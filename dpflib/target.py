@@ -72,5 +72,10 @@ class Target(object):
     def bits(self, value):
         self._bits = value
 
+    def assume(self, target):
+        self._arch = target._arch
+        self._endian = target._endian
+        self._bits = target._bits
+
 
 target = Target()
