@@ -11,8 +11,16 @@ __all__ = [
 
 
 class Architecture(Enum):
-    x86 = 1
-    x86_64 = 2
+    # Note: it is no coindicence that these values map to the e_machine ELF field.
+    sparc = 0x02
+    x86 = 0x03
+    mips = 0x08
+    powerpc = 0x14
+    arm = 0x28
+    superh = 0x2a
+    ia_64 = 0x32
+    x86_64 = 0x3e
+    aarch64 = 0xb7
         
 
 class Endianness(Enum):
