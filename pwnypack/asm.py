@@ -1,5 +1,5 @@
 import subprocess
-import dpflib.target
+import pwnypack.target
 import tempfile
 
 
@@ -11,7 +11,7 @@ __all__ = [
 def asm(code, format='bin', bits=None, target=None):
     if bits is None:
         if target is None:
-            target = dpflib.target.target
+            target = pwnypack.target.target
         bits = target.bits
 
     tmp = tempfile.NamedTemporaryFile(delete=False)

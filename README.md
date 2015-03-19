@@ -1,34 +1,34 @@
-# Dino Penetration Framework
+# pwnypack
 
-The official _Certified Edible Dinosaurs_ CTF toolkit. Dino Penetration Framework (DPF) attempts to provide a toolset which can be used to more easily develop CTF solutions.
+The official _Certified Edible Dinosaurs_ CTF toolkit. *pwnypack* attempts to provide a toolset which can be used to more easily develop CTF solutions.
 
-To import all of DPF into your global namespace, use:
+To import all of *pwnypack* into your global namespace, use:
 
 ```python
->>> from dpf import *
+>>> from pwny import *
 ```
 
 I promise that effort will be put into not exposing unnecessary stuff and thus overly polluting your global namespace.
 
-For an example, check out the [Big Prison Fence](https://github.com/iksteen/dpf/wiki/Big-Prison-Fence) example in the wiki.
+For an example, check out the [Big Prison Fence](https://github.com/iksteen/pwnypack/wiki/Big-Prison-Fence) example in the wiki.
 
 ## Motivation
 
-After seeing the excellent [pwntools](https://github.com/Gallopsled/pwntools) by Gallopsled, I got interested in building my own CTF toolkit. _pwntools_ is much more complete so you should probably use that. DPF was created mostly out of curiosity.
+After seeing the excellent [pwntools](https://github.com/Gallopsled/pwntools) by Gallopsled, I got interested in building my own CTF toolkit. _pwntools_ is much more complete so you should probably use that. *pwnypack* was created mostly out of curiosity.
 
 ## Modules
 
-DPF contains a variety of modules which can be imported individually if you do not want to import everything:
+*pwnypack* contains a variety of modules which can be imported individually if you do not want to import everything:
 
 ```python
->>> import dpflib.packing
+>>> import pwnypack.packing
 ```
 
 The available modules are listed below.
 
-### dpflib.target
+### pwnypack.target
 
-This module defines a `Target` class that exposes information about a target platform. The `Target` exposes the machine architecture (x86/x86_64/arm/etc), the endianness of the platform (little/big) and the word size (32/64 bit). It is used throughout DPF to determine how to parse or generate machine specific structures.
+This module defines a `Target` class that exposes information about a target platform. The `Target` exposes the machine architecture (x86/x86_64/arm/etc), the endianness of the platform (little/big) and the word size (32/64 bit). It is used throughout *pwnypack* to determine how to parse or generate machine specific structures.
 
 If you do not specify the endianness or word size explicitly, they will assume the default for the configured architecture.
 
@@ -41,7 +41,7 @@ A `Target` can also assume properties of a different instance of `Target`. This 
 Examples:
 
 ```python
->>> from dpf import *
+>>> from pwny import *
 >>> target.arch
 <Architecture.x86_64: 62>
 >>> target.endian
@@ -58,27 +58,27 @@ Examples:
 >>> target.assume(ELF.parse('exploit-me'))
 ```
 
-### dpflib.packing
+### pwnypack.packing
 
 Contains functions to pack and unpack structures for the default or a given target platform.
 
-### dpflib.util
+### pwnypack.util
 
 Contains various utility methods. Currently a de Bruijn sequence generator and a function to find the first occurence of a string in a de Bruijn sequence.
 
-### dpflib.flow
+### pwnypack.flow
 
 Contains a set of classes that provide a consistent and easy to learn and use interface to a subprocess or a socket. Fairly trivial to extend to other channel types.
 
-### dpflib.asm
+### pwnypack.asm
 
 Contains a function that invokes `nasm` for you for a given target platform.
 
-### dpflib.elf
+### pwnypack.elf
 
 Contains a parser for ELF header structures.
 
-### dpflib.codec
+### pwnypack.codec
 
 Contains various methods to transcode strings.
 
@@ -95,4 +95,4 @@ Just me for now. If you want to contribute, feel free to fork & create a pull re
 
 ## License
 
-DPF is distributed under the MIT license.
+*pwnypack* is distributed under the MIT license.

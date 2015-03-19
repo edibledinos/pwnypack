@@ -1,5 +1,5 @@
-from dpflib.target import Architecture, Endianness, Target
-from dpflib.packing import U16, U32, unpack, packsize
+from pwnypack.target import Architecture, Endianness, Target
+from pwnypack.packing import U16, U32, unpack, packsize
 from enum import Enum
 
 

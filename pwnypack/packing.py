@@ -1,4 +1,4 @@
-import dpflib.target
+import pwnypack.target
 import struct
 
 
@@ -12,11 +12,11 @@ __all__ = [
 
 
 def pack(format, *args, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
+    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if format and format[0] not in '@=<>!':
-        if endian is dpflib.target.Endianness.little:
+        if endian is pwnypack.target.Endianness.little:
             format = '<' + format
-        elif endian is dpflib.target.Endianness.big:
+        elif endian is pwnypack.target.Endianness.big:
             format = '>' + format
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
@@ -24,11 +24,11 @@ def pack(format, *args, **kwargs):
 
 
 def unpack(format, data, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
+    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if format and format[0] not in '@=<>!':
-        if endian is dpflib.target.Endianness.little:
+        if endian is pwnypack.target.Endianness.little:
             format = '<' + format
-        elif endian is dpflib.target.Endianness.big:
+        elif endian is pwnypack.target.Endianness.big:
             format = '>' + format
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
@@ -58,21 +58,21 @@ del _w, _f, _pack_closure, _unpack_closure
 
 
 def P(*args, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
     return globals()['P%d' % bits](*args, **kwargs)
 
 
 def U(data, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
     return globals()['U%d' % bits](data, **kwargs)
 
 
 def packsize(format, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
+    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if format and format[0] not in '@=<>!':
-        if endian is dpflib.target.Endianness.little:
+        if endian is pwnypack.target.Endianness.little:
             format = '<' + format
-        elif endian is dpflib.target.Endianness.big:
+        elif endian is pwnypack.target.Endianness.big:
             format = '>' + format
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)

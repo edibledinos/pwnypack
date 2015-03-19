@@ -2,8 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 
-README = 'Dino Penetration Framework'
-CHANGES = 'Always in flux, everything is different'
+README = ''
 REQUIRES = [
 ]
 
@@ -15,20 +14,19 @@ except ImportError:
 
 
 setup(
-    name='dpf',
+    name='pwnypack',
     version='0.0.0',
-    description='Dino Penetration Framework',
-    long_description=README + '\n\n' + CHANGES,
+    description='Official CTF toolkit for Certified Edible Dinosaurs.',
+    long_description=README,
     classifiers=[
         "Programming Language :: Python",
     ],
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
-    url='https://github.com/iksteen/dpf/',
+    url='https://github.com/iksteen/pwnypack/',
     keywords='wargame ctf',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
 )
-
