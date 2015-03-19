@@ -26,10 +26,7 @@ class Process(object):
                 block = None
             if not block:
                 self._process.poll()
-                if not self._process.returncode is None:
-                    raise EOFError('Process ended')
-                else:
-                    print >>sys.stderr, 'Warning: spinning'
+                raise EOFError('Process ended')
             d += block
             n -= len(block)
         return d
