@@ -6,3 +6,4 @@ from dpflib.packing import *
 from dpflib.util import *
 from dpflib.flow import *
 from dpflib.asm import *
+from dpflib.elf import *
