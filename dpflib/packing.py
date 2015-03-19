@@ -11,39 +11,41 @@ __all__ = [
 
 
 def pack(format, *args, **kwargs):
-    _target = kwargs.get('target', dpflib.target.target)
+    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
     if format and format[0] not in '@=<>!':
-        if _target.endian == dpflib.target.Endianness.little:
+        if endian is dpflib.target.Endianness.little:
             format = '<' + format
-        elif _target.endian == dpflib.target.Endianness.big:
+        elif endian is dpflib.target.Endianness.big:
             format = '>' + format
         else:
-            raise NotImplementedError('Unsupported endianness: %s' % _target.endian)
+            raise NotImplementedError('Unsupported endianness: %s' % endian)
     return struct.pack(format, *args)
 
 
 def unpack(format, *args, **kwargs):
-    global target
-    _target = kwargs.get('target', target)
+    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
     if format and format[0] not in '@=<>!':
-        if _target.endian == dpflib.target.Endianness.little:
+        if endian is dpflib.target.Endianness.little:
             format = '<' + format
-        elif _target.endian == dpflib.target.Endianness.big:
+        elif endian is dpflib.target.Endianness.big:
             format = '>' + format
         else:
-            raise NotImplementedError('Unsupported endianness: %s' % _target.endian)
+            raise NotImplementedError('Unsupported endianness: %s' % endian)
     return struct.unpack(format, *args)
 
 
-def _make_closure(f, fmt):
+def _pack_closure(f, fmt):
     return lambda *a, **k: f(fmt * len(a), *a, **k)
+
+def _unpack_closure(f, fmt):
+    return lambda *a, **k: f(fmt * len(a), *a, **k)[0]
 
 for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
     locals().update({
-        'p%d' % _w: _make_closure(pack, _f),
-        'P%d' % _w: _make_closure(pack, _f.upper()),
-        'u%d' % _w: _make_closure(unpack, _f),
-        'U%d' % _w: _make_closure(unpack, _f.upper()),
+        'p%d' % _w: _pack_closure(pack, _f),
+        'P%d' % _w: _pack_closure(pack, _f.upper()),
+        'u%d' % _w: _unpack_closure(unpack, _f),
+        'U%d' % _w: _unpack_closure(unpack, _f.upper()),
     })
     __all__.extend([
         'p%d' % _w,
@@ -51,14 +53,14 @@ for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
         'u%d' % _w,
         'U%d' % _w,
     ])
-del _w, _f, _make_closure
+del _w, _f, _pack_closure, _unpack_closure
 
 
 def P(*args, **kwargs):
-    bits = kwargs.get('target', dpflib.target.target).bits
+    bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
     return globals()['P%d' % bits](*args, **kwargs)
 
 
 def U(*args, **kwargs):
-    bits = kwargs.get('target', dpflib.target.target).bits
-    return globals()['P%d' % bits](*args, **kwargs)
+    bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
+    return globals()['U%d' % bits](*args, **kwargs)
