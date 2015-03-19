@@ -30,22 +30,148 @@ class ELF(Target):
         openbsd = 0x0c
         openvms = 0x0d
 
-    osabi = None
-    abi_version = None
-    type = None
-    entry = None
-    phoff = None
-    shoff = None
-    flags = None
-    hsize = None
-    phentsize = None
-    phnum = None
-    shentsize = None
-    shnum = None
-    shstrndx = None
+    class SectionType(Enum):
+        UNKNOWN = -1
+        NULL = 0
+        PROGBITS = 1
+        SYMTAB = 2
+        STRTAB = 3
+        RELA = 4
+        HASH = 5
+        DYNAMIC = 6
+        NOTE = 7
+        NOBITS = 8
+        REL = 9
+        DYNSYM = 11
+        INIT_ARRAY = 14
+        FINI_ARRAY = 15
+        PREINIT_ARRAY = 16
+        GROUP = 17
+        SYMTAB_SHNDX = 18
+        NUM = 19
+        GNU_ATTRIBUTES = 0x6ffffff5
+        GNU_HASH = 0x6ffffff6
+        GNU_LIBLIST = 0x6ffffff7
+        CHECKSUM = 0x6ffffff8
+        LOSUNW = 0x6ffffffa
+        SUNW_move = 0x6ffffffa
+        SUNW_COMDAT = 0x6ffffffb
+        SUNW_syminfo = 0x6ffffffc
+        GNU_VERDEF = 0x6ffffffd
+        GNU_VERNEED = 0x6ffffffe
+        GNU_VERSYM = 0x6fffffff
+        HISUNW = 0x6fffffff
+        HIOS = 0x6fffffff
 
-    def __init__(self):
-        pass
+    # Flags for section headers.
+    SHF_WRITE = 1 << 0
+    SHF_ALLOC = 1 < 1
+    SHF_EXECINSTR = 1 << 2
+    SHF_MERGE = 1 << 4
+    SHF_STRINGS = 1 << 5
+    SHF_INFO_LINK = 1 << 6
+    SHF_LINK_ORDER = 1 << 7
+    SHF_OS_NONCONFORMING = 1 << 8
+    SHF_GROUP = 1 << 9
+    SHF_TLS = 1 << 10
+    SHF_MASKOS = 0x0ff00000
+    SHF_MASKPROC = 0xf0000000
+    SHF_ORDERED = 1 << 30
+    SHF_EXCLUDE = 1 << 31
+
+    def __init__(self, header=None):
+        self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
+            self.shoff = self.flags = self.hsize = self.phentsize = self.phnum = \
+            self.shentsize = self.shnum = self.shstrndx = \
+            self.strings = self._strings = None
+
+        self.sections = []
+
+        if header is not None:
+            self.parse_header(header)
+
+    def parse_header(self, data):
+        (magic, bits, endian, version, osabi, abi_version, _), data = \
+            unpack('4sBBBBB7s', data[:16]), data[16:]
+
+        assert magic == self.MAGIC, 'Missing ELF magic'
+
+        assert bits in (1, 2), 'Invalid word size'
+        self.bits = 32 * bits
+
+        self.endian = Endianness(endian)
+
+        assert version == 1, 'Invalid ident version'
+
+        self.osabi = self.OSABI(osabi)
+        self.abi_version = abi_version
+
+        (type_, arch, version), data = unpack('HHI', data[:8], endian=self.endian), data[8:]
+
+        self.type = self.Type(type_)
+        self.arch = Architecture(arch)
+
+        assert version == 1, 'Invalid version'
+
+        if self.bits == 32:
+            format = 'IIIIHHHHHH'
+        else:
+            format = 'QQQIHHHHHH'
+
+        format_size = packsize(format)
+        (self.entry, self.phoff, self.shoff, self.flags, self.hsize, self.phentsize, \
+            self.phnum, self.shentsize, self.shnum, self.shstrndx) = \
+            unpack(format, data[:format_size], target=self)
+
+    def parse_section_header(self, data):
+        if self.bits == 32:
+            format = 'I' * 10
+        else:
+            format = 'IIQQQQIIQQ'
+
+        format_size = packsize(format)
+        section = {
+            key: value
+            for key, value in zip(
+                [
+                    'name_index',
+                    'type_id',
+                    'flags',
+                    'addr',
+                    'offset',
+                    'size',
+                    'link',
+                    'info',
+                    'addralign',
+                    'entsize',
+                ],
+                unpack(format, data[:format_size], target=self)
+            )
+        }
+
+        if self._strings is not None:
+            name_index = section['name_index']
+            name = self._strings[name_index:].split('\0', 1)[0]
+            self.strings[name_index] = name
+        else:
+            name = None
+
+        try:
+            type_ = self.SectionType(section['type_id'])
+        except ValueError:
+            type_ = self.SectionType.UNKNOWN
+
+        section.update({
+            'type': type_,
+            'name': name,
+        })
+
+        self.sections.append(section)
+        return section
+
+    def parse_strings(self, data):
+        self._strings = data
+        self.strings = {}  # Will be filled by parsing sections.
 
     @classmethod
     def parse(cls, f):
@@ -56,34 +182,17 @@ class ELF(Target):
             need_close = False
 
         elf = cls()
+        elf.parse_header(f.read(64))
 
-        header = f.read(0x18)
-        assert len(header) == 0x18, 'File prematurely ended'
-        assert header[:4] == cls.MAGIC, 'Missing ELF magic'
+        f.seek(elf.shoff + elf.shstrndx * elf.shentsize)
+        str_sh = elf.parse_section_header(f.read(elf.shentsize))
 
-        assert header[4] in '\x01\x02', 'Invalid word size'
-        elf.bits = 32 * ord(header[4])
-        elf.endian = Endianness(ord(header[5]))
-        assert header[6] == chr(1)
-        elf.osabi = cls.OSABI(ord(header[7]))
-        elf.abi_version = ord(header[8])
+        f.seek(str_sh['offset'])
+        elf.parse_strings(f.read(str_sh['size']))
 
-        elf.type = cls.Type(U16(header[16:18], endian=elf.endian))
-        elf.arch = Architecture(U16(header[18:20], endian=elf.endian))
-        assert U32(header[20:24], endian=elf.endian) == 1
-
-        if elf.bits == 32:
-            format = 'IIIIHHHHHH'
-        elif elf.bits == 64:
-            format = 'QQQIHHHHHH'
-
-        header_len = packsize(format)
-        header = f.read(header_len)
-        assert len(header) == header_len, 'File prematurely ended'
-
-        elf.entry, elf.phoff, elf.shoff, elf.flags, elf.hsize, elf.phentsize, \
-            elf.phnum, elf.shentsize, elf.shnum, elf.shstrndx = \
-            unpack(format, header, target=elf)
+        f.seek(elf.shoff)
+        for i in range(elf.shnum):
+            elf.parse_section_header(f.read(elf.shentsize))
 
         if need_close:
             f.close()
