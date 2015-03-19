@@ -7,6 +7,7 @@ __all__ = [
     'unpack',
     'P',
     'U',
+    'packsize',
 ]
 
 
@@ -64,3 +65,6 @@ def P(*args, **kwargs):
 def U(data, **kwargs):
     bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
     return globals()['U%d' % bits](data, **kwargs)
+
+
+packsize = struct.calcsize
