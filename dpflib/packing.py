@@ -22,7 +22,7 @@ def pack(format, *args, **kwargs):
     return struct.pack(format, *args)
 
 
-def unpack(format, *args, **kwargs):
+def unpack(format, data, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
     if format and format[0] not in '@=<>!':
         if endian is dpflib.target.Endianness.little:
@@ -31,14 +31,14 @@ def unpack(format, *args, **kwargs):
             format = '>' + format
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
-    return struct.unpack(format, *args)
+    return struct.unpack(format, data)
 
 
 def _pack_closure(f, fmt):
     return lambda *a, **k: f(fmt * len(a), *a, **k)
 
 def _unpack_closure(f, fmt):
-    return lambda *a, **k: f(fmt * len(a), *a, **k)[0]
+    return lambda a, **k: f(fmt, a, **k)[0]
 
 for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
     locals().update({
@@ -61,6 +61,6 @@ def P(*args, **kwargs):
     return globals()['P%d' % bits](*args, **kwargs)
 
 
-def U(*args, **kwargs):
+def U(data, **kwargs):
     bits = kwargs.get('bits', kwargs.get('target', dpflib.target.target).bits)
-    return globals()['U%d' % bits](*args, **kwargs)
+    return globals()['U%d' % bits](data, **kwargs)
