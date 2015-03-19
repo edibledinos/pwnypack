@@ -67,4 +67,13 @@ def U(data, **kwargs):
     return globals()['U%d' % bits](data, **kwargs)
 
 
-packsize = struct.calcsize
+def packsize(format, **kwargs):
+    endian = kwargs.get('endian', kwargs.get('target', dpflib.target.target).endian)
+    if format and format[0] not in '@=<>!':
+        if endian is dpflib.target.Endianness.little:
+            format = '<' + format
+        elif endian is dpflib.target.Endianness.big:
+            format = '>' + format
+        else:
+            raise NotImplementedError('Unsupported endianness: %s' % endian)
+    return struct.calcsize(format)
