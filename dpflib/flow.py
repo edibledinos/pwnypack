@@ -87,41 +87,55 @@ class TCPSocket(Socket):
 
 
 class Flow(object):
-    def __init__(self, subject):
+    def __init__(self, subject, echo=False):
         self._subject = subject
+        self.echo = echo
 
-    def read(self, n):
-        return self._subject.read(n)
+    def read(self, n, echo=None):
+        d = self._subject.read(n)
+        if echo or (echo is None and self.echo):
+            sys.stdout.write(d)
+        return d
 
-    def read_until(self, s):
+    def read_eof(self, echo=None):
+        d = ''
+        while True:
+            try:
+                d += self.read(1, echo)
+            except EOFError:
+                return d
+
+    def read_until(self, s, echo=None):
         s = list(s)
         s_len = len(s)
-        buf = list(self.read(s_len))
+        buf = list(self.read(s_len, echo))
 
         while buf[-s_len:] != s:
-            buf.append(self.read(1))
+            buf.append(self.read(1, echo))
 
         return ''.join(buf)
 
     until = read_until
 
-    def readlines(self, n):
+    def readlines(self, n, echo=None):
         return [
-            self.until('\n')
+            self.until('\n', echo)
             for i in range(n)
         ]
 
-    def readline(self):
-        return self.readlines(1)[0]
+    def readline(self, echo=None):
+        return self.readlines(1, echo)[0]
 
-    def write(self, data):
+    def write(self, data, echo=None):
+        if echo or (echo is None and self.echo):
+            sys.stdout.write(data)
         self._subject.write(data)
 
-    def writelines(self, lines):
-        self.write('\n'.join(lines) + '\n')
+    def writelines(self, lines, echo=None):
+        self.write('\n'.join(lines) + '\n', echo)
 
-    def writeline(self, line):
-        self.writelines([line])
+    def writeline(self, line='', echo=None):
+        self.writelines([line], echo)
 
     def close(self):
         self._subject.close()
@@ -130,9 +144,11 @@ class Flow(object):
         self._subject.kill()
 
     @classmethod
-    def execute(cls, *args):
-        return cls(Process(*args))
+    def execute(cls, *args, **kwargs):
+        echo = kwargs.pop('echo', False)
+        return cls(Process(*args, **kwargs), echo=echo)
 
     @classmethod
-    def connect_tcp(cls, *args):
-        return cls(TCPSocket(*args))
+    def connect_tcp(cls, *args, **kwargs):
+        echo = kwargs.pop('echo', False)
+        return cls(TCPSocket(*args, **kwargs), echo=echo)
