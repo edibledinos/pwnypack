@@ -20,7 +20,7 @@ class ProcessChannel(object):
         )
 
     def read(self, n):
-        d = ''
+        d = b''
         while n:
             try:
                 block = self._process.stdout.read(n)
@@ -51,7 +51,7 @@ class SocketChannel(object):
         self._socket = socket
 
     def read(self, n):
-        d = ''
+        d = b''
         while n:
             try:
                 block = self._socket.recv(n)
@@ -96,11 +96,11 @@ class Flow(object):
     def read(self, n, echo=None):
         d = self.channel.read(n)
         if echo or (echo is None and self.echo):
-            sys.stdout.write(d)
+            sys.stdout.write(d.decode('utf-8'))
         return d
 
     def read_eof(self, echo=None):
-        d = ''
+        d = b''
         while True:
             try:
                 d += self.read(1, echo)
@@ -108,20 +108,19 @@ class Flow(object):
                 return d
 
     def read_until(self, s, echo=None):
-        s = list(s)
         s_len = len(s)
-        buf = list(self.read(s_len, echo))
+        buf = self.read(s_len, echo)
 
         while buf[-s_len:] != s:
-            buf.append(self.read(1, echo))
+            buf += self.read(1, echo)
 
-        return ''.join(buf)
+        return buf
 
     until = read_until
 
     def readlines(self, n, echo=None):
         return [
-            self.until('\n', echo)
+            self.until(b'\n', echo)
             for i in range(n)
         ]
 
@@ -134,7 +133,7 @@ class Flow(object):
         self.channel.write(data)
 
     def writelines(self, lines, echo=None):
-        self.write('\n'.join(lines) + '\n', echo)
+        self.write(b'\n'.join(lines + [b'']), echo)
 
     def writeline(self, line='', echo=None):
         self.writelines([line], echo)
