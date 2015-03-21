@@ -15,6 +15,7 @@ class ProcessChannel(object):
     def __init__(self, *arguments):
         self._process = subprocess.Popen(
             arguments,
+            bufsize=0,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
@@ -96,7 +97,7 @@ class Flow(object):
     def read(self, n, echo=None):
         d = self.channel.read(n)
         if echo or (echo is None and self.echo):
-            sys.stdout.write(d.decode('utf-8'))
+            sys.stdout.write(d.decode('latin1'))
         return d
 
     def read_eof(self, echo=None):
@@ -129,7 +130,7 @@ class Flow(object):
 
     def write(self, data, echo=None):
         if echo or (echo is None and self.echo):
-            sys.stdout.write(data)
+            sys.stdout.write(data.decode('latin1'))
         self.channel.write(data)
 
     def writelines(self, lines, echo=None):
