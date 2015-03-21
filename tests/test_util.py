@@ -1,0 +1,21 @@
+import pwny
+
+
+def test_cycle():
+    assert pwny.cycle(64) == 'AAAABAAACAAADAAAEAAAFAAAGAAAHAAAIAAAJAAAKAAALAAAMAAANAAAOAAAPAAA'
+
+
+def test_cycle_width():
+    assert pwny.cycle(64, width=2) == 'AABACADAEAFAGAHAIAJAKALAMANAOAPAQARASATAUAVAWAXAYAZBBCBDBEBFBGBH'
+
+
+def test_cycle_find():
+    assert pwny.cycle.find('PAAA') == 60
+
+
+def test_cycle_find_start():
+    assert pwny.cycle.find('AAAA') == 0
+
+
+def test_cycle_find_not_found():
+    assert pwny.cycle.find('\x00', width=1) == -1
