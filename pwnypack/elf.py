@@ -80,6 +80,7 @@ class ELF(Target):
     SHF_EXCLUDE = 1 << 31
 
     def __init__(self, header=None):
+        super(ELF, self).__init__()
         self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
             self.shoff = self.flags = self.hsize = self.phentsize = self.phnum = \
             self.shentsize = self.shnum = self.shstrndx = \
@@ -101,7 +102,7 @@ class ELF(Target):
 
         self.endian = Endianness(endian)
 
-        assert version == 1, 'Invalid ident version'
+        assert version == 1, 'Invalid version'
 
         self.osabi = self.OSABI(osabi)
         self.abi_version = abi_version
@@ -118,8 +119,8 @@ class ELF(Target):
         else:
             format = 'QQQIHHHHHH'
 
-        (self.entry, self.phoff, self.shoff, self.flags, self.hsize, self.phentsize, \
         format_size = pack_size(format)
+        (self.entry, self.phoff, self.shoff, self.flags, self.hsize, self.phentsize,
             self.phnum, self.shentsize, self.shnum, self.shstrndx) = \
             unpack(format, data[:format_size], target=self)
 
@@ -166,7 +167,6 @@ class ELF(Target):
             'name': name,
         })
 
-        self.sections.append(section)
         return section
 
     def parse_strings(self, data):
@@ -181,18 +181,18 @@ class ELF(Target):
         else:
             need_close = False
 
-        elf = cls()
-        elf.parse_header(f.read(64))
+        elf = cls(f.read(64))
 
-        f.seek(elf.shoff + elf.shstrndx * elf.shentsize)
-        str_sh = elf.parse_section_header(f.read(elf.shentsize))
+        if elf.shnum:
+            f.seek(elf.shoff + elf.shstrndx * elf.shentsize)
+            str_sh = elf.parse_section_header(f.read(elf.shentsize))
 
-        f.seek(str_sh['offset'])
-        elf.parse_strings(f.read(str_sh['size']))
+            f.seek(str_sh['offset'])
+            elf.parse_strings(f.read(str_sh['size']))
 
-        f.seek(elf.shoff)
-        for i in range(elf.shnum):
-            elf.parse_section_header(f.read(elf.shentsize))
+            f.seek(elf.shoff)
+            for i in range(elf.shnum):
+                elf.sections.append(elf.parse_section_header(f.read(elf.shentsize)))
 
         if need_close:
             f.close()
