@@ -5,9 +5,9 @@ import struct
 __all__ = [
     'pack',
     'unpack',
+    'pack_size',
     'P',
     'U',
-    'packsize',
 ]
 
 
@@ -33,6 +33,18 @@ def unpack(format, data, **kwargs):
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
     return struct.unpack(format, data)
+
+
+def pack_size(fmt, **kwargs):
+    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
+    if fmt and fmt[0] not in '@=<>!':
+        if endian is pwnypack.target.Endianness.little:
+            fmt = '<' + fmt
+        elif endian is pwnypack.target.Endianness.big:
+            fmt = '>' + fmt
+        else:
+            raise NotImplementedError('Unsupported endianness: %s' % endian)
+    return struct.calcsize(fmt)
 
 
 def _pack_closure(f, fmt):
@@ -65,15 +77,3 @@ def P(*args, **kwargs):
 def U(data, **kwargs):
     bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
     return globals()['U%d' % bits](data, **kwargs)
-
-
-def packsize(format, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
-    if format and format[0] not in '@=<>!':
-        if endian is pwnypack.target.Endianness.little:
-            format = '<' + format
-        elif endian is pwnypack.target.Endianness.big:
-            format = '>' + format
-        else:
-            raise NotImplementedError('Unsupported endianness: %s' % endian)
-    return struct.calcsize(format)

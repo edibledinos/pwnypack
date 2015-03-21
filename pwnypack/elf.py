@@ -1,5 +1,5 @@
 from pwnypack.target import Architecture, Endianness, Target
-from pwnypack.packing import U16, U32, unpack, packsize
+from pwnypack.packing import U16, U32, unpack, pack_size
 from enum import Enum
 
 
@@ -118,8 +118,8 @@ class ELF(Target):
         else:
             format = 'QQQIHHHHHH'
 
-        format_size = packsize(format)
         (self.entry, self.phoff, self.shoff, self.flags, self.hsize, self.phentsize, \
+        format_size = pack_size(format)
             self.phnum, self.shentsize, self.shnum, self.shstrndx) = \
             unpack(format, data[:format_size], target=self)
 
@@ -129,7 +129,7 @@ class ELF(Target):
         else:
             format = 'IIQQQQIIQQ'
 
-        format_size = packsize(format)
+        format_size = pack_size(format)
         section = {
             key: value
             for key, value in zip(
