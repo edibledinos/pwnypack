@@ -4,12 +4,14 @@ import socket
 
 
 __all__ = [
-    'Process',
+    'ProcessChannel',
+    'SocketChannel',
+    'TCPSocketChannel',
     'Flow',
 ]
 
 
-class Process(object):
+class ProcessChannel(object):
     def __init__(self, *arguments):
         self._process = subprocess.Popen(
             arguments,
@@ -44,7 +46,7 @@ class Process(object):
         self._process.kill()
 
 
-class Socket(object):
+class SocketChannel(object):
     def __init__(self, socket):
         self._socket = socket
 
@@ -79,20 +81,20 @@ class Socket(object):
         self._socket.close()
 
 
-class TCPSocket(Socket):
+class TCPSocketChannel(SocketChannel):
     def __init__(self, host, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
-        super(TCPSocket, self).__init__(s)
+        super(TCPSocketChannel, self).__init__(s)
 
 
 class Flow(object):
-    def __init__(self, subject, echo=False):
-        self._subject = subject
+    def __init__(self, channel, echo=False):
+        self.channel = channel
         self.echo = echo
 
     def read(self, n, echo=None):
-        d = self._subject.read(n)
+        d = self.channel.read(n)
         if echo or (echo is None and self.echo):
             sys.stdout.write(d)
         return d
@@ -129,7 +131,7 @@ class Flow(object):
     def write(self, data, echo=None):
         if echo or (echo is None and self.echo):
             sys.stdout.write(data)
-        self._subject.write(data)
+        self.channel.write(data)
 
     def writelines(self, lines, echo=None):
         self.write('\n'.join(lines) + '\n', echo)
@@ -138,17 +140,17 @@ class Flow(object):
         self.writelines([line], echo)
 
     def close(self):
-        self._subject.close()
+        self.channel.close()
 
     def kill(self):
-        self._subject.kill()
+        self.channel.kill()
 
     @classmethod
     def execute(cls, *args, **kwargs):
         echo = kwargs.pop('echo', False)
-        return cls(Process(*args, **kwargs), echo=echo)
+        return cls(ProcessChannel(*args), echo=echo)
 
     @classmethod
     def connect_tcp(cls, *args, **kwargs):
         echo = kwargs.pop('echo', False)
-        return cls(TCPSocket(*args, **kwargs), echo=echo)
+        return cls(TCPSocketChannel(*args, **kwargs), echo=echo)
