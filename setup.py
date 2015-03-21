@@ -1,32 +1,43 @@
-from setuptools import setup, find_packages
-import os
+from setuptools import setup
+import sys
 
 
-README = ''
-REQUIRES = [
+__version__ = '0.5.0'
+
+
+requires = [
+    'six',
+    'nose',
 ]
 
 
-try:
-    import enum
-except ImportError:
-    REQUIRES.append('enum34')
+if sys.version_info[:2] < (3, 4):
+    requires.append('enum34')
 
 
 setup(
     name='pwnypack',
-    version='0.0.0',
-    description='Official CTF toolkit for Certified Edible Dinosaurs.',
-    long_description=README,
-    classifiers=[
-        "Programming Language :: Python",
-    ],
+    packages=['pwny', 'pwnypack'],
+    version=__version__,
+    description='Official Certified Edible Dinosaurs CTF toolkit.',
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
     url='https://github.com/iksteen/pwnypack/',
-    keywords='wargame ctf',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=False,
-    install_requires=REQUIRES,
+    download_url='https://github.com/iksteen/pwnypack/tarball/%s' % __version__,
+    install_requires=requires,
+    tests_require=['mock', 'coverage'],
+    keywords=['wargame', 'ctf'],
+    classifiers=[
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+        'Topic :: Security',
+        'Topic :: Security :: Cryptography',
+    ],
 )
