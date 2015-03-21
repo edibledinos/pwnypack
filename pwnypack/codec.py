@@ -1,6 +1,7 @@
 import base64
 import collections
-import string
+import six
+import codecs
 
 
 __all__ = [
@@ -17,16 +18,13 @@ __all__ = [
 
 def xor(key, data):
     if type(key) is int:
-        key = chr(key)
+        key = six.int2byte(key)
     key_len = len(key)
 
-    return ''.join(
-        chr(ord(c) ^ ord(key[i % key_len]))
-        for i, c in enumerate(data)
+    return b''.join(
+        six.int2byte(c ^ six.indexbytes(key, i % key_len))
+        for i, c in enumerate(six.iterbytes(data))
     )
-
-
-rot13 = lambda d: d.encode('rot13')
 
 
 def caesar(shift, data, shift_ranges=('az', 'AZ')):
@@ -38,11 +36,17 @@ def caesar(shift, data, shift_ranges=('az', 'AZ')):
     return ''.join(alphabet.get(c, c) for c in data)
 
 
-enhex = lambda d: d.encode('hex')
-dehex = lambda d: ''.join(d.split()).decode('hex')
+rot13_encode = codecs.getencoder('rot-13')
+rot13 = lambda d: rot13_encode(d)[0]
 
-enb64 = base64.b64encode
-deb64 = base64.b64decode
+hex_encode = codecs.getencoder('hex')
+hex_decode = codecs.getdecoder('hex')
+enhex = lambda d: hex_encode(d)[0].decode('ascii')
+dehex = lambda d: hex_decode(''.join(d.replace(':', '').split()))[0]
+
+
+enb64 = lambda d: base64.b64encode(d).decode('ascii')
+deb64 = lambda d: base64.b64decode(d.encode('ascii'))
 
 
 frequency = collections.Counter
