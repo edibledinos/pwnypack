@@ -7,7 +7,9 @@ __all__ = [
     'unpack',
     'pack_size',
     'P',
+    'p',
     'U',
+    'u',
 ]
 
 
@@ -74,6 +76,16 @@ def P(value, **kwargs):
     return globals()['P%d' % bits](value, **kwargs)
 
 
+def p(value, **kwargs):
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    return globals()['p%d' % bits](value, **kwargs)
+
+
 def U(data, **kwargs):
     bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
     return globals()['U%d' % bits](data, **kwargs)
+
+
+def u(data, **kwargs):
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    return globals()['u%d' % bits](data, **kwargs)
