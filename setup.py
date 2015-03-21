@@ -23,7 +23,7 @@ setup(
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
     url='https://github.com/iksteen/pwnypack/',
-    download_url='https://github.com/iksteen/pwnypack/tarball/%s' % __version__,
+    download_url='https://github.com/iksteen/pwnypack/tarball/v%s' % __version__,
     install_requires=requires,
     tests_require=['mock', 'coverage'],
     keywords=['wargame', 'ctf'],
