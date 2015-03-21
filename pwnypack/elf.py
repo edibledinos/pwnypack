@@ -9,7 +9,7 @@ __all__ = [
 
 
 class ELF(Target):
-    MAGIC = '\x7fELF'
+    MAGIC = b'\x7fELF'
 
     class Type(Enum):
         none = 0
@@ -170,7 +170,7 @@ class ELF(Target):
         return section
 
     def parse_strings(self, data):
-        self._strings = data
+        self._strings = data.decode('ascii')
         self.strings = {}  # Will be filled by parsing sections.
 
     @classmethod
