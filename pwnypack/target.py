@@ -11,7 +11,7 @@ __all__ = [
 
 
 class Architecture(Enum):
-    # Note: it is no coindicence that these values map to the e_machine ELF field.
+    # Note: it is no coincidence that these values map to the e_machine ELF field.
     sparc = 0x02
     x86 = 0x03
     mips = 0x08
