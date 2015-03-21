@@ -1,5 +1,4 @@
-import itertools
-import string
+from six.moves import range
 
 
 __all__ = [
@@ -26,7 +25,7 @@ def deBruijn(n, k):
             for v in gen(t + 1, p):
                 yield v
          
-            for j in xrange(a[t - p] + 1, k):
+            for j in range(a[t - p] + 1, k):
                 a[t] = j
                 for v in gen(t + 1, t):
                     yield v
