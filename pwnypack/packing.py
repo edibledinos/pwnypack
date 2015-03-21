@@ -13,28 +13,28 @@ __all__ = [
 ]
 
 
-def pack(format, *args, **kwargs):
+def pack(fmt, *args, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
-    if format and format[0] not in '@=<>!':
+    if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Endianness.little:
-            format = '<' + format
+            fmt = '<' + fmt
         elif endian is pwnypack.target.Endianness.big:
-            format = '>' + format
+            fmt = '>' + fmt
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
-    return struct.pack(format, *args)
+    return struct.pack(fmt, *args)
 
 
-def unpack(format, data, **kwargs):
+def unpack(fmt, data, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
-    if format and format[0] not in '@=<>!':
+    if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Endianness.little:
-            format = '<' + format
+            fmt = '<' + fmt
         elif endian is pwnypack.target.Endianness.big:
-            format = '>' + format
+            fmt = '>' + fmt
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
-    return struct.unpack(format, data)
+    return struct.unpack(fmt, data)
 
 
 def pack_size(fmt, **kwargs):
@@ -52,8 +52,10 @@ def pack_size(fmt, **kwargs):
 def _pack_closure(f, fmt):
     return lambda a, **k: f(fmt, a, **k)
 
+
 def _unpack_closure(f, fmt):
     return lambda a, **k: f(fmt, a, **k)[0]
+
 
 for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
     locals().update({
