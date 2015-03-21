@@ -21,7 +21,7 @@ class Architecture(Enum):
     ia_64 = 0x32
     x86_64 = 0x3e
     aarch64 = 0xb7
-        
+
 
 class Endianness(Enum):
     little = 1
