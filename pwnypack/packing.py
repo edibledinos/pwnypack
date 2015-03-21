@@ -48,7 +48,7 @@ def pack_size(fmt, **kwargs):
 
 
 def _pack_closure(f, fmt):
-    return lambda *a, **k: f(fmt * len(a), *a, **k)
+    return lambda a, **k: f(fmt, a, **k)
 
 def _unpack_closure(f, fmt):
     return lambda a, **k: f(fmt, a, **k)[0]
@@ -69,9 +69,9 @@ for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
 del _w, _f, _pack_closure, _unpack_closure
 
 
-def P(*args, **kwargs):
+def P(value, **kwargs):
     bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
-    return globals()['P%d' % bits](*args, **kwargs)
+    return globals()['P%d' % bits](value, **kwargs)
 
 
 def U(data, **kwargs):
