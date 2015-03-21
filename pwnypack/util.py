@@ -36,7 +36,7 @@ def deBruijn(n, k):
 
 def cycle(length, width=4, **kwargs):
     iter = deBruijn(width, 26)
-    return ''.join([chr(ord('A') + iter.next()) for i in range(length)])
+    return ''.join([chr(ord('A') + next(iter)) for i in range(length)])
 
 
 def find(key, width=4):
@@ -46,7 +46,7 @@ def find(key, width=4):
     iter = deBruijn(width, 26)
 
     for i in range(key_len):
-        buf += chr(ord('A') + iter.next())
+        buf += chr(ord('A') + next(iter))
 
     if buf == key:
         return 0
