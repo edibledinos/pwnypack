@@ -1,5 +1,6 @@
 from pwnypack.target import Architecture, Endianness, Target
 from pwnypack.packing import U16, U32, unpack, pack_size
+import pwnypack.main
 from enum import Enum
 
 
@@ -276,3 +277,54 @@ class ELF(Target):
             })
 
         return symbols
+
+
+@pwnypack.main.register(name='symbols')
+def symbols(parser, cmd, args):
+    """
+    List ELF symbol table.
+    """
+
+    parser.add_argument('file', help='ELF file to list the symbols of')
+    parser.add_argument('symbol', nargs='?', help='show only this symbol')
+    parser.add_argument('--exact', '-e', action='store_const', const=True, help='filter by exact symbol name')
+    args = parser.parse_args(args)
+
+    print('%-18s %5s %-7s %-7s %-9s %5s %s' % (
+        'value',
+        'size',
+        'type',
+        'binding',
+        'visibility',
+        'index',
+        'name',
+    ))
+
+    elf = ELF(args.file)
+    for symbol in elf.symbols():
+        if args.symbol:
+            if args.exact:
+                if symbol['name'] != args.symbol:
+                    continue
+            else:
+                if args.symbol not in symbol['name']:
+                    continue
+
+        if symbol['shndx'] == elf.SHN_UNDEF:
+            shndx = 'UND'
+        elif symbol['shndx'] == elf.SHN_ABS:
+            shndx = 'ABS'
+        elif symbol['shndx'] == elf.SHN_COMMON:
+            shndx = 'COM'
+        else:
+            shndx = str(symbol['shndx'])
+
+        print('0x%016x %5d %-7s %-7s %-9s %5s %s' % (
+            symbol['value'],
+            symbol['size'],
+            symbol['type'].name,
+            symbol['binding'].name,
+            symbol['visibility'].name,
+            shndx,
+            symbol['name'],
+        ))
