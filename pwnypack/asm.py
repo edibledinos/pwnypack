@@ -37,9 +37,12 @@ class Asm(object):
         if not isinstance(fmt, cls.Format):
             fmt = cls.Format(fmt)
 
+        if target is None:
+            target = pwnypack.target.target
+
+        assert target.arch in (pwnypack.target.Architecture.x86, pwnypack.target.Architecture.x86_64)
+
         if bits is None:
-            if target is None:
-                target = pwnypack.target.target
             bits = target.bits
 
         tmp = tempfile.NamedTemporaryFile(delete=False)
