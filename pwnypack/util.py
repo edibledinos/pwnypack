@@ -82,6 +82,6 @@ def cycle_find_app(parser, cmd, args):
     """
 
     parser.add_argument('-w', '--width', type=int, default=4, help='the length of the cycled value')
-    parser.add_argument('value', help='the value to determine the position of')
+    parser.add_argument('value', help='the value to determine the position of, read from stdin if missing', nargs='?')
     args = parser.parse_args(args)
-    return 'Found at position: %d' % cycle.find(args.value, args.width)
+    return 'Found at position: %d' % cycle.find(pwnypack.main.string_value_or_stdin(args.value), args.width)
