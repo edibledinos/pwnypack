@@ -1,5 +1,6 @@
 from setuptools import setup
 import sys
+import os
 
 
 __version__ = '0.5.1'
@@ -16,11 +17,20 @@ if sys.version_info[:2] < (3, 4):
     requires.append('enum34')
 
 
+def read_file(filename):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), filename)) as f:
+            return f.read()
+    except IOError:
+        return ''
+
+
 setup(
     name='pwnypack',
     packages=['pwny', 'pwnypack'],
     version=__version__,
     description='Official Certified Edible Dinosaurs CTF toolkit.',
+    long_description=read_file('README.rst'),
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
     url='https://github.com/iksteen/pwnypack/',
