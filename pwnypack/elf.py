@@ -290,7 +290,7 @@ def symbols(parser, cmd, args):
     parser.add_argument('--exact', '-e', action='store_const', const=True, help='filter by exact symbol name')
     args = parser.parse_args(args)
 
-    print('%-18s %5s %-7s %-7s %-9s %5s %s' % (
+    print('%-18s %5s %-7s %-7s %-10s %5s %s' % (
         'value',
         'size',
         'type',
@@ -319,7 +319,7 @@ def symbols(parser, cmd, args):
         else:
             shndx = str(symbol['shndx'])
 
-        print('0x%016x %5d %-7s %-7s %-9s %5s %s' % (
+        print('0x%016x %5d %-7s %-7s %-10s %5s %s' % (
             symbol['value'],
             symbol['size'],
             symbol['type'].name,
