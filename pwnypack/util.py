@@ -1,4 +1,5 @@
 from six.moves import range
+import pwnypack.main
 
 
 __all__ = [
@@ -60,3 +61,27 @@ def find(key, width=4):
 
 cycle.find = find
 del find
+
+
+@pwnypack.main.register('cycle')
+def cycle_app(parser, cmd, args):
+    """
+    Generate a de Bruijn sequence of a given length.
+    """
+
+    parser.add_argument('-w', '--width', type=int, default=4, help='the length of the cycled value')
+    parser.add_argument('length', type=int, help='the cycle length to generate')
+    args = parser.parse_args(args)
+    return cycle(args.length, args.width)
+
+
+@pwnypack.main.register('cycle-find')
+def cycle_find_app(parser, cmd, args):
+    """
+    Find the first position of a value in a de Bruijn sequence.
+    """
+
+    parser.add_argument('-w', '--width', type=int, default=4, help='the length of the cycled value')
+    parser.add_argument('value', help='the value to determine the position of')
+    args = parser.parse_args(args)
+    return 'Found at position: %d' % cycle.find(args.value, args.width)
