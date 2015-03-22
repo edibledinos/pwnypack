@@ -79,6 +79,39 @@ class ELF(Target):
     SHF_ORDERED = 1 << 30
     SHF_EXCLUDE = 1 << 31
 
+    class SymbolBinding(Enum):
+        LOCAL = 0
+        GLOBAL = 1
+        WEAK = 2
+        LOOS = 10
+        HIOS = 11
+        LOPROC = 13
+        HIPROC = 15
+
+    class SymbolType(Enum):
+        NOTYPE = 0
+        OBJECT = 1
+        FUNC = 2
+        SECTION = 3
+        FILE = 4
+        COMMON = 5
+        TLS = 6
+        LOOS = 10
+        HIOS = 12
+        LOPROC = 13
+        HIPROC = 15
+
+    class SymbolVisibility(Enum):
+        DEFAULT = 0
+        INTERNAL = 1
+        HIDDEN = 2
+        PROTECTED = 3
+
+    # Special section indexes
+    SHN_UNDEF = 0
+    SHN_ABS = 0xfff1
+    SHN_COMMON = 0xfff2
+
     def __init__(self, f=None):
         super(ELF, self).__init__()
         self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
@@ -86,7 +119,8 @@ class ELF(Target):
             self.shentsize = self.shnum = self.shstrndx = \
             self.strings = self.raw_section_strings = None
 
-        self.sections = []
+        self.sections_by_name = {}
+        self.sections_by_index = []
 
         self.f = None
 
@@ -108,7 +142,9 @@ class ELF(Target):
 
             self.f.seek(self.shoff)
             for i in range(self.shnum):
-                self.sections.append(self.parse_section_header(self.f.read(self.shentsize)))
+                section = self.parse_section_header(self.f.read(self.shentsize))
+                self.sections_by_name[section['name']] = section
+                self.sections_by_index.append(section)
 
     def parse_header(self, data):
         (magic, bits, endian, version, osabi, abi_version, _), data = \
@@ -198,3 +234,45 @@ class ELF(Target):
         })
 
         return section
+
+    def get_section(self, section):
+        if type(section) is int:
+            return self.sections_by_index[section]
+        else:
+            return self.sections_by_name[section]
+
+    def symbols(self):
+        dynstrs = self.read_section(self.get_section('.dynstr')).decode('ascii')
+        dynsyms = self.read_section(self.get_section('.dynsym'))
+
+        if self.bits == 32:
+            fmt = 'IIIBBH'
+            fmt_size = pack_size(fmt)
+        else:
+            fmt = 'IBBHQQ'
+            fmt_size = pack_size(fmt)
+
+        symbols = []
+
+        while dynsyms:
+            dynsym, dynsyms = dynsyms[:fmt_size], dynsyms[fmt_size:]
+            if self.bits == 32:
+                st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, dynsym)
+            else:
+                st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, dynsym)
+            name = dynstrs[st_name:].split('\0', 1)[0]
+
+            symbols.append({
+                'name': name,
+                'name_index': st_name,
+                'info': st_info,
+                'other': st_other,
+                'shndx': st_shndx,
+                'value': st_value,
+                'size': st_size,
+                'binding': ELF.SymbolBinding(st_info >> 4),
+                'type': ELF.SymbolType(st_info & 15),
+                'visibility': ELF.SymbolVisibility(st_other & 3),
+            })
+
+        return symbols
