@@ -107,7 +107,8 @@ def test_elf_header_parse():
 
 
 def check_elf_header_parse(data, values):
-    elf = pwny.ELF(data)
+    elf = pwny.ELF()
+    elf.parse_header(data)
     for key, value in values.items():
         assert getattr(elf, key, value) == value
 
@@ -186,7 +187,7 @@ def test_elf_parse_file_32():
     b.write(strings_section)
     b.seek(0)
 
-    elf = pwny.ELF.parse(b)
+    elf = pwny.ELF(b)
 
     for key, value in {
         'arch': pwny.Architecture.x86,
@@ -262,7 +263,8 @@ def test_elf_parse_file_64():
 
     b.write(strings_section)
     b.seek(0)
-    elf = pwny.ELF.parse(b)
+
+    elf = pwny.ELF(b)
 
     for key, value in {
         'arch': pwny.Architecture.x86_64,
@@ -320,4 +322,4 @@ def test_elf_parse_file_open():
 
     with mock.patch('pwnypack.elf.open', create=True) as mock_open:
         mock_open.return_value = b
-        elf = pwny.ELF.parse('test.elf')
+        pwny.ELF('test.elf')

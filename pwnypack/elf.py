@@ -79,17 +79,36 @@ class ELF(Target):
     SHF_ORDERED = 1 << 30
     SHF_EXCLUDE = 1 << 31
 
-    def __init__(self, header=None):
+    def __init__(self, f=None):
         super(ELF, self).__init__()
         self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
             self.shoff = self.flags = self.hsize = self.phentsize = self.phnum = \
             self.shentsize = self.shnum = self.shstrndx = \
-            self.strings = self._strings = None
+            self.strings = self.raw_section_strings = None
 
         self.sections = []
 
-        if header is not None:
-            self.parse_header(header)
+        self.f = None
+
+        if f is not None:
+            self.parse_file(f)
+
+    def parse_file(self, f):
+        if type(f) is str:
+            self.f = open(f, 'rb')
+        else:
+            self.f = f
+
+        self.parse_header(self.f.read(64))
+
+        if self.shnum:
+            strings = self.read_section(self.load_section_header(self.shstrndx))
+            self.strings = {}  # Will be filled by parsing sections.
+            self.raw_section_strings = strings.decode('ascii')
+
+            self.f.seek(self.shoff)
+            for i in range(self.shnum):
+                self.sections.append(self.parse_section_header(self.f.read(self.shentsize)))
 
     def parse_header(self, data):
         (magic, bits, endian, version, osabi, abi_version, _), data = \
@@ -124,6 +143,17 @@ class ELF(Target):
             self.phnum, self.shentsize, self.shnum, self.shstrndx) = \
             unpack(format, data[:format_size], target=self)
 
+    def read_section(self, section):
+        self.f.seek(section['offset'])
+        return self.f.read(section['size'])
+
+    def load_section_header(self, index):
+        return self.parse_section_header(self.read_section_header(index))
+
+    def read_section_header(self, index):
+        self.f.seek(self.shoff + index * self.shentsize)
+        return self.f.read(self.shentsize)
+
     def parse_section_header(self, data):
         if self.bits == 32:
             format = 'I' * 10
@@ -150,9 +180,9 @@ class ELF(Target):
             )
         }
 
-        if self._strings is not None:
+        if self.raw_section_strings is not None:
             name_index = section['name_index']
-            name = self._strings[name_index:].split('\0', 1)[0]
+            name = self.raw_section_strings[name_index:].split('\0', 1)[0]
             self.strings[name_index] = name
         else:
             name = None
@@ -168,33 +198,3 @@ class ELF(Target):
         })
 
         return section
-
-    def parse_strings(self, data):
-        self._strings = data.decode('ascii')
-        self.strings = {}  # Will be filled by parsing sections.
-
-    @classmethod
-    def parse(cls, f):
-        if type(f) is str:
-            f = open(f, 'rb')
-            need_close = True
-        else:
-            need_close = False
-
-        elf = cls(f.read(64))
-
-        if elf.shnum:
-            f.seek(elf.shoff + elf.shstrndx * elf.shentsize)
-            str_sh = elf.parse_section_header(f.read(elf.shentsize))
-
-            f.seek(str_sh['offset'])
-            elf.parse_strings(f.read(str_sh['size']))
-
-            f.seek(elf.shoff)
-            for i in range(elf.shnum):
-                elf.sections.append(elf.parse_section_header(f.read(elf.shentsize)))
-
-        if need_close:
-            f.close()
-
-        return elf
