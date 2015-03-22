@@ -169,10 +169,10 @@ def frequency_app(parser, cmd, args):
 
     parser.add_argument('value', help='the value to analyse, read from stdin if omitted', nargs='?')
     args = parser.parse_args(args)
-    data = frequency(pwnypack.main.binary_value_or_stdin(args.value))
+    data = frequency(six.iterbytes(pwnypack.main.binary_value_or_stdin(args.value)))
     return '\n'.join(
         '0x%02x (%c): %d' % (key, chr(key), value)
-        if chr(key) in string.printable else
+        if key >= 32 and chr(key) in string.printable else
         '0x%02x ---: %d' % (key, value)
         for key, value in data.items()
     )
