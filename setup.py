@@ -26,6 +26,11 @@ setup(
     download_url='https://github.com/iksteen/pwnypack/tarball/v%s' % __version__,
     install_requires=requires,
     tests_require=['mock', 'coverage'],
+    entry_points={
+        'console_scripts': [
+            'pwny=pwnypack.main:main',
+        ],
+    },
     keywords=['wargame', 'ctf'],
     classifiers=[
         'Environment :: Console',
