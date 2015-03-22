@@ -8,3 +8,4 @@ from pwnypack.flow import *
 from pwnypack.asm import *
 from pwnypack.elf import *
 from pwnypack.codec import *
+from pwnypack.shell import *
