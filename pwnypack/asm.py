@@ -1,5 +1,6 @@
 import subprocess
 import pwnypack.target
+import pwnypack.main
 import tempfile
 import os
 from enum import Enum
@@ -67,3 +68,34 @@ class Asm(object):
             os.unlink(tmp.name)
 
 asm = Asm()
+
+
+@pwnypack.main.register('asm')
+def asm_app(parser, cmd, args):
+    """
+    Assemble code from commandline or stdin.
+    """
+
+    parser.add_argument('source', help='the code to assemble, read from stdin if omitted', nargs='?')
+    parser.add_argument(
+        '--target', '-t',
+        choices=['x86', 'x86_64'],
+        default=pwnypack.target.target.arch.name,
+        help='the target architecture',
+    )
+    parser.add_argument(
+        '--output-format', '-F',
+        choices=asm.Format.__members__.keys(),
+        default=asm.Format.bin.name,
+        help='the output format',
+    )
+    args = parser.parse_args(args)
+
+    target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.target])
+    fmt = asm.Format(asm.Format.__members__[args.output_format])
+
+    return asm(
+        pwnypack.main.string_value_or_stdin(args.source).replace(';', '\n'),
+        fmt=fmt,
+        target=target,
+    )
