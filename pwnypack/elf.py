@@ -116,7 +116,7 @@ class ELF(Target):
             self.shoff = self.flags = self.hsize = self.phentsize = self.phnum = \
             self.shentsize = self.shnum = self.shstrndx = None
 
-        self._sections_by_name = self._sections_by_index = None
+        self._section_headers_by_name = self._section_headers_by_index = None
         self._symbols_by_index = self._symbols_by_name = None
 
         self.f = None
@@ -196,39 +196,41 @@ class ELF(Target):
 
         return section
 
-    def _ensure_sections_loaded(self):
-        if self._sections_by_index is not None:
+    def _ensure_section_headers_loaded(self):
+        if self._section_headers_by_index is not None:
             return
 
-        self._sections_by_index = []
-        self._sections_by_name = {}
+        self._section_headers_by_index = []
+        self._section_headers_by_name = {}
 
         if self.shnum:
             self.f.seek(self.shoff)
             for i in range(self.shnum):
                 section = self._parse_section_header(self.f.read(self.shentsize))
-                self._sections_by_index.append(section)
+                self._section_headers_by_index.append(section)
 
-            strings_section = self._sections_by_index[self.shstrndx]
+            strings_section = self._section_headers_by_index[self.shstrndx]
             section_strings = self.read_section(strings_section).decode('ascii')
-            for section in self._sections_by_index:
+            for section in self._section_headers_by_index:
                 name_index = section['name_index']
                 section['name'] = name = section_strings[name_index:].split('\0', 1)[0]
-                self._sections_by_name[name] = section
+                self._section_headers_by_name[name] = section
 
     @property
-    def sections(self):
-        self._ensure_sections_loaded()
-        return self._sections_by_index
+    def section_headers(self):
+        self._ensure_section_headers_loaded()
+        return self._section_headers_by_index
 
-    def get_section(self, section):
-        self._ensure_sections_loaded()
+    def get_section_header(self, section):
+        self._ensure_section_headers_loaded()
         if type(section) is int:
-            return self._sections_by_index[section]
+            return self._section_headers_by_index[section]
         else:
-            return self._sections_by_name[section]
+            return self._section_headers_by_name[section]
 
     def read_section(self, section):
+        if isinstance(section, (int, str)):
+            section = self.get_section_header(section)
         self.f.seek(section['offset'])
         return self.f.read(section['size'])
 
@@ -280,8 +282,8 @@ class ELF(Target):
                 raise ValueError('Could not determine string section for symbol section %s' % symbol_section)
 
         return self._parse_symbols(
-            self.read_section(self.get_section(symbol_section)),
-            self.read_section(self.get_section(string_section)).decode('ascii')
+            self.read_section(symbol_section),
+            self.read_section(string_section).decode('ascii')
         )
 
     def _ensure_symbols_loaded(self):

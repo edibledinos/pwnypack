@@ -209,7 +209,7 @@ def test_elf_parse_file_32():
     }.items():
         assert getattr(elf, key) == value, '%s != %r' % (key, value)
 
-    assert len(elf.sections) == 1
+    assert len(elf.section_headers) == 1
 
 
 def test_elf_parse_file_64():
@@ -286,7 +286,7 @@ def test_elf_parse_file_64():
     }.items():
         assert getattr(elf, key) == value, '%s != %r' % (key, value)
 
-    assert len(elf.sections) == 1
+    assert len(elf.section_headers) == 1
 
 def test_elf_parse_file_open():
     b = six.BytesIO()
