@@ -90,6 +90,7 @@ class ELF(Target):
         HIPROC = 15
 
     class SymbolType(Enum):
+        UNKNOWN = -1
         NOTYPE = 0
         OBJECT = 1
         FUNC = 2
@@ -97,10 +98,6 @@ class ELF(Target):
         FILE = 4
         COMMON = 5
         TLS = 6
-        LOOS = 10
-        HIOS = 12
-        LOPROC = 13
-        HIPROC = 15
 
     class SymbolVisibility(Enum):
         DEFAULT = 0
@@ -117,37 +114,16 @@ class ELF(Target):
         super(ELF, self).__init__()
         self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
             self.shoff = self.flags = self.hsize = self.phentsize = self.phnum = \
-            self.shentsize = self.shnum = self.shstrndx = \
-            self.strings = self.raw_section_strings = None
+            self.shentsize = self.shnum = self.shstrndx = None
 
-        self.sections_by_name = {}
-        self.sections_by_index = []
+        self._sections_by_name = self._sections_by_index = None
+        self._symbols_by_index = self._symbols_by_name = None
 
         self.f = None
-
         if f is not None:
             self.parse_file(f)
 
-    def parse_file(self, f):
-        if type(f) is str:
-            self.f = open(f, 'rb')
-        else:
-            self.f = f
-
-        self.parse_header(self.f.read(64))
-
-        if self.shnum:
-            strings = self.read_section(self.load_section_header(self.shstrndx))
-            self.strings = {}  # Will be filled by parsing sections.
-            self.raw_section_strings = strings.decode('ascii')
-
-            self.f.seek(self.shoff)
-            for i in range(self.shnum):
-                section = self.parse_section_header(self.f.read(self.shentsize))
-                self.sections_by_name[section['name']] = section
-                self.sections_by_index.append(section)
-
-    def parse_header(self, data):
+    def _parse_header(self, data):
         (magic, bits, endian, version, osabi, abi_version, _), data = \
             unpack('4sBBBBB7s', data[:16]), data[16:]
 
@@ -171,33 +147,29 @@ class ELF(Target):
         assert version == 1, 'Invalid version'
 
         if self.bits == 32:
-            format = 'IIIIHHHHHH'
+            fmt = 'IIIIHHHHHH'
         else:
-            format = 'QQQIHHHHHH'
+            fmt = 'QQQIHHHHHH'
 
-        format_size = pack_size(format)
+        fmt_size = pack_size(fmt)
         (self.entry, self.phoff, self.shoff, self.flags, self.hsize, self.phentsize,
             self.phnum, self.shentsize, self.shnum, self.shstrndx) = \
-            unpack(format, data[:format_size], target=self)
+            unpack(fmt, data[:fmt_size], target=self)
 
-    def read_section(self, section):
-        self.f.seek(section['offset'])
-        return self.f.read(section['size'])
-
-    def load_section_header(self, index):
-        return self.parse_section_header(self.read_section_header(index))
-
-    def read_section_header(self, index):
-        self.f.seek(self.shoff + index * self.shentsize)
-        return self.f.read(self.shentsize)
-
-    def parse_section_header(self, data):
-        if self.bits == 32:
-            format = 'I' * 10
+    def parse_file(self, f):
+        if type(f) is str:
+            self.f = open(f, 'rb')
         else:
-            format = 'IIQQQQIIQQ'
+            self.f = f
+        self._parse_header(self.f.read(64))
 
-        format_size = pack_size(format)
+    def _parse_section_header(self, data):
+        if self.bits == 32:
+            fmt = 'I' * 10
+        else:
+            fmt = 'IIQQQQIIQQ'
+        fmt_size = pack_size(fmt)
+
         section = {
             key: value
             for key, value in zip(
@@ -213,55 +185,79 @@ class ELF(Target):
                     'addralign',
                     'entsize',
                 ],
-                unpack(format, data[:format_size], target=self)
+                unpack(fmt, data[:fmt_size], target=self)
             )
         }
 
-        if self.raw_section_strings is not None:
-            name_index = section['name_index']
-            name = self.raw_section_strings[name_index:].split('\0', 1)[0]
-            self.strings[name_index] = name
-        else:
-            name = None
-
         try:
-            type_ = self.SectionType(section['type_id'])
+            section['type'] = self.SectionType(section['type_id'])
         except ValueError:
-            type_ = self.SectionType.UNKNOWN
-
-        section.update({
-            'type': type_,
-            'name': name,
-        })
+            section['type'] = self.SectionType.UNKNOWN
 
         return section
 
-    def get_section(self, section):
-        if type(section) is int:
-            return self.sections_by_index[section]
-        else:
-            return self.sections_by_name[section]
+    def _ensure_sections_loaded(self):
+        if self._sections_by_index is not None:
+            return
 
-    def symbols(self):
+        self._sections_by_index = []
+        self._sections_by_name = {}
+
+        if self.shnum:
+            self.f.seek(self.shoff)
+            for i in range(self.shnum):
+                section = self._parse_section_header(self.f.read(self.shentsize))
+                self._sections_by_index.append(section)
+
+            strings_section = self._sections_by_index[self.shstrndx]
+            section_strings = self.read_section(strings_section).decode('ascii')
+            for section in self._sections_by_index:
+                name_index = section['name_index']
+                section['name'] = name = section_strings[name_index:].split('\0', 1)[0]
+                self._sections_by_name[name] = section
+
+    @property
+    def sections(self):
+        self._ensure_sections_loaded()
+        return self._sections_by_index
+
+    def get_section(self, section):
+        self._ensure_sections_loaded()
+        if type(section) is int:
+            return self._sections_by_index[section]
+        else:
+            return self._sections_by_name[section]
+
+    def read_section(self, section):
+        self.f.seek(section['offset'])
+        return self.f.read(section['size'])
+
+    def _read_symbols(self):
         dynstrs = self.read_section(self.get_section('.dynstr')).decode('ascii')
         dynsyms = self.read_section(self.get_section('.dynsym'))
+        return self._parse_symbols(dynstrs, dynsyms)
 
+    def _parse_symbols(self, strs, syms):
         if self.bits == 32:
             fmt = 'IIIBBH'
-            fmt_size = pack_size(fmt)
         else:
             fmt = 'IBBHQQ'
-            fmt_size = pack_size(fmt)
+        fmt_size = pack_size(fmt)
 
         symbols = []
 
-        while dynsyms:
-            dynsym, dynsyms = dynsyms[:fmt_size], dynsyms[fmt_size:]
+        while syms:
+            dynsym, syms = syms[:fmt_size], syms[fmt_size:]
             if self.bits == 32:
                 st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, dynsym)
             else:
                 st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, dynsym)
-            name = dynstrs[st_name:].split('\0', 1)[0]
+            name = strs[st_name:].split('\0', 1)[0]
+
+            try:
+                type_ = ELF.SymbolType(st_info & 15)
+            except ValueError:
+                type_ = ELF.SymbolType.UNKNOWN
 
             symbols.append({
                 'name': name,
@@ -272,15 +268,37 @@ class ELF(Target):
                 'value': st_value,
                 'size': st_size,
                 'binding': ELF.SymbolBinding(st_info >> 4),
-                'type': ELF.SymbolType(st_info & 15),
+                'type_id': st_info & 15,
+                'type': type_,
                 'visibility': ELF.SymbolVisibility(st_other & 3),
             })
 
         return symbols
 
+    def _ensure_symbols_loaded(self):
+        if self._symbols_by_index is None:
+            self._symbols_by_index = symbols = self._read_symbols()
+            self._symbols_by_name = {
+                symbol['name']: symbol
+                for symbol in symbols
+                if symbol['name']
+            }
+
+    @property
+    def symbols(self):
+        self._ensure_symbols_loaded()
+        return self._symbols_by_index
+
+    def get_symbol(self, symbol):
+        self._ensure_symbols_loaded()
+        if type(symbol) is int:
+            return self._symbols_by_index[symbol]
+        else:
+            return self._symbols_by_name[symbol]
+
 
 @pwnypack.main.register(name='symbols')
-def symbols(parser, cmd, args):
+def symbols_app(parser, cmd, args):
     """
     List ELF symbol table.
     """
@@ -301,13 +319,13 @@ def symbols(parser, cmd, args):
     ))
 
     elf = ELF(args.file)
-    for symbol in elf.symbols():
+    for symbol in elf.symbols:
         if args.symbol:
             if args.exact:
                 if symbol['name'] != args.symbol:
                     continue
             else:
-                if args.symbol not in symbol['name']:
+                if args.symbol.lower() not in symbol['name'].lower():
                     continue
 
         if symbol['shndx'] == elf.SHN_UNDEF:

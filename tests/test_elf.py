@@ -108,7 +108,7 @@ def test_elf_header_parse():
 
 def check_elf_header_parse(data, values):
     elf = pwny.ELF()
-    elf.parse_header(data)
+    elf._parse_header(data)
     for key, value in values.items():
         assert getattr(elf, key, value) == value
 
@@ -131,7 +131,7 @@ def test_elf_parse_section_invalid_type():
     )
     elf = pwny.ELF()
     elf.bits = 32
-    section = elf.parse_section_header(section)
+    section = elf._parse_section_header(section)
     assert section['type'] == pwny.ELF.SectionType.UNKNOWN
 
 
@@ -209,7 +209,7 @@ def test_elf_parse_file_32():
     }.items():
         assert getattr(elf, key) == value, '%s != %r' % (key, value)
 
-    assert len(elf.sections_by_name) == 1
+    assert len(elf.sections) == 1
 
 
 def test_elf_parse_file_64():
@@ -286,7 +286,7 @@ def test_elf_parse_file_64():
     }.items():
         assert getattr(elf, key) == value, '%s != %r' % (key, value)
 
-    assert len(elf.sections_by_name) == 1
+    assert len(elf.sections) == 1
 
 def test_elf_parse_file_open():
     b = six.BytesIO()
