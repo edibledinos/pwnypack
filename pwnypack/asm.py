@@ -81,7 +81,7 @@ def asm_app(parser, cmd, args):
 
     parser.add_argument('source', help='the code to assemble, read from stdin if omitted', nargs='?')
     parser.add_argument(
-        '--target', '-t',
+        '--arch', '-a',
         choices=['x86', 'x86_64'],
         default=pwnypack.target.target.arch.name,
         help='the target architecture',
@@ -94,7 +94,7 @@ def asm_app(parser, cmd, args):
     )
     args = parser.parse_args(args)
 
-    target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.target])
+    target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.arch])
     fmt = asm.Format(asm.Format.__members__[args.output_format])
 
     return asm(
