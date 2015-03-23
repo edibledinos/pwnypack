@@ -64,7 +64,7 @@ del find
 
 
 @pwnypack.main.register('cycle')
-def cycle_app(parser, cmd, args):
+def cycle_app(parser, cmd, args):  # pragma: no cover
     """
     Generate a de Bruijn sequence of a given length.
     """
@@ -76,7 +76,7 @@ def cycle_app(parser, cmd, args):
 
 
 @pwnypack.main.register('cycle-find')
-def cycle_find_app(parser, cmd, args):
+def cycle_find_app(parser, cmd, args):  # pragma: no cover
     """
     Find the first position of a value in a de Bruijn sequence.
     """

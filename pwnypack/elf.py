@@ -298,7 +298,7 @@ class ELF(Target):
 
 
 @pwnypack.main.register(name='symbols')
-def symbols_app(parser, cmd, args):
+def symbols_app(parser, cmd, args):  # pragma: no cover
     """
     List ELF symbol table.
     """

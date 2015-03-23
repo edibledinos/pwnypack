@@ -7,7 +7,7 @@ __all__ = [
 
 
 @pwnypack.main.register()
-def shell(argparse, cmd, args):
+def shell(argparse, cmd, args):  # pragma: no cover
     """
     Start an interactive IPython shell with pwny imported globally.
     """

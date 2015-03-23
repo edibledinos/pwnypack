@@ -74,7 +74,7 @@ asm = Asm()
 
 
 @pwnypack.main.register('asm')
-def asm_app(parser, cmd, args):
+def asm_app(parser, cmd, args):  # pragma: no cover
     """
     Assemble code from commandline or stdin.
     """

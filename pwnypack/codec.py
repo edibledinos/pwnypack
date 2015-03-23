@@ -55,7 +55,7 @@ frequency = collections.Counter
 
 
 @pwnypack.main.register('xor')
-def xor_app(parser, cmd, args):
+def xor_app(parser, cmd, args):  # pragma: no cover
     """
     Xor a value with a key.
     """
@@ -85,7 +85,7 @@ def xor_app(parser, cmd, args):
 
 
 @pwnypack.main.register('caesar')
-def caesar_app(parser, cmd, args):
+def caesar_app(parser, cmd, args):  # pragma: no cover
     """
     Caesar crypt a value with a key.
     """
@@ -107,7 +107,7 @@ def caesar_app(parser, cmd, args):
 
 
 @pwnypack.main.register('rot13')
-def rot13_app(parser, cmd, args):
+def rot13_app(parser, cmd, args):  # pragma: no cover
     """
     rot13 encrypt a value.
     """
@@ -118,7 +118,7 @@ def rot13_app(parser, cmd, args):
 
 
 @pwnypack.main.register('enb64')
-def enb64_app(parser, cmd, args):
+def enb64_app(parser, cmd, args):  # pragma: no cover
     """
     base64 encode a value.
     """
@@ -129,7 +129,7 @@ def enb64_app(parser, cmd, args):
 
 
 @pwnypack.main.register('deb64')
-def deb64_app(parser, cmd, args):
+def deb64_app(parser, cmd, args):  # pragma: no cover
     """
     base64 decode a value.
     """
@@ -140,7 +140,7 @@ def deb64_app(parser, cmd, args):
 
 
 @pwnypack.main.register('enhex')
-def enhex_app(parser, cmd, args):
+def enhex_app(parser, cmd, args):  # pragma: no cover
     """
     hex encode a value.
     """
@@ -151,7 +151,7 @@ def enhex_app(parser, cmd, args):
 
 
 @pwnypack.main.register('dehex')
-def dehex_app(parser, cmd, args):
+def dehex_app(parser, cmd, args):  # pragma: no cover
     """
     hex decode a value.
     """
@@ -162,7 +162,7 @@ def dehex_app(parser, cmd, args):
 
 
 @pwnypack.main.register('frequency')
-def frequency_app(parser, cmd, args):
+def frequency_app(parser, cmd, args):  # pragma: no cover
     """
     perform frequency analysis on a value.
     """
