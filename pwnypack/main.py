@@ -107,6 +107,7 @@ def main():
                 writer.write(output_bytes)
                 if not args.no_newline:
                     writer.write(b'\n')
+                writer.close()
             elif args.format == 'hex':
                 print(pwny.enhex(output_bytes), end=end)
             elif args.format == 'py':
