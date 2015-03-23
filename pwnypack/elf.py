@@ -232,12 +232,7 @@ class ELF(Target):
         self.f.seek(section['offset'])
         return self.f.read(section['size'])
 
-    def _read_symbols(self):
-        dynstrs = self.read_section(self.get_section('.dynstr')).decode('ascii')
-        dynsyms = self.read_section(self.get_section('.dynsym'))
-        return self._parse_symbols(dynstrs, dynsyms)
-
-    def _parse_symbols(self, strs, syms):
+    def _parse_symbols(self, syms, strs):
         if self.bits == 32:
             fmt = 'IIIBBH'
         else:
@@ -247,11 +242,11 @@ class ELF(Target):
         symbols = []
 
         while syms:
-            dynsym, syms = syms[:fmt_size], syms[fmt_size:]
+            sym, syms = syms[:fmt_size], syms[fmt_size:]
             if self.bits == 32:
-                st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, dynsym)
+                st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, sym)
             else:
-                st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, dynsym)
+                st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, sym)
             name = strs[st_name:].split('\0', 1)[0]
 
             try:
@@ -275,9 +270,31 @@ class ELF(Target):
 
         return symbols
 
+    def _read_symbols(self, symbol_section, string_section=None):
+        if string_section is None:
+            string_section = {
+                '.symtab': '.strtab',
+                '.dynsym': '.dynstr'
+            }.get(symbol_section, None)
+            if string_section is None:
+                raise ValueError('Could not determine string section for symbol section %s' % symbol_section)
+
+        return self._parse_symbols(
+            self.read_section(self.get_section(symbol_section)),
+            self.read_section(self.get_section(string_section)).decode('ascii')
+        )
+
     def _ensure_symbols_loaded(self):
         if self._symbols_by_index is None:
-            self._symbols_by_index = symbols = self._read_symbols()
+            try:
+                symbols = self._read_symbols('.symtab')
+            except KeyError:
+                try:
+                    symbols = self._read_symbols('.dynsym')
+                except KeyError:
+                    symbols = []
+
+            self._symbols_by_index = symbols
             self._symbols_by_name = {
                 symbol['name']: symbol
                 for symbol in symbols
