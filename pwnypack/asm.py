@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import pwnypack.target
 import pwnypack.main
 import tempfile
@@ -77,6 +78,9 @@ asm = Asm()
 def asm_app(parser, cmd, args):  # pragma: no cover
     """
     Assemble code from commandline or stdin.
+
+    Please not that all semi-colons are replaced with carriage returns
+    unless source is read from stdin.
     """
 
     parser.add_argument('source', help='the code to assemble, read from stdin if omitted', nargs='?')
@@ -97,8 +101,13 @@ def asm_app(parser, cmd, args):  # pragma: no cover
     target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.arch])
     fmt = asm.Format(asm.Format.__members__[args.output_format])
 
+    if args.source is None:
+        args.source = sys.stdin.read()
+    else:
+        args.source = args.source.replace(';', '\n')
+
     return asm(
-        pwnypack.main.string_value_or_stdin(args.source).replace(';', '\n'),
+        args.source,
         fmt=fmt,
         target=target,
     )
