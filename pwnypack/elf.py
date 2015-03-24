@@ -170,8 +170,8 @@ class ELF(Target):
             fmt = 'IIQQQQIIQQ'
         fmt_size = pack_size(fmt)
 
-        section = {
-            key: value
+        section = dict(
+            (key, value)
             for key, value in zip(
                 [
                     'name_index',
@@ -187,7 +187,7 @@ class ELF(Target):
                 ],
                 unpack(fmt, data[:fmt_size], target=self)
             )
-        }
+        )
 
         try:
             section['type'] = self.SectionType(section['type_id'])
@@ -297,11 +297,11 @@ class ELF(Target):
                     symbols = []
 
             self._symbols_by_index = symbols
-            self._symbols_by_name = {
-                symbol['name']: symbol
+            self._symbols_by_name = dict(
+                (symbol['name'], symbol)
                 for symbol in symbols
                 if symbol['name']
-            }
+            )
 
     @property
     def symbols(self):

@@ -16,11 +16,11 @@ def shell(argparse, cmd, args):  # pragma: no cover
     from IPython import start_ipython
     from IPython.config import get_config
 
-    pwny_locals = {
-        key: getattr(pwny, key)
+    pwny_locals = dict(
+        (key, getattr(pwny, key))
         for key in dir(pwny)
         if not key.startswith('__') and not key == 'shell'
-    }
+    )
 
     config = get_config()
     config.InteractiveShell.confirm_exit = False

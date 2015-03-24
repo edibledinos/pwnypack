@@ -31,11 +31,11 @@ def xor(key, data):
 
 
 def caesar(shift, data, shift_ranges=('az', 'AZ')):
-    alphabet = {
-        chr(c): chr((c - s + shift) % (e - s + 1) + s)
+    alphabet = dict(
+        (chr(c), chr((c - s + shift) % (e - s + 1) + s))
         for s, e in map(lambda r: (ord(r[0]), ord(r[-1])), shift_ranges)
         for c in range(s, e + 1)
-    }
+    )
     return ''.join(alphabet.get(c, c) for c in data)
 
 
