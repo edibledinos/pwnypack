@@ -18,7 +18,10 @@ if (sys.version_info[0] == 2 and sys.version_info[1] >= 7) or \
 
 
 if sys.version_info[:2] < (2, 7):
-    requires.append('ordereddict')
+    requires.extend([
+        'counter',
+        'ordereddict'
+    ])
 
 
 if sys.version_info[:2] < (3, 4):

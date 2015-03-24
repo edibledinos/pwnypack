@@ -1,5 +1,8 @@
 import base64
-import collections
+try:
+    from collections import Counter
+except ImportError:
+    from counter import Counter
 import string
 import six
 import codecs
@@ -50,7 +53,7 @@ enb64 = lambda d: base64.b64encode(d).decode('ascii')
 deb64 = lambda d: base64.b64decode(d.encode('ascii'))
 
 
-frequency = collections.Counter
+frequency = Counter
 
 
 @pwnypack.main.register('xor')
