@@ -6,7 +6,13 @@ __all__ = [
 ]
 
 
-@pwnypack.main.register()
+try:
+    import IPython
+    have_IPython = True
+except ImportError:
+    have_IPython = False
+
+
 def shell(argparse, cmd, args):  # pragma: no cover
     """
     Start an interactive IPython shell with pwny imported globally.
@@ -29,3 +35,5 @@ def shell(argparse, cmd, args):  # pragma: no cover
         config=config,
         user_ns=pwny_locals,
     )
+if have_IPython:
+    pwnypack.main.register()(shell)

@@ -9,8 +9,12 @@ __version__ = '0.5.2'
 requires = [
     'six',
     'nose',
-    'IPython',
 ]
+
+
+if (sys.version_info[0] == 2 and sys.version_info[1] >= 7) or \
+        (sys.version_info[0] == 3 and sys.version_info[1] >= 3):
+    requires.append('IPython')
 
 
 if sys.version_info[:2] < (3, 4):
