@@ -1,5 +1,8 @@
 from __future__ import print_function
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 import io
 import os
 import sys

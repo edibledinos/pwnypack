@@ -17,6 +17,10 @@ if (sys.version_info[0] == 2 and sys.version_info[1] >= 7) or \
     requires.append('IPython')
 
 
+if sys.version_info[:2] < (2, 7):
+    requires.append('ordereddict')
+
+
 if sys.version_info[:2] < (3, 4):
     requires.append('enum34')
 
