@@ -4,6 +4,7 @@ import string
 import six
 import codecs
 import pwnypack.main
+import binascii
 
 
 __all__ = [
@@ -41,10 +42,8 @@ def caesar(shift, data, shift_ranges=('az', 'AZ')):
 rot13_encode = codecs.getencoder('rot-13')
 rot13 = lambda d: rot13_encode(d)[0]
 
-hex_encode = codecs.getencoder('hex')
-hex_decode = codecs.getdecoder('hex')
-enhex = lambda d: hex_encode(d)[0].decode('ascii')
-dehex = lambda d: hex_decode(''.join(d.replace(':', '').split()))[0]
+enhex = lambda d: binascii.hexlify(d).decode('ascii')
+dehex = lambda d: binascii.unhexlify(''.join(d.replace(':', '').split()).encode('ascii'))
 
 
 enb64 = lambda d: base64.b64encode(d).decode('ascii')
