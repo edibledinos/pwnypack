@@ -110,6 +110,25 @@ class ELF(Target):
     SHN_ABS = 0xfff1
     SHN_COMMON = 0xfff2
 
+    class ProgramHeaderType(Enum):
+        UNKNOWN = -1
+        NULL = 0
+        LOAD = 1
+        DYNAMIC = 2
+        INTERP = 3
+        NOTE = 4
+        SHLIB = 5
+        PHDR = 6
+        GNU_EH_FRAME = 0x6474e550
+        GNU_EH_STACK = 0x6474e551
+        GNU_RELRO = 0x6474e552
+
+    # Program header flags
+    PT_X = 1
+    PT_W = 2
+    PT_MASKOS = 0x0ff00000
+    PT_MASKPROC = 0xf0000000
+
     def __init__(self, f=None):
         super(ELF, self).__init__()
         self.osabi = self.abi_version = self.type = self.entry = self.phoff = \
@@ -117,6 +136,7 @@ class ELF(Target):
             self.shentsize = self.shnum = self.shstrndx = None
 
         self._section_headers_by_name = self._section_headers_by_index = None
+        self._program_headers = None
         self._symbols_by_index = self._symbols_by_name = None
 
         self.f = None
@@ -163,9 +183,72 @@ class ELF(Target):
             self.f = f
         self._parse_header(self.f.read(64))
 
+    def _parse_program_header(self, data):
+        if self.bits == 32:
+            fmt = 'IIIIIIII'
+            fmt_fields = [
+                'type_id',
+                'offset',
+                'vaddr',
+                'paddr',
+                'filesz',
+                'memsz',
+                'flags',
+                'align',
+            ]
+        else:
+            fmt = 'IIQQQQQQ'
+            fmt_fields = [
+                'type_id',
+                'flags',
+                'offset',
+                'vaddr',
+                'paddr',
+                'filesz',
+                'memsz',
+                'align',
+            ]
+        fmt_size = pack_size(fmt)
+
+        section = dict(
+            (key, value)
+            for key, value in zip(
+                fmt_fields,
+                unpack(fmt, data[:fmt_size], target=self)
+            )
+        )
+
+        try:
+            section['type'] = self.ProgramHeaderType(section['type_id'])
+        except ValueError:
+            section['type'] = self.ProgramHeaderType.UNKNOWN
+
+        return section
+
+    def _ensure_program_headers_loaded(self):
+        if self._program_headers is not None:
+            return
+
+        self._program_headers = []
+
+        if self.phnum:
+            self.f.seek(self.phoff)
+            for i in range(self.phnum):
+                section = self._parse_program_header(self.f.read(self.phentsize))
+                self._program_headers.append(section)
+
+    @property
+    def program_headers(self):
+        self._ensure_program_headers_loaded()
+        return self._program_headers
+
+    def get_program_header(self, index):
+        self._ensure_section_headers_loaded()
+        return self._program_headers[index]
+
     def _parse_section_header(self, data):
         if self.bits == 32:
-            fmt = 'I' * 10
+            fmt = 'IIIIIIIIII'
         else:
             fmt = 'IIQQQQIIQQ'
         fmt_size = pack_size(fmt)
