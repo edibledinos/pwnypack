@@ -124,10 +124,11 @@ class ELF(Target):
         GNU_RELRO = 0x6474e552
 
     # Program header flags
-    PT_X = 1
-    PT_W = 2
-    PT_MASKOS = 0x0ff00000
-    PT_MASKPROC = 0xf0000000
+    PF_X = 1
+    PF_W = 2
+    PF_R = 4
+    PF_MASKOS = 0x0ff00000
+    PF_MASKPROC = 0xf0000000
 
     def __init__(self, f=None):
         super(ELF, self).__init__()
