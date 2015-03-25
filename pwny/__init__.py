@@ -1,6 +1,3 @@
-# Convenience package that imports useful stuff into
-# a single namespace.
-
 from pwnypack.target import *
 from pwnypack.packing import *
 from pwnypack.util import *
