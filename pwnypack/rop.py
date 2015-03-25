@@ -38,16 +38,27 @@ def find_gadget(elf, gadget, align=1, unique=True):
                 continue
 
             match_gadget = match.group()
+
             if match_gadget in gadgets:
                 continue
-            
-            matches.append({
-                'section': section,
-                'offset': match_index,
-                'addr': section['addr'] + match_index,
-                'gadget': match_gadget,
-            })
-            
+
+            match_addr = section['addr'] + match_index
+
+            try:
+                match_asm = pwnypack.asm.disasm(match_gadget, match_addr, elf)
+
+                matches.append({
+                    'section': section,
+                    'offset': match_index,
+                    'addr': match_addr,
+                    'gadget': match_gadget,
+                    'asm': match_asm,
+                })
+            except SyntaxError:
+                # Prevent retrying this gadget even in non-unique mode.
+                gadgets.append(match_gadget)
+                continue
+
             if unique:
                 gadgets.append(match_gadget)
 
@@ -112,11 +123,6 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
 
     elf = pwnypack.elf.ELF(args.file)
 
-    assert elf.arch in (
-        pwnypack.target.Architecture.x86,
-        pwnypack.target.Architecture.x86_64,
-    ), 'Only x86 and x86_64 architectures are currently supported.'
-
     matches = find_gadget(
         elf,
         gadget,
@@ -128,7 +134,7 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
         return
 
     longest_gadget = max(len(m['gadget']) for m in matches)
-    fmt = '  0x%%0%dx: [ %%-%ds ]' % (elf.bits / 4, longest_gadget * 3 - 1)
+    fmt = '  0x%%0%dx: [ %%-%ds ] %%s' % (elf.bits / 4, longest_gadget * 3 - 1)
 
     current_section = None
 
@@ -140,9 +146,13 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
             current_section = match['section']['name']
 
         hex_gadget = pwnypack.codec.enhex(match['gadget'])
-        print(fmt % (match['addr'], ' '.join(
-            hex_gadget[i:i+2]
-            for i in range(0, len(hex_gadget), 2)
-        )))
+        print(fmt % (
+            match['addr'],
+            ' '.join(
+                hex_gadget[i:i+2]
+                for i in range(0, len(hex_gadget), 2)
+            ),
+            ' ; '.join(match['asm'])
+        ))
 
     print()
