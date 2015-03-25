@@ -13,7 +13,7 @@ import six
 MAIN_FUNCTIONS = OrderedDict()
 
 
-def register(name=None):
+def register(name=None, symlink=True):
     def wrapper(f):
         if name is None:
             f_name = f.__name__
@@ -21,7 +21,10 @@ def register(name=None):
             f_name = name
         if f_name in MAIN_FUNCTIONS:
             raise ValueError('Duplicate application %s' % f_name)
-        MAIN_FUNCTIONS[f_name] = f
+        MAIN_FUNCTIONS[f_name] = {
+            'callable': f,
+            'symlink': symlink,
+        }
         return f
     return wrapper
 
@@ -49,6 +52,32 @@ def string_value_or_stdin(value):
         return value
 
 
+@register(symlink=False)
+def symlink(parser, cmd, args):
+    """
+    Set up symlinks for (a subset) of the pwny apps.
+    """
+
+    parser.add_argument(
+        'apps',
+        nargs=argparse.REMAINDER,
+        help='Which apps to create symlinks for.'
+    )
+    args = parser.parse_args(args)
+
+    base_dir, pwny_main = os.path.split(sys.argv[0])
+
+    for app_name, config in MAIN_FUNCTIONS.items():
+        if not config['symlink'] or (args.apps and app_name not in args.apps):
+            continue
+        dest = os.path.join(base_dir, app_name)
+        if not os.path.exists(dest):
+            print('Creating symlink %s' % dest)
+            os.symlink(pwny_main, dest)
+        else:
+            print('Not creating symlink %s (file already exists)' % dest)
+
+
 def main():
     def usage():
         global MAIN_FUNCTIONS
@@ -56,7 +85,8 @@ def main():
         print()
         print('Available apps:')
         longest_app_name = max(len(app) for app in MAIN_FUNCTIONS)
-        for app, f in MAIN_FUNCTIONS.items():
+        for app, config in MAIN_FUNCTIONS.items():
+            f = config['callable']
             fmt = ' - %%-%ds   %%s' % longest_app_name
             print(fmt % (app, f.__doc__.strip().split('\n')[0]))
         print()
@@ -78,7 +108,7 @@ def main():
     else:
         prog = app
 
-    f = MAIN_FUNCTIONS[app]
+    f = MAIN_FUNCTIONS[app]['callable']
     parser = argparse.ArgumentParser(
         prog=prog,
         description=f.__doc__,
