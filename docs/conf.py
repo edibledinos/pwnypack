@@ -15,6 +15,7 @@
 import sys
 import os
 import shlex
+import mock
 
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -37,7 +38,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',
+    'sphinxcontrib.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
