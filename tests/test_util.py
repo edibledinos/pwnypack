@@ -10,12 +10,12 @@ def test_cycle_width():
 
 
 def test_cycle_find():
-    assert pwny.cycle.find('PAAA') == 60
+    assert pwny.cycle_find('PAAA') == 60
 
 
 def test_cycle_find_start():
-    assert pwny.cycle.find('AAAA') == 0
+    assert pwny.cycle_find('AAAA') == 0
 
 
 def test_cycle_find_not_found():
-    assert pwny.cycle.find('\x00', width=1) == -1
+    assert pwny.cycle_find('\x00', width=1) == -1

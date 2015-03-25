@@ -10,6 +10,7 @@ import pwnypack.codec
 
 __all__ = [
     'cycle',
+    'cycle_find',
     'reghex',
 ]
 
@@ -46,7 +47,7 @@ def cycle(length, width=4, **kwargs):
     return ''.join([chr(ord('A') + next(iter)) for i in range(length)])
 
 
-def find(key, width=4):
+def cycle_find(key, width=4):
     key_len = len(key)
     buf = ''
 
@@ -64,10 +65,6 @@ def find(key, width=4):
             return i + 1
 
     return -1
-
-
-cycle.find = find
-del find
 
 
 reghex_regex = re.compile(r'([?.])(\{(\d+)\})?|(\*|\+)')
@@ -130,7 +127,7 @@ def cycle_find_app(_parser, cmd, args):  # pragma: no cover
     parser.add_argument('-w', '--width', type=int, default=4, help='the length of the cycled value')
     parser.add_argument('value', help='the value to determine the position of, read from stdin if missing', nargs='?')
     args = parser.parse_args(args)
-    index = cycle.find(pwnypack.main.string_value_or_stdin(args.value), args.width)
+    index = cycle_find(pwnypack.main.string_value_or_stdin(args.value), args.width)
     if index == -1:
         print('Not found.')
         sys.exit(1)
