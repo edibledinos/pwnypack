@@ -13,6 +13,7 @@ from enum import Enum
 
 __all__ = [
     'asm',
+    'disasm',
 ]
 
 
@@ -78,7 +79,7 @@ class Asm(object):
 asm = Asm()
 
 
-def disasm(code, addr, target=None):
+def disasm(code, addr=0, target=None):
     if target is None:
         target = pwnypack.target.target
 
