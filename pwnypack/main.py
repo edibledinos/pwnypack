@@ -66,59 +66,66 @@ def main():
     import pwny
 
     global MAIN_FUNCTIONS
-    if len(sys.argv) < 2 or sys.argv[1] not in MAIN_FUNCTIONS:
-        usage()
+
+    app = os.path.basename(sys.argv[0])
+    app_args = sys.argv[1:]
+
+    if app not in MAIN_FUNCTIONS:
+        if len(sys.argv) < 2 or app_args[0] not in MAIN_FUNCTIONS:
+            usage()
+        prog = '%s %s' % (app, app_args[0])
+        app, app_args = app_args[0], app_args[1:]
     else:
-        app, app_args = sys.argv[1], sys.argv[2:]
+        prog = app
 
-        f = MAIN_FUNCTIONS[app]
-        parser = argparse.ArgumentParser(
-            prog='%s %s' % (os.path.split(sys.argv[0])[1], app),
-            description=f.__doc__,
-        )
-        parser.add_argument(
-            '-f', '--format',
-            dest='format',
-            choices=['raw', 'hex', 'py', 'sh', 'b64'],
-            default='raw',
-            help='set output format'
-        )
-        parser.add_argument(
-            '-n', '--no-newline',
-            dest='no_newline',
-            action='store_const',
-            const=True,
-            help='inhibit newline after output'
-        )
+    f = MAIN_FUNCTIONS[app]
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description=f.__doc__,
+    )
+    parser.add_argument(
+        '-f', '--format',
+        dest='format',
+        choices=['raw', 'hex', 'py', 'sh', 'b64'],
+        default='raw',
+        help='set output format'
+    )
+    parser.add_argument(
+        '-n', '--no-newline',
+        dest='no_newline',
+        action='store_const',
+        const=True,
+        help='inhibit newline after output'
+    )
 
-        output = f(parser, app, app_args)
+    output = f(parser, app, app_args)
 
-        if output is not None:
-            if six.PY3:
-                output_bytes = os.fsencode(output)
-            else:
-                output_bytes = output
+    if output is not None:
+        if six.PY3:
+            output_bytes = os.fsencode(output)
+        else:
+            output_bytes = output
 
-            args = parser.parse_args(app_args)
-            if args.no_newline:
-                end = ''
-            else:
-                end = '\n'
+        args = parser.parse_args(app_args)
+        if args.no_newline:
+            end = ''
+        else:
+            end = '\n'
 
-            if args.format == 'raw':
-                writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
-                writer.write(output_bytes)
-                if not args.no_newline:
-                    writer.write(b'\n')
-                writer.close()
-            elif args.format == 'hex':
-                print(pwny.enhex(output_bytes), end=end)
-            elif args.format == 'py':
-                print(repr(output), end=end)
-            elif args.format == 'sh':
-                r = repr(output)
-                if r.startswith('b\''):
-                    r = r[1:]
-                print('$' + r, end=end)
-            elif args.format == 'b64':
-                print(pwny.enb64(output_bytes), end=end)
+        if args.format == 'raw':
+            writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
+            writer.write(output_bytes)
+            if not args.no_newline:
+                writer.write(b'\n')
+            writer.close()
+        elif args.format == 'hex':
+            print(pwny.enhex(output_bytes), end=end)
+        elif args.format == 'py':
+            print(repr(output), end=end)
+        elif args.format == 'sh':
+            r = repr(output)
+            if r.startswith('b\''):
+                r = r[1:]
+            print('$' + r, end=end)
+        elif args.format == 'b64':
+            print(pwny.enb64(output_bytes), end=end)
