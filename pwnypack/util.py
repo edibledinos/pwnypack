@@ -1,5 +1,6 @@
 from six.moves import range
 import re
+import binascii
 import pwnypack.main
 import pwnypack.codec
 
@@ -70,32 +71,35 @@ reghex_regex = re.compile(r'([?.])(\{(\d+)\})?|(\*|\+)')
 
 
 def reghex(pattern):
-    b_pattern = b''
+    try:
+        b_pattern = b''
 
-    last_index = 0
-    for match in reghex_regex.finditer(pattern):
-        index = match.start()
-        b_pattern += pwnypack.codec.dehex(pattern[last_index:index])
+        last_index = 0
+        for match in reghex_regex.finditer(pattern):
+            index = match.start()
+            b_pattern += pwnypack.codec.dehex(pattern[last_index:index])
 
-        if match.group(1) == '?':
-            length = match.group(3)
-            if length is None:
-                b_pattern += b'.?'
+            if match.group(1) == '?':
+                length = match.group(3)
+                if length is None:
+                    b_pattern += b'.?'
+                else:
+                    b_pattern += ('.{0,%d}?' % int(length)).encode('ascii')
+            elif match.group(1) == '.':
+                length = match.group(3)
+                if length is None:
+                    b_pattern += b'.'
+                else:
+                    b_pattern += b'.' * int(length)
             else:
-                b_pattern += ('.{0,%d}?' % int(length)).encode('ascii')
-        elif match.group(1) == '.':
-            length = match.group(3)
-            if length is None:
-                b_pattern += b'.'
-            else:
-                b_pattern += b'.' * int(length)
-        else:
-            b_pattern += b'.' + match.group(4).encode('ascii') + b'?'
-        last_index = match.end()
+                b_pattern += b'.' + match.group(4).encode('ascii') + b'?'
+            last_index = match.end()
 
-    b_pattern += pwnypack.codec.dehex(pattern[last_index:])
+        b_pattern += pwnypack.codec.dehex(pattern[last_index:])
 
-    return re.compile(b_pattern)
+        return re.compile(b_pattern)
+    except (TypeError, binascii.Error, re.error):
+        raise SyntaxError('Invalid rehex pattern.')
 
 
 @pwnypack.main.register('cycle')

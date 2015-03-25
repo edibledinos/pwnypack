@@ -105,13 +105,13 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
         try:
             pwnypack.util.reghex(args.gadget)
             args.mode = 'reghex'
-        except TypeError:
+        except SyntaxError:
             args.mode = 'asm'
 
     if args.mode == 'reghex':
         try:
             gadget = pwnypack.util.reghex(args.gadget)
-        except TypeError:
+        except SyntaxError:
             print('Invalid reghex pattern.')
             sys.exit(1)
     else:
