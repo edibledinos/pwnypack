@@ -55,7 +55,7 @@ def string_value_or_stdin(value):
 @register(symlink=False)
 def symlink(parser, cmd, args):
     """
-    Set up symlinks for (a subset) of the pwny apps.
+    Set up symlinks for (a subset of) the pwny apps.
     """
 
     parser.add_argument(
