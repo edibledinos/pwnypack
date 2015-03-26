@@ -74,20 +74,20 @@ del _w, _f, _pack_closure, _unpack_closure
 
 
 def P(value, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
     return globals()['P%d' % bits](value, **kwargs)
 
 
 def p(value, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
     return globals()['p%d' % bits](value, **kwargs)
 
 
 def U(data, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
     return globals()['U%d' % bits](data, **kwargs)
 
 
 def u(data, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits)
+    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
     return globals()['u%d' % bits](data, **kwargs)
