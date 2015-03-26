@@ -427,6 +427,17 @@ class ELF(Target):
         else:
             return self._symbols_by_name[symbol]
 
+    def read_symbol(self, symbol):
+        symbol = self.get_symbol(symbol)
+        if symbol['shndx'] in (ELF.SHN_UNDEF, ELF.SHN_ABS, ELF.SHN_COMMON):
+            raise TypeError('Symbol is not defined')
+
+        section_header = self.get_section_header(symbol['shndx'])
+        symbol_offset = symbol['value'] - section_header['addr']
+
+        self.f.seek(section_header['offset'] + symbol_offset)
+        return self.f.read(symbol['size'])
+
 
 @pwnypack.main.register(name='symbols')
 def symbols_app(parser, cmd, args):  # pragma: no cover
@@ -477,3 +488,15 @@ def symbols_app(parser, cmd, args):  # pragma: no cover
             shndx,
             symbol['name'],
         ))
+
+
+@pwnypack.main.register(name='extract-symbol')
+def extract_symbol_app(parser, cmd, args):  # pragma: no cover
+    """
+    Extract a symbol from an ELF file.
+    """
+
+    parser.add_argument('file', help='ELF file to extract a symbol from')
+    parser.add_argument('symbol', help='the symbol to extract')
+    args = parser.parse_args(args)
+    return ELF(args.file).read_symbol(args.symbol)
