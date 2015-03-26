@@ -9,9 +9,9 @@ headers = [
                 b'\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00p\x11\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x008\x00\t'
                 b'\x00@\x00\x1e\x00\x1b\x00',
         'header': {
-            'arch': pwny.Architecture.x86_64,
+            'arch': pwny.Target.Arch.x86,
             'bits': 64,
-            'endian': pwny.Endianness.little,
+            'endian': pwny.Target.Endian.little,
             'abi_version': 0,
             'entry': 4195392,
             'flags': 0,
@@ -32,9 +32,9 @@ headers = [
                 b'\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00\xa8\x1d\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x008\x00'
                 b'\x06\x00@\x00\x1f\x00\x1c\x00',
         'header': {
-            'arch': pwny.Architecture.x86_64,
+            'arch': pwny.Target.Arch.x86,
             'bits': 64,
-            'endian': pwny.Endianness.little,
+            'endian': pwny.Target.Endian.little,
             'abi_version': 0,
             'entry': 4198222,
             'flags': 0,
@@ -55,9 +55,9 @@ headers = [
                 b'4\x00\x00\x00L\x11\x00\x00\x00\x00\x00\x004\x00 \x00\t\x00(\x00\x1e\x00\x1b\x00\x06\x00\x00\x004\x00'
                 b'\x00\x004\x80\x04\x08',
         'header': {
-            'arch': pwny.Architecture.x86,
+            'arch':pwny.Target.Arch.x86,
             'bits': 32,
-            'endian': pwny.Endianness.little,
+            'endian': pwny.Target.Endian.little,
             'abi_version': 0,
             'entry': 134513440,
             'flags': 0,
@@ -78,9 +78,9 @@ headers = [
                 b'4\x00\x00\x00\xf0 \n\x00\x00\x00\x00\x004\x00 \x00\x06\x00(\x00\x1f\x00\x1c\x00\x01\x00\x00\x00\x00'
                 b'\x00\x00\x00\x00\x80\x04\x08',
         'header': {
-            'arch': pwny.Architecture.x86,
+            'arch': pwny.Target.Arch.x86,
             'bits': 32,
-            'endian': pwny.Endianness.little,
+            'endian': pwny.Target.Endian.little,
             'abi_version': 0,
             'entry': 134515978,
             'flags': 0,
@@ -110,7 +110,7 @@ def check_elf_header_parse(data, values):
     elf = pwny.ELF()
     elf._parse_header(data)
     for key, value in values.items():
-        assert getattr(elf, key, value) == value
+        assert getattr(elf, key, value) == value, '%s != %r (%r)' % (key, value, getattr(elf, key))
 
 
 def test_elf_parse_section_invalid_type():
@@ -156,7 +156,7 @@ def test_elf_parse_file_32():
         0,
         b'\x00' * 7,
         pwny.ELF.Type.executable.value,
-        pwny.Architecture.x86.value,
+        pwny.ELF.Machine.x86.value,
         1,
         0,
         0,
@@ -190,9 +190,9 @@ def test_elf_parse_file_32():
     elf = pwny.ELF(b)
 
     for key, value in {
-        'arch': pwny.Architecture.x86,
+        'arch': pwny.Target.Arch.x86,
         'bits': 32,
-        'endian': pwny.Endianness.little,
+        'endian': pwny.Target.Endian.little,
         'abi_version': 0,
         'entry': 0,
         'flags': 0,
@@ -207,7 +207,7 @@ def test_elf_parse_file_32():
         'shstrndx': 0,
         'type': pwny.ELF.Type.executable,
     }.items():
-        assert getattr(elf, key) == value, '%s != %r' % (key, value)
+        assert getattr(elf, key) == value, '%s != %r (%r)' % (key, value, getattr(elf, key))
 
     assert len(elf.section_headers) == 1
 
@@ -233,7 +233,7 @@ def test_elf_parse_file_64():
         0,
         b'\x00' * 7,
         pwny.ELF.Type.executable.value,
-        pwny.Architecture.x86_64.value,
+        pwny.ELF.Machine.x86_64.value,
         1,
         0,
         0,
@@ -267,9 +267,9 @@ def test_elf_parse_file_64():
     elf = pwny.ELF(b)
 
     for key, value in {
-        'arch': pwny.Architecture.x86_64,
+        'arch': pwny.Target.Arch.x86,
         'bits': 64,
-        'endian': pwny.Endianness.little,
+        'endian': pwny.Target.Endian.little,
         'abi_version': 0,
         'entry': 0,
         'flags': 0,
@@ -288,6 +288,7 @@ def test_elf_parse_file_64():
 
     assert len(elf.section_headers) == 1
 
+
 def test_elf_parse_file_open():
     b = six.BytesIO()
 
@@ -304,7 +305,7 @@ def test_elf_parse_file_open():
         0,
         b'\x00' * 7,
         pwny.ELF.Type.executable.value,
-        pwny.Architecture.x86.value,
+        pwny.ELF.Machine.x86.value,
         1,
         0,
         0,

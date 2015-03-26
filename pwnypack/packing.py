@@ -16,9 +16,9 @@ __all__ = [
 def pack(fmt, *args, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if fmt and fmt[0] not in '@=<>!':
-        if endian is pwnypack.target.Endianness.little:
+        if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
-        elif endian is pwnypack.target.Endianness.big:
+        elif endian is pwnypack.target.Target.Endian.big:
             fmt = '>' + fmt
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
@@ -28,9 +28,9 @@ def pack(fmt, *args, **kwargs):
 def unpack(fmt, data, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if fmt and fmt[0] not in '@=<>!':
-        if endian is pwnypack.target.Endianness.little:
+        if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
-        elif endian is pwnypack.target.Endianness.big:
+        elif endian is pwnypack.target.Target.Endian.big:
             fmt = '>' + fmt
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)
@@ -40,9 +40,9 @@ def unpack(fmt, data, **kwargs):
 def pack_size(fmt, **kwargs):
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if fmt and fmt[0] not in '@=<>!':
-        if endian is pwnypack.target.Endianness.little:
+        if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
-        elif endian is pwnypack.target.Endianness.big:
+        elif endian is pwnypack.target.Target.Endian.big:
             fmt = '>' + fmt
         else:
             raise NotImplementedError('Unsupported endianness: %s' % endian)

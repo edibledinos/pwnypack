@@ -2,25 +2,28 @@ from nose.tools import raises
 import pwny
 
 
+target_little_endian = pwny.Target(arch=pwny.Target.Arch.unknown, endian=pwny.Target.Endian.little)
+target_big_endian = pwny.Target(arch=pwny.Target.Arch.unknown, endian=pwny.Target.Endian.big)
+
+
 def test_pack():
     assert pwny.pack('I', 0x41424344) == b'DCBA'
 
 
-def test_pack_format_with_endianness():
+def test_pack_format_with_endian():
     assert pwny.pack('>I', 0x41424344) == b'ABCD'
 
 
-def test_pack_explicit_endianness():
-    assert pwny.pack('I', 0x41424344, endian=pwny.Endianness.big) == b'ABCD'
+def test_pack_explicit_endian():
+    assert pwny.pack('I', 0x41424344, endian=pwny.Target.Endian.big) == b'ABCD'
 
 
 def test_pack_explicit_target():
-    target = pwny.Target(pwny.Architecture.x86, endian=pwny.Endianness.big)
-    assert pwny.pack('I', 0x41424344, target=target) == b'ABCD'
+    assert pwny.pack('I', 0x41424344, target=target_big_endian) == b'ABCD'
 
 
 @raises(NotImplementedError)
-def test_pack_invalid_endianness():
+def test_pack_invalid_endian():
     pwny.pack('I', 1, endian='invalid')
 
 
@@ -28,21 +31,20 @@ def test_unpack():
     assert pwny.unpack('I', b'DCBA') == (0x41424344,)
 
 
-def test_unpack_format_with_endianness():
+def test_unpack_format_with_endian():
     assert pwny.unpack('>I', b'ABCD') == (0x41424344,)
 
 
-def test_unpack_explicit_endianness():
-    assert pwny.unpack('I', b'ABCD', endian=pwny.Endianness.big) == (0x41424344,)
+def test_unpack_explicit_endian():
+    assert pwny.unpack('I', b'ABCD', endian=pwny.Target.Endian.big) == (0x41424344,)
 
 
 def test_unpack_explicit_target():
-    target = pwny.Target(pwny.Architecture.x86, endian=pwny.Endianness.big)
-    assert pwny.unpack('I', b'ABCD', target=target) == (0x41424344,)
+    assert pwny.unpack('I', b'ABCD', target=target_big_endian) == (0x41424344,)
 
 
 @raises(NotImplementedError)
-def test_unpack_invalid_endianness():
+def test_unpack_invalid_endian():
     pwny.unpack('I', 'AAAA', endian='invalid')
 
 
@@ -71,48 +73,48 @@ def test_short_form_pack():
     for width, num, bytestr in short_signed_data:
         f = 'p%d' % width
         yield check_short_form_pack, f, num, bytestr[::-1]
-        yield check_short_form_pack_endian, f, num, bytestr[::-1], pwny.Endianness.little
-        yield check_short_form_pack_endian, f, num, bytestr, pwny.Endianness.big
+        yield check_short_form_pack_endian, f, num, bytestr[::-1], pwny.Target.Endian.little
+        yield check_short_form_pack_endian, f, num, bytestr, pwny.Target.Endian.big
 
     for width, num, bytestr in short_unsigned_data:
         f = 'P%d' % width
         yield check_short_form_pack, f, num, bytestr[::-1]
-        yield check_short_form_pack_endian, f, num, bytestr[::-1], pwny.Endianness.little
-        yield check_short_form_pack_endian, f, num, bytestr, pwny.Endianness.big
+        yield check_short_form_pack_endian, f, num, bytestr[::-1], pwny.Target.Endian.little
+        yield check_short_form_pack_endian, f, num, bytestr, pwny.Target.Endian.big
 
 
 def test_short_form_unpack():
     for width, num, bytestr in short_signed_data:
         f = 'u%d' % width
         yield check_short_form_unpack, f, num, bytestr[::-1]
-        yield check_short_form_unpack_endian, f, num, bytestr[::-1], pwny.Endianness.little
-        yield check_short_form_unpack_endian, f, num, bytestr, pwny.Endianness.big
+        yield check_short_form_unpack_endian, f, num, bytestr[::-1], pwny.Target.Endian.little
+        yield check_short_form_unpack_endian, f, num, bytestr, pwny.Target.Endian.big
 
     for width, num, bytestr in short_unsigned_data:
         f = 'U%d' % width
         yield check_short_form_unpack, f, num, bytestr[::-1]
-        yield check_short_form_unpack_endian, f, num, bytestr[::-1], pwny.Endianness.little
-        yield check_short_form_unpack_endian, f, num, bytestr, pwny.Endianness.big
+        yield check_short_form_unpack_endian, f, num, bytestr[::-1], pwny.Target.Endian.little
+        yield check_short_form_unpack_endian, f, num, bytestr, pwny.Target.Endian.big
 
 
 def test_pointer_pack():
     yield check_short_form_pack, 'p', -66052, b'\xfc\xfd\xfe\xff'
-    yield check_short_form_pack_endian, 'p', -66052, b'\xfc\xfd\xfe\xff', pwny.Endianness.little
-    yield check_short_form_pack_endian, 'p', -66052, b'\xff\xfe\xfd\xfc', pwny.Endianness.big
+    yield check_short_form_pack_endian, 'p', -66052, b'\xfc\xfd\xfe\xff', pwny.Target.Endian.little
+    yield check_short_form_pack_endian, 'p', -66052, b'\xff\xfe\xfd\xfc', pwny.Target.Endian.big
 
     yield check_short_form_pack, 'P', 4294901244, b'\xfc\xfd\xfe\xff'
-    yield check_short_form_pack_endian, 'P', 4294901244, b'\xfc\xfd\xfe\xff', pwny.Endianness.little
-    yield check_short_form_pack_endian, 'P', 4294901244, b'\xff\xfe\xfd\xfc', pwny.Endianness.big
+    yield check_short_form_pack_endian, 'P', 4294901244, b'\xfc\xfd\xfe\xff', pwny.Target.Endian.little
+    yield check_short_form_pack_endian, 'P', 4294901244, b'\xff\xfe\xfd\xfc', pwny.Target.Endian.big
 
 
 def test_pointer_unpack():
     yield check_short_form_unpack, 'u', -66052, b'\xfc\xfd\xfe\xff'
-    yield check_short_form_unpack_endian, 'u', -66052, b'\xfc\xfd\xfe\xff', pwny.Endianness.little
-    yield check_short_form_unpack_endian, 'u', -66052, b'\xff\xfe\xfd\xfc', pwny.Endianness.big
+    yield check_short_form_unpack_endian, 'u', -66052, b'\xfc\xfd\xfe\xff', pwny.Target.Endian.little
+    yield check_short_form_unpack_endian, 'u', -66052, b'\xff\xfe\xfd\xfc', pwny.Target.Endian.big
 
     yield check_short_form_unpack, 'U', 4294901244, b'\xfc\xfd\xfe\xff'
-    yield check_short_form_unpack_endian, 'U', 4294901244, b'\xfc\xfd\xfe\xff', pwny.Endianness.little
-    yield check_short_form_unpack_endian, 'U', 4294901244, b'\xff\xfe\xfd\xfc', pwny.Endianness.big
+    yield check_short_form_unpack_endian, 'U', 4294901244, b'\xfc\xfd\xfe\xff', pwny.Target.Endian.little
+    yield check_short_form_unpack_endian, 'U', 4294901244, b'\xff\xfe\xfd\xfc', pwny.Target.Endian.big
 
 
 def check_short_form_pack(f, num, bytestr):

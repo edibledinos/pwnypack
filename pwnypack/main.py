@@ -8,6 +8,7 @@ import os
 import sys
 import argparse
 import six
+import pwnypack.target
 
 
 MAIN_FUNCTIONS = OrderedDict()
@@ -50,6 +51,36 @@ def string_value_or_stdin(value):
         return sys.stdin.read()
     else:
         return value
+
+
+def add_target_arguments(parser):
+    parser.add_argument(
+        '--arch', '-a',
+        choices=[v.value for v in pwnypack.target.Target.Arch.__members__.values()],
+        default=None,
+        help='the target architecture',
+    )
+    parser.add_argument(
+        '--bits', '-b',
+        type=int,
+        choices=[v.value for v in pwnypack.target.Target.Bits.__members__.values()],
+        default=None,
+        help='the target word size',
+    )
+    parser.add_argument(
+        '--endian', '-e',
+        choices=pwnypack.target.Target.Endian.__members__.keys(),
+        default=None,
+        help='the target endianness',
+    )
+
+
+def target_from_arguments(args):
+    if args.endian is not None:
+        endian = pwnypack.target.Target.Endian.__members__[args.endian]
+    else:
+        endian = None
+    return pwnypack.target.Target(arch=args.arch, bits=args.bits, endian=endian)
 
 
 @register(symlink=False)

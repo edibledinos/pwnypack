@@ -1,4 +1,4 @@
-from pwnypack.target import Architecture, Endianness, Target
+from pwnypack.target import Target
 from pwnypack.packing import U16, U32, unpack, pack_size
 import pwnypack.main
 from enum import Enum
@@ -18,6 +18,17 @@ class ELF(Target):
         executable = 2
         shared = 3
         core = 4
+
+    class Machine(Enum):
+        sparc = 0x02
+        x86 = 0x03
+        mips = 0x08
+        powerpc = 0x14
+        arm = 0x28
+        superh = 0x2a
+        ia64 = 0x32
+        x86_64 = 0x3e
+        aarch64 = 0xb7
 
     class OSABI(Enum):
         system_v = 0x00
@@ -153,17 +164,34 @@ class ELF(Target):
         assert bits in (1, 2), 'Invalid word size'
         self.bits = 32 * bits
 
-        self.endian = Endianness(endian)
+        self.endian = Target.Endian(endian - 1)
 
         assert version == 1, 'Invalid version'
 
         self.osabi = self.OSABI(osabi)
         self.abi_version = abi_version
 
-        (type_, arch, version), data = unpack('HHI', data[:8], endian=self.endian), data[8:]
+        (type_, machine, version), data = unpack('HHI', data[:8], endian=self.endian), data[8:]
 
         self.type = self.Type(type_)
-        self.arch = Architecture(arch)
+        self.machine = ELF.Machine(machine)
+
+        if self.machine is ELF.Machine.x86:
+            self.arch = Target.Arch.x86
+            assert bits == 1, 'Unexpected ELF64 for machine type x86'
+            assert endian == 1, 'Unexpected big-endian for machine type x86'
+        elif self.machine is ELF.Machine.x86_64:
+            self.arch = Target.Arch.x86
+            assert bits == 2, 'Unexpected ELF32 for machine type x64_64'
+            assert endian == 1, 'Unexpected big-endian for machine type x86'
+        elif self.machine is ELF.Machine.arm:
+            self.arch = Target.Arch.arm
+            assert bits == 1, 'Unexpected ELF64 for machine type arm'
+        elif self.machine is ELF.Machine.aarch64:
+            self.arch = Target.Arch.arm
+            assert bits == 2, 'Unexpected ELF32 for machine type aarch64'
+        else:
+            self.arch = Target.Arch.unknown
 
         assert version == 1, 'Invalid version'
 

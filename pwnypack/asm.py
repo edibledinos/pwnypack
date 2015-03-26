@@ -38,21 +38,16 @@ class Asm(object):
         macho64 = 'macho64'
         dbg = 'dbg'
 
-    @classmethod
-    def __call__(cls, code, fmt=Format.bin, bits=None, target=None):
-        if not isinstance(fmt, cls.Format):
-            fmt = cls.Format(fmt)
+    def __call__(self, code, fmt=Format.bin, target=None):
+        if not isinstance(fmt, self.Format):
+            fmt = self.Format(fmt)
 
         if target is None:
             target = pwnypack.target.target
-
-        assert target.arch in (pwnypack.target.Architecture.x86, pwnypack.target.Architecture.x86_64)
-
-        if bits is None:
-            bits = target.bits
+        assert target.arch is pwnypack.target.Target.Arch.x86, 'Only x86 is currently supported.'
 
         tmp = tempfile.NamedTemporaryFile(delete=False)
-        tmp.write(('bits %d\n%s' % (bits, code)).encode('utf-8'))
+        tmp.write(('bits %d\n%s' % (target.bits.value, code)).encode('utf-8'))
         tmp.close()
 
         try:
@@ -83,10 +78,11 @@ def disasm(code, addr=0, target=None):
     if target is None:
         target = pwnypack.target.target
 
-    if target.arch == pwnypack.target.Architecture.x86:
-        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
-    elif target.arch == pwnypack.target.Architecture.x86_64:
-        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    if target.arch == pwnypack.target.Target.Arch.x86:
+        if target.bits is pwnypack.target.Target.Bits.bits_32:
+            md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+        else:
+            md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     else:
         raise NotImplementedError('Only x86 and x86_64 architectures are currently supported')
 
@@ -112,23 +108,17 @@ def asm_app(parser, cmd, args):  # pragma: no cover
     """
 
     parser.add_argument('source', help='the code to assemble, read from stdin if omitted', nargs='?')
-    parser.add_argument(
-        '--arch', '-a',
-        choices=['x86', 'x86_64'],
-        default=pwnypack.target.target.arch.name,
-        help='the target architecture',
-    )
+    pwnypack.main.add_target_arguments(parser)
     parser.add_argument(
         '--output-format', '-F',
         choices=asm.Format.__members__.keys(),
         default=asm.Format.bin.name,
         help='the output format',
     )
+
     args = parser.parse_args(args)
-
-    target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.arch])
+    target = pwnypack.main.target_from_arguments(args)
     fmt = asm.Format(asm.Format.__members__[args.output_format])
-
     if args.source is None:
         args.source = sys.stdin.read()
     else:
@@ -152,14 +142,9 @@ def asm_app(_parser, cmd, args):  # pragma: no cover
         description=_parser.description,
     )
     parser.add_argument('code', help='the code to disassemble, read from stdin if omitted', nargs='?')
+    pwnypack.main.add_target_arguments(parser)
     parser.add_argument(
-        '--arch', '-a',
-        choices=['x86', 'x86_64'],
-        default=pwnypack.target.target.arch.name,
-        help='the target architecture',
-    )
-    parser.add_argument(
-        '--address', '-b',
+        '--address', '-o',
         type=lambda v: int(v, 0),
         default=0,
         help='the address of the disassembled code',
@@ -169,9 +154,9 @@ def asm_app(_parser, cmd, args):  # pragma: no cover
         choices=['hex', 'bin'],
         help='the input format (defaults to hex for commandline, bin for stdin)',
     )
-    args = parser.parse_args(args)
 
-    target = pwnypack.target.Target(arch=pwnypack.target.Architecture.__members__[args.arch])
+    args = parser.parse_args(args)
+    target = pwnypack.main.target_from_arguments(args)
 
     if args.format is None:
         if args.code is None:

@@ -46,11 +46,11 @@ The available modules are listed below.
 
 ### pwnypack.target
 
-This module defines a `Target` class that exposes information about a target platform. The `Target` exposes the machine architecture (x86/x86_64/arm/etc), the endianness of the platform (little/big) and the word size (32/64 bit). It is used throughout *pwnypack* to determine how to parse or generate machine specific structures.
+This module defines a `Target` class that exposes information about a target platform. The `Target` exposes the *machine architecture* (x86/arm/other, the *endianness* of the platform (little/big), the *word size* (32/64 bit) and the *mode* (ARM thumb/v8/mcode). It is used throughout *pwnypack* to determine how to parse or generate machine specific structures.
 
 If you do not specify the endianness or word size explicitly, they will assume the default for the configured architecture.
 
-A global default target is created as `target` which defaults to an x86 or x86-64 platform depending on the host machine's word size.
+A global default target is created as `target` which defaults to the current machines architecture, word size and endianness if they can be determined.
 
 You can change the properties of a target (and the default target) to match the properties of the machine you're working with. If you're working with multiple platform at the same time you can create multiple instances of `Target` which you pass to the various targetable functions.
 
@@ -61,19 +61,19 @@ Examples:
 ```python
 >>> from pwny import *
 >>> target.arch
-<Architecture.x86_64: 62>
+<Arch.x86: 'x86'>
 >>> target.endian
-<Endianness.little: 1>
+<Endian.little: 0>
 >>> target.bits
-64
->>> target.arch = Architecture.x86
+<Bits.bits_64: 64>
+>>> target.arch = Target.Arch.arm
 >>> target.arch
-<Architecture.x86: 3>
+<Arch.arm: 'arm'>
 >>> target.endian
-<Endianness.little: 1>
+<Endian.little: 0>
 >>> target.bits
-32
->>> target.assume(ELF.parse('exploit-me'))
+<Bits.bits_64: 64>
+>>> target.assume(ELF('exploit-me'))
 ```
 
 ### pwnypack.packing
