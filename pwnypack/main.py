@@ -174,11 +174,12 @@ def main():
             end = '\n'
 
         if args.format == 'raw':
-            writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
-            writer.write(output_bytes)
-            if not args.no_newline:
-                writer.write(b'\n')
-            writer.close()
+            if isinstance(output, six.binary_type):
+                writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
+                writer.write(output_bytes)
+                writer.close()
+            else:
+                print(output, end=end)
         elif args.format == 'hex':
             print(pwny.enhex(output_bytes), end=end)
         elif args.format == 'py':
