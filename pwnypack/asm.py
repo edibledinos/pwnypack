@@ -1,3 +1,15 @@
+"""
+This module contains functions to assemble and disassemble code for a given
+target platform.
+
+Currently, the only supported architecture is
+:attr:`~pwnypack.target.Target.Arch.x86` (both 32 and 64 bits variants).
+Assembly is performed by the *nasm* assembler (only supports
+:attr:`~AsmSyntax.nasm` syntax). Disassembly is performed by *ndisasm*
+(:attr:`~AsmSyntax.nasm` syntax) or *capstone*
+(:attr:`~AsmSyntax.intel` & :attr:`~AsmSyntax.att` syntax).
+"""
+
 from __future__ import print_function
 import argparse
 import subprocess
@@ -18,12 +30,43 @@ __all__ = [
 
 
 class AsmSyntax(IntEnum):
+    """
+    This enumeration is used to specify the assembler syntax.
+    """
+
     nasm = 0   #: Netwide assembler syntax
     intel = 1  #: Intel assembler syntax
     att = 2    #: AT&T assembler syntax
 
 
 def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
+    """asm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
+
+    Assemble statements into machine readable code.
+
+    Args:
+        code(str): The statements to assemble.
+        addr(int): The memory address where the code will run.
+        syntax(AsmSyntax): The input assembler syntax.
+        target(~pwnypack.target.Target): The target architecture. The
+            global target is used if this argument is ``None``.
+
+    Returns:
+        bytes: The assembled machine code.
+
+    Raises:
+        SyntaxError: If the assembler statements are invalid.
+        NotImplementedError: In an unsupported target platform is specified.
+
+    Example:
+        >>> from pwny import *
+        >>> asm('''
+        ...     pop rdi
+        ...     ret
+        ... ''', target=Target(arch=Target.Arch.x86, bits=64))
+        b'_\\xc3'
+    """
+
     if target is None:
         target = pwnypack.target.target
 
@@ -53,6 +96,32 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
 
 
 def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
+    """disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
+
+    Disassemble machine readable code into human readable statements.
+
+    Args:
+        code(bytes): The machine code that is to be disassembled.
+        addr(int): The memory address of the code (used for relative
+            references).
+        syntax(AsmSyntax): The output assembler syntax.
+        target(~pwnypack.target.Target): The architecture for which the code
+            was written.  The global target is used if this argument is
+            ``None``.
+
+    Returns:
+        list of str: The disassembled machine code.
+
+    Raises:
+        SyntaxError: If the machine code was invalid.
+        NotImplementedError: In an unsupported target platform is specified.
+
+    Example:
+        >>> from pwny import *
+        >>> disasm(b'_\\xc3', target=Target(arch=Target.Arch.x86, bits=64))
+        ['pop rdi', 'ret']
+    """
+
     if target is None:
         target = pwnypack.target.target
 
