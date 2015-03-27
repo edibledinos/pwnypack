@@ -45,7 +45,12 @@ def find_gadget(elf, gadget, align=1, unique=True):
             match_addr = section['addr'] + match_index
 
             try:
-                match_asm = pwnypack.asm.disasm(match_gadget, match_addr, elf)
+                match_asm = pwnypack.asm.disasm(
+                    match_gadget,
+                    addr=match_addr,
+                    syntax=pwnypack.asm.AsmSyntax.intel,
+                    target=elf
+                )
 
                 matches.append({
                     'section': section,
