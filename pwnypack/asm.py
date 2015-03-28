@@ -95,6 +95,46 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
         raise NotImplementedError('Unsupported syntax for host platform.')
 
 
+def prepare_capstone(syntax=AsmSyntax.att, target=None):
+    """
+    Prepare a capstone disassembler instance for a given target and syntax.
+
+    Args:
+        syntax(AsmSyntax): The assembler syntax (Intel or AT&T).
+        target(~pwnypack.target.Target): The target to create a disassembler
+            instance for. The global target is used if this argument is
+            ``None``.
+
+    Returns:
+        An instance of the capstone disassembler.
+
+    Raises:
+        NotImplementedError: If the specified target isn't supported.
+    """
+
+    if target is None:
+        target = pwnypack.target.target
+
+    if target.arch == pwnypack.target.Target.Arch.x86:
+        if target.bits is pwnypack.target.Target.Bits.bits_32:
+            md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+        else:
+            md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    else:
+        raise NotImplementedError('Only x86 is currently supported.')
+
+    md.skipdata = True
+
+    if syntax is AsmSyntax.att:
+        md.syntax = capstone.CS_OPT_SYNTAX_ATT
+    elif syntax is AsmSyntax.intel:
+        md.skipdata_setup(('db', None, None))
+    else:
+        raise NotImplementedError('capstone engine only implements AT&T and Intel syntax.')
+
+    return md
+
+
 def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
     """disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
 
@@ -113,8 +153,8 @@ def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
         list of str: The disassembled machine code.
 
     Raises:
-        SyntaxError: If the machine code was invalid.
         NotImplementedError: In an unsupported target platform is specified.
+        RuntimeError: If ndisasm encounters an error.
 
     Example:
         >>> from pwny import *
@@ -144,7 +184,7 @@ def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
         )
         stdout, stderr = p.communicate(code)
         if p.returncode:
-            raise SyntaxError(stderr.decode('utf-8'))
+            raise RuntimeError(stderr.decode('utf-8'))
 
         return [
             line.split(None, 2)[2]
@@ -152,26 +192,12 @@ def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
             if line and not line.startswith(' ')
         ]
     elif syntax in (AsmSyntax.intel, AsmSyntax.att):
-        if target.arch == pwnypack.target.Target.Arch.x86:
-            if target.bits is pwnypack.target.Target.Bits.bits_32:
-                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
-            else:
-                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-        else:
-            raise NotImplementedError('Only x86 is currently supported.')
-
-        if syntax is AsmSyntax.att:
-            md.syntax = capstone.CS_OPT_SYNTAX_ATT
-
+        md = prepare_capstone(syntax, target)
         statements = []
         total_size = 0
         for (_, size, mnemonic, op_str) in md.disasm_lite(code, addr):
             statements.append((mnemonic + ' ' + op_str).strip())
             total_size += size
-
-        if total_size != len(code):
-            raise SyntaxError('invalid opcode')
-
         return statements
     else:
         raise NotImplementedError('Unsupported syntax for host platform.')
@@ -259,10 +285,4 @@ def disasm_app(_parser, cmd, args):  # pragma: no cover
     else:
         code = pwnypack.main.binary_value_or_stdin(args.code)
 
-    try:
-        statements = disasm(code, args.address, syntax=syntax, target=target)
-    except SyntaxError:
-        print('Failed to disassemble.', file=sys.stderr)
-        sys.exit(1)
-
-    print('\n'.join(statements))
+    print('\n'.join(disasm(code, args.address, syntax=syntax, target=target)))
