@@ -1,6 +1,7 @@
 from __future__ import print_function
 import argparse
 import re
+import capstone
 import six
 import sys
 import pwnypack.codec
@@ -14,6 +15,9 @@ import pwnypack.util
 __all__ = [
     'find_gadget',
 ]
+
+
+INVALID_GROUPS = set((capstone.CS_GRP_CALL, capstone.CS_GRP_JUMP))
 
 
 def find_gadget(elf, gadget, align=1, unique=True):
@@ -44,14 +48,17 @@ def find_gadget(elf, gadget, align=1, unique=True):
 
             match_addr = section['addr'] + match_index
 
-            try:
-                match_asm = pwnypack.asm.disasm(
-                    match_gadget,
-                    addr=match_addr,
-                    syntax=pwnypack.asm.AsmSyntax.intel,
-                    target=elf
-                )
+            md = pwnypack.asm.prepare_capstone(syntax=pwnypack.asm.AsmSyntax.intel, target=elf)
+            md.detail = True
+            match_asm = []
 
+            for insn in md.disasm(match_gadget, match_addr):
+                if insn.id == capstone.CS_OP_INVALID or set(insn.groups) & INVALID_GROUPS:
+                    # Don't try to disassemble this particular gadget again.
+                    gadgets.append(match_gadget)
+                    break
+                match_asm.append((insn.mnemonic + ' ' + insn.op_str).strip())
+            else:
                 matches.append({
                     'section': section,
                     'offset': match_index,
@@ -59,13 +66,8 @@ def find_gadget(elf, gadget, align=1, unique=True):
                     'gadget': match_gadget,
                     'asm': match_asm,
                 })
-            except SyntaxError:
-                # Prevent retrying this gadget even in non-unique mode.
-                gadgets.append(match_gadget)
-                continue
-
-            if unique:
-                gadgets.append(match_gadget)
+                if unique:
+                    gadgets.append(match_gadget)
 
     return matches
 
