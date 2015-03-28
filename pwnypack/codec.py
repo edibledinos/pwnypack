@@ -1,13 +1,15 @@
 import base64
-try:
-    from collections import Counter
-except ImportError:
-    from counter import Counter
+import re
 import string
 import six
 import codecs
 import pwnypack.main
 import binascii
+from six.moves import range
+try:
+    from collections import Counter
+except ImportError:
+    from counter import Counter
 
 
 __all__ = [
@@ -45,8 +47,20 @@ def caesar(shift, data, shift_ranges=('az', 'AZ')):
 rot13_encode = codecs.getencoder('rot-13')
 rot13 = lambda d: rot13_encode(d)[0]
 
-enhex = lambda d: binascii.hexlify(d).decode('ascii')
-dehex = lambda d: binascii.unhexlify(''.join(d.replace(':', '').split()).encode('ascii'))
+
+def enhex(d, separator=''):
+    v = binascii.hexlify(d).decode('ascii')
+    if separator:
+        return separator.join(
+            v[i:i+2]
+            for i in range(0, len(v), 2)
+        )
+    else:
+        return v
+
+
+dehex_clean = re.compile('[^a-fA-F0-9]')
+dehex = lambda d: binascii.unhexlify(dehex_clean.sub('', d).encode('ascii'))
 
 
 enb64 = lambda d: base64.b64encode(d).decode('ascii')
@@ -148,8 +162,13 @@ def enhex_app(parser, cmd, args):  # pragma: no cover
     """
 
     parser.add_argument('value', help='the value to hex encode, read from stdin if omitted', nargs='?')
+    parser.add_argument(
+        '--separator', '-s',
+        default='',
+        help='the separator to place between hex tuples'
+    )
     args = parser.parse_args(args)
-    return enhex(pwnypack.main.binary_value_or_stdin(args.value))
+    return enhex(pwnypack.main.binary_value_or_stdin(args.value), args.separator)
 
 
 @pwnypack.main.register('dehex')
