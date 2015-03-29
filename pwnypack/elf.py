@@ -358,9 +358,9 @@ class ELF(Target):
         while syms:
             sym, syms = syms[:fmt_size], syms[fmt_size:]
             if self.bits == 32:
-                st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, sym)
+                st_name, st_value, st_size, st_info, st_other, st_shndx = unpack(fmt, sym, target=self)
             else:
-                st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, sym)
+                st_name, st_info, st_other, st_shndx, st_value, st_size = unpack(fmt, sym, target=self)
             name = strs[st_name:].split('\0', 1)[0]
 
             try:
