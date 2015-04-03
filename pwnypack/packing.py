@@ -35,7 +35,8 @@ def pack(fmt, *args, **kwargs):
         bytes: The provided values packed according to the format.
     """
 
-    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
+    endian, target = kwargs.get('endian'), kwargs.get('target')
+    endian = endian if endian is not None else target.endian if target is not None else pwnypack.target.target.endian
     if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
