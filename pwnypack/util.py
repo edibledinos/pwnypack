@@ -67,39 +67,39 @@ def cycle_find(key, width=4):
     return -1
 
 
-reghex_regex = re.compile(r'([?.])(\{(\d+)\})?|(\*|\+)')
+REGHEX_PATTERN = r'(([a-fA-F0-9]{2})|(([?.])(\{\d+\})?)|(\*|\+)|\s+)'
+reghex_check = re.compile(REGHEX_PATTERN + '+')
+reghex_regex = re.compile(REGHEX_PATTERN)
 
 
 def reghex(pattern):
-    try:
-        b_pattern = b''
+    if not reghex_check.match(pattern):
+        raise SyntaxError('Invalid reghex pattern.')
 
-        last_index = 0
-        for match in reghex_regex.finditer(pattern):
-            index = match.start()
-            b_pattern += pwnypack.codec.dehex(pattern[last_index:index])
+    b_pattern = b''
 
-            if match.group(1) == '?':
-                length = match.group(3)
-                if length is None:
+    for match in reghex_regex.finditer(pattern):
+        _, match_hex, _, match_char, match_char_len, match_star_plus = match.groups()
+        if match_hex:
+            b_pattern += pwnypack.codec.dehex(match_hex)
+        elif match_char:
+            if match_char == '?':
+                if match_char_len is None:
                     b_pattern += b'.?'
                 else:
-                    b_pattern += ('.{0,%d}?' % int(length)).encode('ascii')
-            elif match.group(1) == '.':
-                length = match.group(3)
-                if length is None:
+                    b_pattern += ('.{0,%d}?' % int(match_char_len[1:-1])).encode('ascii')
+            else:
+                if match_char_len is None:
                     b_pattern += b'.'
                 else:
-                    b_pattern += b'.' * int(length)
-            else:
-                b_pattern += b'.' + match.group(4).encode('ascii') + b'?'
-            last_index = match.end()
+                    b_pattern += b'.' * int(match_char_len[1:-1])
+        elif match_star_plus:
+            b_pattern += b'.' + match_star_plus.encode('ascii') + b'?'
 
-        b_pattern += pwnypack.codec.dehex(pattern[last_index:])
-
+    try:
         return re.compile(b_pattern)
     except (TypeError, binascii.Error, re.error):
-        raise SyntaxError('Invalid rehex pattern.')
+        raise SyntaxError('Invalid reghex pattern.')
 
 
 @pwnypack.main.register('cycle')
