@@ -6,6 +6,27 @@ It is based around the central :class:`Flow` class which uses a ``Channel``
 to connect to a process. The :class:`Flow` class then uses the primitives
 exposed by the ``Channel`` to provide a high level API for reading/receiving
 and writing/sending data.
+
+
+Examples:
+    >>> from pwny import *
+    >>> f = Flow.connect_tcp('ced.pwned.systems', 80)
+    >>> f.writelines([
+    ...     b'GET / HTTP/1.0',
+    ...     b'Host: ced.pwned.systems',
+    ...     b'',
+    ... ])
+    >>> line = f.readline().strip()
+    >>> print(line == b'HTTP/1.0 200 OK')
+    True
+    >>> f.until(b'\\r\\n\\r\\n')
+    >>> f.read_eof(echo=True)
+    ... lots of html ...
+
+    >>> from pwny import *
+    >>> f = Flow.execute('cat')
+    >>> f.writeline(b'hello')
+    >>> f.readline(echo=True)
 """
 
 import subprocess
@@ -207,24 +228,6 @@ class Flow(object):
     Args:
         channel(``Channel``): A channel.
         echo(bool): Whether or not to echo all input / output.
-
-    Examples:
-        >>> from pwny import *
-        >>> f = Flow.connect_tcp('ced.pwned.systems', 80)
-        >>> f.writeline(b'GET / HTTP/1.0')
-        >>> f.writeline(b'Host: ced.pwned.systems')
-        >>> f.writeline(b'')
-        >>> line = f.readline().strip()
-        >>> print(line == b'HTTP/1.0 200 OK')
-        True
-        >>> f.until(b'\\r\\n\\r\\n')
-        >>> f.read_eof(echo=True)
-        ... lots of html ...
-
-        >>> from pwny import *
-        >>> f = Flow.execute('cat')
-        >>> f.writeline(b'hello')
-        >>> f.readline(echo=True)
     """
 
     def __init__(self, channel, echo=False):
