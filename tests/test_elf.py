@@ -131,8 +131,8 @@ def test_elf_parse_section_invalid_type():
     )
     elf = pwny.ELF()
     elf.bits = 32
-    section = elf._parse_section_header(section)
-    assert section['type'] == pwny.ELF.SectionType.UNKNOWN
+    section = elf.SectionHeader(elf, section)
+    assert section.type == pwny.ELF.SectionHeader.Type.unknown
 
 
 def test_elf_parse_file_32():
@@ -156,7 +156,7 @@ def test_elf_parse_file_32():
         0,
         b'\x00' * 7,
         pwny.ELF.Type.executable.value,
-        pwny.ELF.Machine.x86.value,
+        pwny.ELF.Machine.i386.value,
         1,
         0,
         0,
@@ -173,7 +173,7 @@ def test_elf_parse_file_32():
     b.write(pwny.pack(
         section_fmt,
         1,
-        pwny.ELF.SectionType.NULL.value,
+        pwny.ELF.SectionHeader.Type.null.value,
         0,
         0,
         header_fmt_size + section_fmt_size,
@@ -250,7 +250,7 @@ def test_elf_parse_file_64():
     b.write(pwny.pack(
         section_fmt,
         1,
-        pwny.ELF.SectionType.NULL.value,
+        pwny.ELF.SectionHeader.Type.null.value,
         0,
         0,
         header_fmt_size + section_fmt_size,
@@ -305,7 +305,7 @@ def test_elf_parse_file_open():
         0,
         b'\x00' * 7,
         pwny.ELF.Type.executable.value,
-        pwny.ELF.Machine.x86.value,
+        pwny.ELF.Machine.i386.value,
         1,
         0,
         0,

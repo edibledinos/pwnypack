@@ -31,12 +31,10 @@ def find_gadget(elf, gadget, align=1, unique=True):
         gadget = re.compile(re.escape(gadget))
 
     for section in elf.section_headers:
-        if section['type'] != elf.SectionType.PROGBITS:
+        if section.type != section.Type.progbits:
             continue
 
-        data = elf.read_section(section)
-
-        for match in gadget.finditer(data):
+        for match in gadget.finditer(section.content):
             match_index = match.start()
             if match_index % align != 0:
                 continue
@@ -46,7 +44,7 @@ def find_gadget(elf, gadget, align=1, unique=True):
             if match_gadget in gadgets:
                 continue
 
-            match_addr = section['addr'] + match_index
+            match_addr = section.addr + match_index
 
             md = pwnypack.asm.prepare_capstone(syntax=pwnypack.asm.AsmSyntax.intel, target=elf)
             md.detail = True
@@ -115,6 +113,8 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
         except SyntaxError:
             args.mode = 'asm'
 
+    elf = pwnypack.elf.ELF(args.file)
+
     if args.mode == 'reghex':
         try:
             gadget = pwnypack.util.reghex(args.gadget)
@@ -123,12 +123,10 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
             sys.exit(1)
     else:
         try:
-            gadget = pwnypack.asm.asm(args.gadget.replace(';', '\n'))
+            gadget = pwnypack.asm.asm(args.gadget.replace(';', '\n'), target=elf)
         except SyntaxError as e:
             print('Could not assemble:', e.msg)
             sys.exit(1)
-
-    elf = pwnypack.elf.ELF(args.file)
 
     matches = find_gadget(
         elf,
@@ -146,11 +144,11 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
     current_section = None
 
     for match in matches:
-        if match['section']['name'] != current_section:
+        if match['section'].name != current_section:
             if current_section is not None:
                 print()
-            print('Section: %s' % match['section']['name'])
-            current_section = match['section']['name']
+            print('Section: %s' % match['section'].name)
+            current_section = match['section'].name
 
         hex_gadget = pwnypack.codec.enhex(match['gadget'])
         print(fmt % (
