@@ -1,9 +1,7 @@
 import pwnypack.main
 
 
-__all__ = [
-    'shell',
-]
+__all__ = []
 
 
 try:
