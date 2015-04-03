@@ -16,6 +16,7 @@ import subprocess
 import sys
 import capstone
 from enum import IntEnum
+from pwnypack.elf import ELF
 import pwnypack.target
 import pwnypack.main
 import pwnypack.codec
@@ -286,3 +287,28 @@ def disasm_app(_parser, cmd, args):  # pragma: no cover
         code = pwnypack.main.binary_value_or_stdin(args.code)
 
     print('\n'.join(disasm(code, args.address, syntax=syntax, target=target)))
+
+
+@pwnypack.main.register(name='symbol-disasm')
+def disasm_symbol_app(_parser, _, args):  # pragma: no cover
+    """
+    Disassemble a symbol from an ELF file.
+    """
+
+    parser = argparse.ArgumentParser(
+        prog=_parser.prog,
+        description=_parser.description,
+    )
+    parser.add_argument(
+        '--syntax', '-s',
+        choices=AsmSyntax.__members__.keys(),
+        default='nasm',
+    )
+    parser.add_argument('file', help='ELF file to extract a symbol from')
+    parser.add_argument('symbol', help='the symbol to disassemble')
+
+    args = parser.parse_args(args)
+    syntax = AsmSyntax.__members__[args.syntax]
+    elf = ELF(args.file)
+    symbol = elf.get_symbol(args.symbol)
+    print('\n'.join(disasm(symbol.content, symbol.value, syntax=syntax, target=elf)))
