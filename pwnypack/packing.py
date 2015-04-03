@@ -14,6 +14,27 @@ __all__ = [
 
 
 def pack(fmt, *args, **kwargs):
+    """pack(fmt, v1, v2, ..., endian=None, target=None)
+
+    Return a string containing the values v1, v2, ... packed according to the
+    given format. The actual packing is performed by ``struct.pack`` but the
+    byte order will be set according to the given `endian`, `target` or
+    byte order of the global target.
+
+    Args:
+        fmt(str): The format string.
+        v1,v2,...: The values to pack.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+
+    Returns:
+        bytes: The provided values packed according to the format.
+    """
+
     endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
     if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Target.Endian.little:
@@ -25,8 +46,28 @@ def pack(fmt, *args, **kwargs):
     return struct.pack(fmt, *args)
 
 
-def unpack(fmt, data, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
+def unpack(fmt, data, endian=None, target=None):
+    """
+    Unpack the string (presumably packed by pack(fmt, ...)) according to the
+    given format. The actual unpacking is performed by ``struct.unpack``
+    but the byte order will be set according to the given `endian`, `target`
+    or byte order of the global target.
+
+    Args:
+        fmt(str): The format string.
+        data(bytes): The data to unpack.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+
+    Returns:
+        list: The unpacked values according to the format.
+    """
+
+    endian = endian if endian is not None else target.endian if target is not None else pwnypack.target.target.endian
     if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
@@ -37,8 +78,8 @@ def unpack(fmt, data, **kwargs):
     return struct.unpack(fmt, data)
 
 
-def pack_size(fmt, **kwargs):
-    endian = kwargs.get('endian', kwargs.get('target', pwnypack.target.target).endian)
+def pack_size(fmt, endian=None, target=None):
+    endian = endian if endian is not None else target.endian if target is not None else pwnypack.target.target.endian
     if fmt and fmt[0] not in '@=<>!':
         if endian is pwnypack.target.Target.Endian.little:
             fmt = '<' + fmt
@@ -49,21 +90,28 @@ def pack_size(fmt, **kwargs):
     return struct.calcsize(fmt)
 
 
-def _pack_closure(f, fmt):
-    return lambda a, **k: f(fmt, a, **k)
+def _pack_closure(fmt):
+    return lambda value, endian=None, target=None: pack(fmt, value, endian=endian, target=target)
 
 
-def _unpack_closure(f, fmt):
-    return lambda a, **k: f(fmt, a, **k)[0]
+def _unpack_closure(fmt):
+    return lambda data, endian=None, target=None: unpack(fmt, data, endian=endian, target=target)[0]
 
 
 for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
     locals().update({
-        'p%d' % _w: _pack_closure(pack, _f),
-        'P%d' % _w: _pack_closure(pack, _f.upper()),
-        'u%d' % _w: _unpack_closure(unpack, _f),
-        'U%d' % _w: _unpack_closure(unpack, _f.upper()),
+        'p%d' % _w: _pack_closure(_f),
+        'P%d' % _w: _pack_closure(_f.upper()),
+        'u%d' % _w: _unpack_closure(_f),
+        'U%d' % _w: _unpack_closure(_f.upper()),
     })
+
+    locals()['p%d' % _w].__doc__ = '''Pack signed %d bit integer. Alias for ``pack('%s', ...)``.''' % (_w, _f)
+    locals()['P%d' % _w].__doc__ = '''Pack unsigned %d bit integer. Alias for ``pack('%s', ...)``.''' % (_w, _f.upper())
+    locals()['u%d' % _w].__doc__ = '''Unpack signed %d bit integer. Alias for ``unpack('%s', ...)``.''' % (_w, _f)
+    locals()['U%d' % _w].__doc__ = '''Unpack unsigned %d bit integer. Alias for ``unpack('%s', ...)``.''' % \
+                                   (_w, _f.upper())
+
     __all__.extend([
         'p%d' % _w,
         'P%d' % _w,
@@ -73,21 +121,91 @@ for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
 del _w, _f, _pack_closure, _unpack_closure
 
 
-def P(value, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
-    return globals()['P%d' % bits](value, **kwargs)
+def P(value, bits=None, endian=None, target=None):
+    """
+    Pack an unsigned pointer for a given target.
+
+    Args:
+        value(int): The value to pack.
+        bits(:class:`~pwnypack.target.Target.Bits`): Override the default
+            word size. If ``None`` it will look at the word size of
+            ``target``.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+    """
+
+    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
+    return globals()['P%d' % bits](value, endian=endian, target=target)
 
 
-def p(value, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
-    return globals()['p%d' % bits](value, **kwargs)
+def p(value, bits=None, endian=None, target=None):
+    """
+    Pack a signed pointer for a given target.
+
+    Args:
+        value(int): The value to pack.
+        bits(:class:`pwnypack.target.Target.Bits`): Override the default
+            word size. If ``None`` it will look at the word size of
+            ``target``.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+    """
+
+    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
+    return globals()['p%d' % bits](value, endian=endian, target=target)
 
 
-def U(data, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
-    return globals()['U%d' % bits](data, **kwargs)
+def U(data, bits=None, endian=None, target=None):
+    """
+    Unpack an unsigned pointer for a given target.
+
+    Args:
+        data(bytes): The data to unpack.
+        bits(:class:`pwnypack.target.Target.Bits`): Override the default
+            word size. If ``None`` it will look at the word size of
+            ``target``.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+
+    Returns:
+        int: The pointer value.
+    """
+
+    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
+    return globals()['U%d' % bits](data, endian=endian, target=target)
 
 
-def u(data, **kwargs):
-    bits = kwargs.get('bits', kwargs.get('target', pwnypack.target.target).bits).value
-    return globals()['u%d' % bits](data, **kwargs)
+def u(data, bits=None, endian=None, target=None):
+    """
+    Unpack a signed pointer for a given target.
+
+    Args:
+        data(bytes): The data to unpack.
+        bits(:class:`pwnypack.target.Target.Bits`): Override the default
+            word size. If ``None`` it will look at the word size of
+            ``target``.
+        endian(:class:`~pwnypack.target.Target.Endian`): Override the default
+            byte order. If ``None``, it will look at the byte order of
+            the ``target`` argument.
+        target(:class:`~pwnypack.target.Target`): Override the default byte
+            order. If ``None``, it will look at the byte order of
+            the global :data:`~pwnypack.target.target`.
+
+    Returns:
+        int: The pointer value.
+    """
+
+    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
+    return globals()['u%d' % bits](data, endian=endian, target=target)
