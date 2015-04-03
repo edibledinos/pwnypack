@@ -139,8 +139,9 @@ def P(value, bits=None, endian=None, target=None):
             the global :data:`~pwnypack.target.target`.
     """
 
-    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
-    return globals()['P%d' % bits](value, endian=endian, target=target)
+    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
+        pwnypack.target.target.bits
+    return globals()['P%d' % bits.value](value, endian=endian, target=target)
 
 
 def p(value, bits=None, endian=None, target=None):
@@ -160,8 +161,9 @@ def p(value, bits=None, endian=None, target=None):
             the global :data:`~pwnypack.target.target`.
     """
 
-    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
-    return globals()['p%d' % bits](value, endian=endian, target=target)
+    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
+        pwnypack.target.target.bits
+    return globals()['p%d' % bits.value](value, endian=endian, target=target)
 
 
 def U(data, bits=None, endian=None, target=None):
@@ -184,8 +186,9 @@ def U(data, bits=None, endian=None, target=None):
         int: The pointer value.
     """
 
-    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
-    return globals()['U%d' % bits](data, endian=endian, target=target)
+    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
+        pwnypack.target.target.bits
+    return globals()['U%d' % bits.value](data, endian=endian, target=target)
 
 
 def u(data, bits=None, endian=None, target=None):
@@ -208,5 +211,6 @@ def u(data, bits=None, endian=None, target=None):
         int: The pointer value.
     """
 
-    bits = bits if bits is not None else target.bits if target is not None else pwnypack.target.target.bits
-    return globals()['u%d' % bits](data, endian=endian, target=target)
+    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
+        pwnypack.target.target.bits
+    return globals()['u%d' % bits.value](data, endian=endian, target=target)
