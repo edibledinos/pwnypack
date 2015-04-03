@@ -1,5 +1,5 @@
-pwnypack.codec module
-=====================
+:mod:`pwnypack.codec` -- Data transformation
+============================================
 
 .. automodule:: pwnypack.codec
     :members:

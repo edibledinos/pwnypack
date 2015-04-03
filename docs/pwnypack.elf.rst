@@ -1,5 +1,5 @@
-pwnypack.elf module
-===================
+:mod:`pwnypack.elf` -- ELF file parsing
+=======================================
 
 .. automodule:: pwnypack.elf
     :members:

@@ -1,5 +1,5 @@
-pwnypack.flow module
-====================
+:mod:`pwnypack.flow` -- Communication
+=====================================
 
 .. automodule:: pwnypack.flow
     :members:

@@ -1,5 +1,5 @@
-pwnypack.packing module
-=======================
+:mod:`pwnypack.packing` -- Data (un)packing
+===========================================
 
 .. automodule:: pwnypack.packing
     :members:
