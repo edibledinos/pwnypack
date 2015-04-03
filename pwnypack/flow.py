@@ -12,12 +12,18 @@ __all__ = [
 
 
 class ProcessChannel(object):
-    def __init__(self, *arguments):
+    def __init__(self, *arguments, **kwargs):
+        if kwargs.get('redirect_stderr'):
+            stderr = subprocess.STDOUT
+        else:
+            stderr = None
+
         self._process = subprocess.Popen(
             arguments,
             bufsize=0,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
+            stderr=stderr,
         )
 
     def read(self, n):
@@ -148,7 +154,7 @@ class Flow(object):
     @classmethod
     def execute(cls, *args, **kwargs):
         echo = kwargs.pop('echo', False)
-        return cls(ProcessChannel(*args), echo=echo)
+        return cls(ProcessChannel(*args, **kwargs), echo=echo)
 
     @classmethod
     def connect_tcp(cls, *args, **kwargs):
