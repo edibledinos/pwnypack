@@ -412,7 +412,7 @@ class Flow(object):
         """
 
         echo = kwargs.pop('echo', False)
-        return cls(ProcessChannel(*arguments, **kwargs), echo=echo)
+        return cls(ProcessChannel(executable, *arguments, **kwargs), echo=echo)
 
     @classmethod
     def connect_tcp(cls, host, port, echo=False):
