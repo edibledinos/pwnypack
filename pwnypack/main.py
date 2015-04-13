@@ -11,6 +11,9 @@ import six
 import pwnypack.target
 
 
+__all__ = []
+
+
 MAIN_FUNCTIONS = OrderedDict()
 
 
