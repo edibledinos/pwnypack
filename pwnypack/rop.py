@@ -1,3 +1,8 @@
+"""
+The ROP module contains a function to find gadgets in ELF binaries that can
+be used to create ROP chains.
+"""
+
 from __future__ import print_function
 import argparse
 import re
@@ -21,6 +26,31 @@ INVALID_GROUPS = set((capstone.CS_GRP_CALL, capstone.CS_GRP_JUMP))
 
 
 def find_gadget(elf, gadget, align=1, unique=True):
+    """
+    Find a ROP gadget in a the executable sections of an ELF executable or
+    library. The ROP gadget can be either a set of bytes for an exact match
+    or a (bytes) regular expression. Once it finds gadgets, it uses the
+    capstone engine to verify if the gadget consists of valid instructions
+    and doesn't contain any call or jump instructions.
+
+    Args:
+        elf(:class:`~pwnypack.elf.ELF`): The ELF instance to find a gadget in.
+        gadget(bytes or regexp): The gadget to find.
+        align(int): Make sure the gadget starts at a multiple of this number
+        unique(bool): If true, only unique gadgets are returned.
+
+    Returns:
+        dict: A dictionary containing a description of the found
+            gadget. Contains the following fields:
+
+            - section: The section the gadget was found in.
+            - offset: The offset inside the segment the gadget was found at.
+            - addr: The virtual memory address the gadget will be located at.
+            - gadget: The machine code of the found gadget.
+            - asm: A list of disassembled instructions.
+
+    """
+
     if not isinstance(elf, pwnypack.elf.ELF):
         elf = pwnypack.elf.ELF(elf)
 
