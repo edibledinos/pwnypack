@@ -43,7 +43,7 @@ setup(
     packages=['pwny', 'pwnypack'],
     version=__version__,
     description='Official Certified Edible Dinosaurs CTF toolkit.',
-    long_description=read_file('README.rst'),
+    long_description=read_file('README.rst') + '\n' + read_file('changelog.rst'),
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
     url='https://github.com/edibledinos/pwnypack/',
