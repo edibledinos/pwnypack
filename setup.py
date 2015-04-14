@@ -46,8 +46,8 @@ setup(
     long_description=read_file('README.rst'),
     author='Ingmar Steen',
     author_email='iksteen@gmail.com',
-    url='https://github.com/iksteen/pwnypack/',
-    download_url='https://github.com/iksteen/pwnypack/tarball/v%s' % __version__,
+    url='https://github.com/edibledinos/pwnypack/',
+    download_url='https://github.com/edibledinos/pwnypack/tarball/v%s' % __version__,
     install_requires=requires,
     tests_require=['mock', 'coverage'],
     entry_points={
