@@ -1,3 +1,7 @@
+"""
+The util module contains various utility functions.
+"""
+
 from __future__ import print_function
 import argparse
 from six.moves import range
@@ -16,11 +20,11 @@ __all__ = [
 
 
 def deBruijn(n, k):
-    '''
+    """
     An implementation of the FKM algorithm for generating the de Bruijn
     sequence containing all k-ary strings of length n, as described in
     "Combinatorial Generation" by Frank Ruskey.
-    '''
+    """
 
     a = [ 0 ] * (n + 1)
 
@@ -42,24 +46,55 @@ def deBruijn(n, k):
     return gen(1, 1)
 
 
-def cycle(length, width=4, **kwargs):
+def cycle(length, width=4):
+    """
+    Generate a de Bruijn sequence of a given length (and width). A de Bruijn
+    sequence is a set of varying repetitions where each sequence of *n*
+    characters is unique within the sequence. This type of sequence can be
+    used to easily find the offset to the return pointer when exploiting a
+    buffer overflow.
+
+    Args:
+        length(int): The length of the sequence to generate.
+        width(int): The width of each element in the sequence.
+
+    Returns:
+        str: The sequence.
+
+    Example:
+        >>> from pwny import *
+        >>> cycle(80)
+        AAAABAAACAAADAAAEAAAFAAAGAAAHAAAIAAAJAAAKAAALAAAMAAANAAAOAAAPAAAQAAARAAASAAATAAA
+    """
+
     iter = deBruijn(width, 26)
     return ''.join([chr(ord('A') + next(iter)) for i in range(length)])
 
 
 def cycle_find(key, width=4):
+    """
+    Given an element of a de Bruijn sequence, find its index in that sequence.
+
+    Args:
+        key(str): The piece of the de Bruijn sequence to find.
+        width(int): The width of each element in the sequence.
+
+    Returns:
+        int: The index of ``key`` in the de Bruijn sequence.
+    """
+
     key_len = len(key)
     buf = ''
 
-    iter = deBruijn(width, 26)
+    it = deBruijn(width, 26)
 
     for i in range(key_len):
-        buf += chr(ord('A') + next(iter))
+        buf += chr(ord('A') + next(it))
 
     if buf == key:
         return 0
 
-    for i, c in enumerate(iter):
+    for i, c in enumerate(it):
         buf = buf[1:] + chr(ord('A') + c)
         if buf == key:
             return i + 1
@@ -73,6 +108,27 @@ reghex_regex = re.compile(REGHEX_PATTERN)
 
 
 def reghex(pattern):
+    """
+    Compile a regular hexpression (a short form regular expression subset
+    specifically designed for searching for binary strings).
+
+    A regular hexpression consists of hex tuples interspaced with control
+    characters. The available control characters are:
+
+    - ``?``: Any byte (optional).
+    - ``.``: Any byte (required).
+    - ``?{n}``: A set of 0 up to *n* bytes.
+    - ``.{n}``: A set of exactly *n* bytes.
+    - ``*``: Any number of bytes (or no bytes at all).
+    - ``+``: Any number of bytes (at least one byte).
+
+    Args:
+        pattern(str): The reghex pattern.
+
+    Returns:
+        regexp: A regular expression as returned by ``re.compile()``.
+    """
+
     if not reghex_check.match(pattern):
         raise SyntaxError('Invalid reghex pattern.')
 
