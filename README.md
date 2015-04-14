@@ -36,7 +36,7 @@ For an example, check out the [Big Prison Fence](https://github.com/iksteen/pwny
 
 ## Documentation
 
-*pwnypack*'s API documentation is hosted on [readthedocs](http://pwnypack.readthedocs.org/latest).
+*pwnypack*'s API documentation is hosted on [readthedocs](http://pwnypack.readthedocs.org/).
 
 ## Contributors
 
