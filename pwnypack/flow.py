@@ -259,6 +259,7 @@ class Flow(object):
         d = self.channel.read(n)
         if echo or (echo is None and self.echo):
             sys.stdout.write(d.decode('latin1'))
+            sys.stdout.flush()
         return d
 
     def read_eof(self, echo=None):
@@ -354,6 +355,7 @@ class Flow(object):
 
         if echo or (echo is None and self.echo):
             sys.stdout.write(data.decode('latin1'))
+            sys.stdout.flush()
         self.channel.write(data)
 
     def writelines(self, lines, echo=None):
