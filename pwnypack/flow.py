@@ -223,6 +223,28 @@ class TCPClientSocketChannel(SocketChannel):
         super(TCPClientSocketChannel, self).__init__(s)
 
 
+class TCPServerSocketChannel(SocketChannel):
+    """
+    Convenience subclass of :class:`SocketChannel` that waits for a remote
+    client to connect.
+
+    Args:
+        host(str): The hostname or IP address to connect to. Defaults to all
+            IP adresses.
+        port(int): The port number to connect to. Defaults to a random port
+            chosen by the OS.
+    """
+
+    def __init__(self, host='', port=0):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((host, port))
+        s.listen(1)
+        cs, _ = s.accept()
+        s.close()
+        super(TCPServerSocketChannel, self).__init__(cs)
+
+
 class Flow(object):
     """
     The core class of *Flow*. Takes a channel and exposes synchronous
@@ -456,3 +478,21 @@ class Flow(object):
         """
 
         return cls(TCPClientSocketChannel(host, port), echo=echo)
+
+    @classmethod
+    def listen_tcp(cls, host='', port=0, echo=False):
+        """
+        Set up a :class:`TCPServerSocketChannel` and create a :class:`Flow`
+        instance for it.
+
+        Args:
+            host(str): The hostname or IP address to bind to.
+            port(int): The port number to listen on.
+            echo(bool): Whether to echo read/written data to stdout by default.
+
+        Returns:
+            :class:`Flow`: A Flow instance initialised with the TCP socket
+                channel.
+        """
+
+        return cls(TCPServerSocketChannel(host, port), echo=echo)
