@@ -358,35 +358,37 @@ class Flow(object):
             sys.stdout.flush()
         self.channel.write(data)
 
-    def writelines(self, lines, echo=None):
+    def writelines(self, lines, sep=b'\n', echo=None):
         """
         Write a list of byte sequences to the channel and terminate them
-        with carriage return and line feed.
+        with a separator (line feed).
 
         Args:
             lines(list of bytes): The lines to send.
+            sep(bytes): The separator to use after each line.
             echo(bool): Whether to echo the written data to stdout.
 
         Raises:
             EOFError: If the channel was closed before all data was sent.
         """
 
-        self.write(b'\r\n'.join(lines + [b'']), echo)
+        self.write(sep.join(lines + [b'']), echo)
 
-    def writeline(self, line=b'', echo=None):
+    def writeline(self, line=b'', sep=b'\n', echo=None):
         """
         Write a byte sequences to the channel and terminate it with carriage
         return and line feed.
 
         Args:
             line(bytes): The line to send.
+            sep(bytes): The separator to use after each line.
             echo(bool): Whether to echo the written data to stdout.
 
         Raises:
             EOFError: If the channel was closed before all data was sent.
         """
 
-        self.writelines([line], echo)
+        self.writelines([line], sep, echo)
 
     def close(self):
         """
