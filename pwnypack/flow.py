@@ -69,6 +69,9 @@ class ProcessChannel(object):
             stderr=stderr,
         )
 
+    def fileno(self):
+        return self._process.stdout.fileno()
+
     def read(self, n):
         """
         Read *n* bytes from the subprocess' output channel.
@@ -137,6 +140,9 @@ class SocketChannel(object):
 
     def __init__(self, sock):
         self._socket = sock
+
+    def fileno(self):
+        return self._socket.fileno()
 
     def read(self, n):
         """
