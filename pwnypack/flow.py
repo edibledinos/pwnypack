@@ -33,6 +33,7 @@ import subprocess
 import sys
 import socket
 import select
+import paramiko
 
 
 __all__ = [
@@ -243,6 +244,27 @@ class TCPServerSocketChannel(SocketChannel):
         cs, _ = s.accept()
         s.close()
         super(TCPServerSocketChannel, self).__init__(cs)
+
+
+class SSHClient(paramiko.client.SSHClient):
+    def __init__(self):
+        super(SSHClient, self).__init__()
+        self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
+
+    def execute(self, command, echo=False):
+        channel = self.get_transport().open_session()
+        channel.set_combine_stderr(True)
+        channel.exec_command(command)
+        return Flow(SocketChannel(channel), echo=echo)
+
+    def invoke_shell(self, pty=True, echo=False):
+        channel = self.get_transport().open_session()
+        if pty:
+            channel.get_pty()
+        else:
+            channel.set_combine_stderr(True)
+        channel.invoke_shell()
+        return Flow(SocketChannel(channel), echo=echo)
 
 
 class Flow(object):
@@ -496,3 +518,27 @@ class Flow(object):
         """
 
         return cls(TCPServerSocketChannel(host, port), echo=echo)
+
+    @staticmethod
+    def connect_ssh(*args, **kwargs):
+        client = SSHClient()
+        client.connect(*args, **kwargs)
+        return client
+
+    @classmethod
+    def execute_ssh(cls, command, *args, **kwargs):
+        echo = kwargs.pop('echo', False)
+        client = cls.connect_ssh(*args, **kwargs)
+        f = client.execute(command, echo=echo)
+        f.client = client
+        return f
+
+
+    @classmethod
+    def invoke_ssh_shell(cls, *args, **kwargs):
+        pty = kwargs.pop('pty', True)
+        echo = kwargs.pop('echo', False)
+        client = cls.connect_ssh(*args, **kwargs)
+        f = client.invoke_shell(pty=pty, echo=echo)
+        f.client = client
+        return f

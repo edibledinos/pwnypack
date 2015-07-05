@@ -10,6 +10,7 @@ requires = [
     'six',
     'nose',
     'capstone',
+    'paramiko',
 ]
 
 
