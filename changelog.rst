@@ -1,6 +1,17 @@
 Release history
 ###############
 
+0.7.0 (2015-??-??)
+==================
+
+* Made IPython an optional dependency (pip install pwnypack[shell]).
+* Added pickle_call function to easily execute a function on unpickle.
+* Added format string vulnerability exploit builder.
+* Renamed TCPSocketChannel to TCPClientSocketChannel.
+* Added TCPServerSocketChannel which can listen for an incoming connection.
+* Added Flow.interact() method.
+* Added support for connecting to SSH servers from Flow.
+
 0.6.0 (2015-04-14)
 ==================
 
@@ -14,7 +25,6 @@ Release history
 * A reghex compiler.
 * Verifying ROP gadget finder.
 * Disassembler functionality (based on ndisasm or capstone).
-* A more
 * The ability to redirect stderr to stdout in flow.ProcessChannel.
 * The ability to create symlinks for commandline apps.
 * New commandline apps:
