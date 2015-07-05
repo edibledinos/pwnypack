@@ -42,7 +42,7 @@ def fmtstring(offset, writes, written=0, max_width=2, target=None):
 
     written += len(piece_writes) * int(target.bits) / 8
 
-    piece_writes.sort(key=lambda (w, a, v): (v - written) % (2 ** (max_width * 8)))
+    piece_writes.sort(key=lambda w_a_v: (w_a_v[2] - written) % (2 ** (max_width * 8)))
 
     for piece_width, piece_addr, piece_value in piece_writes:
         addrs.append(pwnypack.packing.P(piece_addr, target=target))
