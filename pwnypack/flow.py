@@ -37,7 +37,7 @@ import socket
 __all__ = [
     'ProcessChannel',
     'SocketChannel',
-    'TCPSocketChannel',
+    'TCPClientSocketChannel',
     'Flow',
 ]
 
@@ -200,7 +200,7 @@ class SocketChannel(object):
         self._socket.close()
 
 
-class TCPSocketChannel(SocketChannel):
+class TCPClientSocketChannel(SocketChannel):
     """
     Convenience subclass of :class:`SocketChannel` that allows you to connect
     to a TCP hostname / port pair easily.
@@ -213,7 +213,7 @@ class TCPSocketChannel(SocketChannel):
     def __init__(self, host, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
-        super(TCPSocketChannel, self).__init__(s)
+        super(TCPClientSocketChannel, self).__init__(s)
 
 
 class Flow(object):
@@ -417,8 +417,8 @@ class Flow(object):
     @classmethod
     def connect_tcp(cls, host, port, echo=False):
         """
-        Set up a :class:`TCPSocketChannel` and create a :class:`Flow` instance
-        for it.
+        Set up a :class:`TCPClientSocketChannel` and create a :class:`Flow`
+        instance for it.
 
         Args:
             host(str): The hostname or IP address to connect to.
@@ -430,4 +430,4 @@ class Flow(object):
                 channel.
         """
 
-        return cls(TCPSocketChannel(host, port), echo=echo)
+        return cls(TCPClientSocketChannel(host, port), echo=echo)
