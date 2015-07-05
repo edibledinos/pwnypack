@@ -32,6 +32,7 @@ Examples:
 import subprocess
 import sys
 import socket
+import select
 
 
 __all__ = [
@@ -398,6 +399,20 @@ class Flow(object):
         """
 
         self.channel.kill()
+
+    def interact(self):
+        sockets = [sys.stdin, self.channel]
+        while True:
+            ready = select.select(sockets, [], [])[0]
+
+            if sys.stdin in ready:
+                line = sys.stdin.readline()
+                if not line:
+                    break
+                self.write(line)
+
+            if self.channel in ready:
+                self.read(1, echo=True)
 
     @classmethod
     def execute(cls, executable, *arguments, **kwargs):
