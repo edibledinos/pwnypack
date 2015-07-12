@@ -251,9 +251,12 @@ class SSHClient(paramiko.client.SSHClient):
         super(SSHClient, self).__init__()
         self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
 
-    def execute(self, command, echo=False):
+    def execute(self, command, pty=False, echo=False):
         channel = self.get_transport().open_session()
-        channel.set_combine_stderr(True)
+        if pty:
+            channel.get_pty()
+        else:
+            channel.set_combine_stderr(True)
         channel.exec_command(command)
         return Flow(SocketChannel(channel), echo=echo)
 
@@ -527,9 +530,10 @@ class Flow(object):
 
     @classmethod
     def execute_ssh(cls, command, *args, **kwargs):
+        pty = kwargs.pop('pty', False)
         echo = kwargs.pop('echo', False)
         client = cls.connect_ssh(*args, **kwargs)
-        f = client.execute(command, echo=echo)
+        f = client.execute(command, pty=pty, echo=echo)
         f.client = client
         return f
 
