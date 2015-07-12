@@ -25,6 +25,15 @@ To install the latest released version of pwnypack, use:
 
     $ pip install pwnypack
 
+If your python version is new enough to support IPython, you can optionally
+choose to automatically install it as an optional dependency. The availability
+of IPython enables the pwnypack shell (an IPython session with pwnypack
+pre-imported).
+
+.. code:: bash
+
+    $ pip install pwnypack[shell]
+
 Usage
 -----
 
@@ -57,8 +66,9 @@ Documentation
 Contributors
 ------------
 
-Just me for now. If you want to contribute, feel free to fork and create
-a pull request on `GitHub <https://github.com/edibledinos/pwnypack>`__.
+*pwnypack* was created by Certified Edible Dinosaurs (dsc & doskop). If you
+want to contribute, feel free to fork and create a pull request on
+`GitHub <https://github.com/edibledinos/pwnypack>`__.
 
 License
 -------
