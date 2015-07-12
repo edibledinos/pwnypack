@@ -247,11 +247,34 @@ class TCPServerSocketChannel(SocketChannel):
 
 
 class SSHClient(paramiko.client.SSHClient):
+    """
+    Wrapper around Paramiko's SSHClient that produces Flow instances when
+    calling :meth:`SSHClient.execute` and :meth:`SSHClient.invoke_shell`.
+
+    Since `pwnypack` is usually used for CTFs, the missing host key policy
+    is set to warn and accept.
+    """
+
     def __init__(self):
         super(SSHClient, self).__init__()
         self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
 
     def execute(self, command, pty=False, echo=False):
+        """
+        Execute `command` on the server this :class:`SSHClient` instance is connected
+        to.
+
+        Args:
+            command(str): The command to execute on the remote server.
+            pty(bool): Request a pseudo-terminal from the server. Note: If
+                this is `False` (the default) then `stderr` will be combined
+                into `stdout` to prevent the buffers from filling up.
+            echo(bool): Whether to write the read data to stdout.
+
+        Returns:
+            :class:`Flow`: A Flow instance initialised with the SSH channel.
+        """
+
         channel = self.get_transport().open_session()
         if pty:
             channel.get_pty()
@@ -261,6 +284,20 @@ class SSHClient(paramiko.client.SSHClient):
         return Flow(SocketChannel(channel), echo=echo)
 
     def invoke_shell(self, pty=True, echo=False):
+        """
+        Start a new shell on the server this :class:`SSHClient` is connected
+        to.
+
+        Args:
+            pty(bool): Request a pseudo-terminal from the server. Note: If
+                this is `False` then `stderr` will be combined into `stdout`
+                to prevent the buffers from filling up.
+            echo(bool): Whether to write the read data to stdout.
+
+        Returns:
+            :class:`Flow`: A Flow instance initialised with the SSH channel.
+        """
+
         channel = self.get_transport().open_session()
         if pty:
             channel.get_pty()
@@ -529,12 +566,34 @@ class Flow(object):
 
     @staticmethod
     def connect_ssh(*args, **kwargs):
+        """
+        Create a new connected :class:`SSHClient` instance. All arguments
+        are passed to :meth:`SSHClient.connect`.
+        """
+
         client = SSHClient()
         client.connect(*args, **kwargs)
         return client
 
     @classmethod
     def execute_ssh(cls, command, *args, **kwargs):
+        """execute_ssh(command, arguments..., pty=False, echo=False)
+
+        Execute `command` on a remote server. It first calls
+        :meth:`Flow.connect_ssh` using all positional and keyword
+        arguments, then calls :meth:`SSHClient.execute` with the command
+        and pty / echo options.
+
+        Args:
+            command(str): The command to execute on the remote server.
+            arguments...: The options for the SSH connection.
+            pty(bool): Request a pseudo-terminal from the server.
+            echo(bool): Whether to echo read/written data to stdout by default.
+
+        Returns:
+            :class:`Flow`: A Flow instance initialised with the SSH channel.
+        """
+
         pty = kwargs.pop('pty', False)
         echo = kwargs.pop('echo', False)
         client = cls.connect_ssh(*args, **kwargs)
@@ -545,6 +604,22 @@ class Flow(object):
 
     @classmethod
     def invoke_ssh_shell(cls, *args, **kwargs):
+        """invoke_ssh(arguments..., pty=False, echo=False)
+
+        Star a new shell on a remote server. It first calls
+        :meth:`Flow.connect_ssh` using all positional and keyword
+        arguments, then calls :meth:`SSHClient.invoke_shell` with the
+        pty / echo options.
+
+        Args:
+            arguments...: The options for the SSH connection.
+            pty(bool): Request a pseudo-terminal from the server.
+            echo(bool): Whether to echo read/written data to stdout by default.
+
+        Returns:
+            :class:`Flow`: A Flow instance initialised with the SSH channel.
+        """
+
         pty = kwargs.pop('pty', True)
         echo = kwargs.pop('echo', False)
         client = cls.connect_ssh(*args, **kwargs)
