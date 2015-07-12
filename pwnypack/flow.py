@@ -72,6 +72,11 @@ class ProcessChannel(object):
         )
 
     def fileno(self):
+        """
+        Return the file descriptor number for the stdout channel of this
+        process.
+        """
+
         return self._process.stdout.fileno()
 
     def read(self, n):
@@ -144,6 +149,10 @@ class SocketChannel(object):
         self._socket = sock
 
     def fileno(self):
+        """
+        Return the file descriptor number for the socket.
+        """
+
         return self._socket.fileno()
 
     def read(self, n):
