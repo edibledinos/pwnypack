@@ -1,7 +1,7 @@
 Release history
 ###############
 
-0.7.0 (2015-??-??)
+0.7.0 (2015-07-12)
 ==================
 
 * Made IPython an optional dependency (pip install pwnypack[shell]).
