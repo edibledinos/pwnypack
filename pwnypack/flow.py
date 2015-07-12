@@ -452,6 +452,11 @@ class Flow(object):
         self.channel.kill()
 
     def interact(self):
+        """
+        Interact with the socket. This will send all keyboard input to the
+        socket and input from the socket to the console until an EOF occurs.
+        """
+
         sockets = [sys.stdin, self.channel]
         while True:
             ready = select.select(sockets, [], [])[0]
