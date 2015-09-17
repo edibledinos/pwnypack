@@ -17,11 +17,6 @@ requires = [
 extras_require = {}
 
 
-if (sys.version_info[0] == 2 and sys.version_info[1] >= 7) or \
-        (sys.version_info[0] == 3 and sys.version_info[1] >= 3):
-    extras_require['shell'] = ['IPython']
-
-
 if sys.version_info[:2] < (2, 7):
     requires.extend([
         'counter',

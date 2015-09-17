@@ -25,14 +25,9 @@ To install the latest released version of pwnypack, use:
 
     $ pip install pwnypack
 
-If your python version is new enough to support IPython, you can optionally
-choose to automatically install it as an optional dependency. The availability
-of IPython enables the pwnypack shell (an IPython session with pwnypack
-pre-imported).
-
-.. code:: bash
-
-    $ pip install pwnypack[shell]
+If you want to use the interactive shell I highly recommend installing
+either `bpython` or `ipython` as those packages can make your time in
+the shell a lot more enjoyable.
 
 Usage
 -----
@@ -44,11 +39,14 @@ To import all of *pwnypack* into your global namespace, use:
     >>> from pwny import *
 
 Or, if you're using python 2.7+ or python 3.3+, try the customized
-IPython shell:
+bpython or IPython shell:
 
 .. code:: bash
 
     $ pwny shell
+
+If you have bpython and/or IPython installed you can use ``--bpython``,
+``--ipython`` or ``--python`` to select which interactive kernel to use.
 
 I promise that effort will be put into not exposing unnecessary stuff
 and thus overly polluting your global namespace.
@@ -62,6 +60,13 @@ Documentation
 
 *pwnypack*'s API documentation is hosted on
 `readthedocs <http://pwnypack.readthedocs.org/>`__.
+
+For information on the commandline apps use the built in help function:
+
+.. code:: bash
+
+   $ pwny --help
+   $ pwny shell --help
 
 Contributors
 ------------
