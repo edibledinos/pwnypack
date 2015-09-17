@@ -1,6 +1,11 @@
 Release history
 ###############
 
+next release
+============
+
+* Add support for bpython and plain python interactive shells.
+
 0.7.0 (2015-07-12)
 ==================
 
