@@ -4,8 +4,13 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5"
+addons:
+  apt:
+    packages:
+    - nasm
+sudo: false
 install:
-  - sudo apt-get install -qqy nasm
   - python setup.py install
 script:
   - python setup.py nosetests
