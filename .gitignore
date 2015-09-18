@@ -4,3 +4,4 @@
 .idea
 dist
 docs/_build
+.eggs/

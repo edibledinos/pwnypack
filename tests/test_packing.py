@@ -1,4 +1,5 @@
-from nose.tools import raises
+import pytest
+
 import pwny
 
 
@@ -22,7 +23,7 @@ def test_pack_explicit_target():
     assert pwny.pack('I', 0x41424344, target=target_big_endian) == b'ABCD'
 
 
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_pack_invalid_endian():
     pwny.pack('I', 1, endian='invalid')
 
@@ -43,7 +44,7 @@ def test_unpack_explicit_target():
     assert pwny.unpack('I', b'ABCD', target=target_big_endian) == (0x41424344,)
 
 
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_unpack_invalid_endian():
     pwny.unpack('I', 'AAAA', endian='invalid')
 

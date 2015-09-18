@@ -1,5 +1,7 @@
 import six
 import mock
+import pytest
+
 import pwny
 
 
@@ -101,12 +103,9 @@ headers = [
 ]
 
 
-def test_elf_header_parse():
-    for header in headers:
-        yield check_elf_header_parse, header['data'], header['header']
-
-
-def check_elf_header_parse(data, values):
+@pytest.mark.parametrize('header', headers)
+def test_elf_header_parse(header):
+    data, values = header['data'], header['header']
     elf = pwny.ELF()
     elf._parse_header(data)
     for key, value in values.items():

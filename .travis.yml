@@ -11,7 +11,7 @@ addons:
     - nasm
 sudo: false
 install:
-  - pip install -U setuptools
+  - pip install -U setuptools py pytest
   - python setup.py install
 script:
-  - python setup.py nosetests
+  - python setup.py test
