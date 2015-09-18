@@ -14,9 +14,6 @@ requires = [
 ]
 
 
-extras_require = {}
-
-
 if sys.version_info[:2] < (2, 7):
     requires.extend([
         'counter',
@@ -48,7 +45,6 @@ setup(
     url='https://github.com/edibledinos/pwnypack/',
     download_url='https://github.com/edibledinos/pwnypack/tarball/v%s' % __version__,
     install_requires=requires,
-    extras_require=extras_require,
     tests_require=['mock', 'coverage'],
     entry_points={
         'console_scripts': [
