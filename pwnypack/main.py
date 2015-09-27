@@ -180,6 +180,7 @@ def main():
             if isinstance(output, six.binary_type):
                 writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
                 writer.write(output_bytes)
+                writer.write(end)
                 writer.close()
             else:
                 print(output, end=end)
