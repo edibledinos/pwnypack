@@ -81,7 +81,7 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
             p = subprocess.Popen(
                 [
                     'nasm',
-                    '-o', '/dev/stdout',
+                    '-o', '/proc/self/fd/1',
                     '-f', 'bin',
                     tmp.name,
                 ],
