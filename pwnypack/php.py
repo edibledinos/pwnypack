@@ -24,7 +24,7 @@ def php_serialize(value):
             php_serialize(i) + php_serialize(v)
             for i, v in items
         )
-        return b'a:' + str(len(value)).encode('utf8') + b':{' + content + b'}'
+        return 'a:{0}:'.format(len(value)).encode('utf8') + b'{' + content + b'}'
 
     def serialize_str(prefix, item):
         return prefix + b':' + str(item).encode('utf8') + b';'
@@ -79,9 +79,9 @@ class PhpObject(object):
 
     def _mogrify_key(self, key):
         if key.startswith('protected '):
-            return '\0*\0{}'.format(key.split(' ', 1)[1])
+            return '\0*\0' + key.split(' ', 1)[1]
         elif key.startswith('private '):
-            return '{}{}'.format(self.class_name, key.split(' ', 1)[1])
+            return self.class_name + key.split(' ', 1)[1]
         elif key.startswith('public '):
             return key.split(' ', 1)[1]
         else:
@@ -98,5 +98,5 @@ class PhpObject(object):
             php_serialize(k) + php_serialize(v)
             for k, v in six.iteritems(self.items)
         )
-        return 'O:{}:"{}":{}:'.format(len(self.class_name), self.class_name, len(self.items)).encode('utf8') + \
+        return 'O:{0}:"{1}":{2}:'.format(len(self.class_name), self.class_name, len(self.items)).encode('utf8') + \
             b'{' + properties + b'}'
