@@ -6,6 +6,7 @@ next release
 
 * Add support for bpython and plain python interactive shells.
 * Fix missing newline after the output of several commandline apps.
+* Added PHP serialized data generation function and helper.
 
 0.7.0 (2015-07-12)
 ==================
