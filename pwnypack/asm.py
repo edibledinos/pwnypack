@@ -75,23 +75,25 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
         if target.arch is not pwnypack.target.Target.Arch.x86:
             raise NotImplementedError('nasm only supports x86 target platforms.')
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            tmp.write(('bits %d\norg %d\n%s' % (target.bits.value, addr, code)).encode('utf-8'))
-            tmp.flush()
-            p = subprocess.Popen(
-                [
-                    'nasm',
-                    '-o', '/proc/self/fd/1',
-                    '-f', 'bin',
-                    tmp.name,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            stdout, stderr = p.communicate()
-            if p.returncode:
-                raise SyntaxError(stderr.decode('utf-8'))
-            return stdout
+        with tempfile.NamedTemporaryFile() as tmp_asm:
+            with tempfile.NamedTemporaryFile() as tmp_bin:
+                tmp_asm.write(('bits %d\norg %d\n%s' % (target.bits.value, addr, code)).encode('utf-8'))
+                tmp_asm.flush()
+                p = subprocess.Popen(
+                    [
+                        'nasm',
+                        '-o', tmp_bin.name,
+                        '-f', 'bin',
+                        tmp_asm.name,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                stdout, stderr = p.communicate()
+                if p.returncode:
+                    raise SyntaxError(stderr.decode('utf-8'))
+                tmp_bin.seek(0, 0)
+                return tmp_bin.read()
     else:
         raise NotImplementedError('Unsupported syntax for host platform.')
 
