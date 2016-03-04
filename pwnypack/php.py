@@ -1,6 +1,12 @@
 import six
 
 
+__all__ = [
+    'php_serialize',
+    'PhpObject',
+]
+
+
 def php_serialize(value):
     """
     Serialize a value for use with PHP's deserialize() function. This function
