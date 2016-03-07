@@ -1,8 +1,8 @@
 Release history
 ###############
 
-next release
-============
+0.7.1 (2016-03-07)
+==================
 
 * Add support for bpython and plain python interactive shells.
 * Fix missing newline after the output of several commandline apps.
