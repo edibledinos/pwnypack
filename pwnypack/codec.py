@@ -12,6 +12,7 @@ import codecs
 import pwnypack.main
 import binascii
 from six.moves import range
+from six.moves.urllib.parse import quote, quote_plus, unquote, unquote_plus, urlencode, parse_qs
 try:
     from collections import Counter
 except ImportError:
@@ -26,6 +27,10 @@ __all__ = [
     'dehex',
     'enb64',
     'deb64',
+    'enurlform',
+    'deurlform',
+    'enurlquote',
+    'deurlquote',
     'frequency',
 ]
 
@@ -211,6 +216,80 @@ Example:
 """
 
 
+def enurlform(q):
+    """
+    Convert a dictionary to a URL encoded query string.
+
+    Args:
+        q(dict): The query to encode.
+
+    Returns:
+        str: The urlencoded representation of ``q``.
+
+    Example:
+        >>> from pwny import *
+        >>> enurlform({'foo': 'bar', 'baz': ['quux', 'corge']})
+        'foo=bar&baz=quux&baz=corge'
+    """
+    return urlencode(q, doseq=True)
+
+
+def deurlform(d):
+    """
+    Convert a URL encoded query string to a dictionary.
+
+    Args:
+        d(str): The URL encoded query string.
+
+    Returns:
+        dict: A dictionary containing each key and all its values as a list.
+
+    Example:
+        >>> from pwny import *
+        >>> deurlform('foo=bar&baz=quux&baz=corge')
+        {'foo': ['bar'], 'baz': ['quux', 'corge']}
+    """
+    return parse_qs(d)
+
+
+def enurlquote(v, plus=False):
+    """
+    Percent encode a string for use in an URL.
+
+    Args:
+        v(str): The value to percent encode.
+        plus(bool): Use a plus symbol for spaces, otherwise use %20.
+
+    Returns:
+        str: The percent encoded string.
+
+    Example:
+        >>> from pwny import *
+        >>> enurlquote('Foo Bar/Baz', True)
+        'Foo+Bar/Baz
+    """
+    return quote_plus(v) if plus else quote(v)
+
+
+def deurlquote(d, plus=False):
+    """
+    Decode a percent encoded string.
+
+    Args:
+        d(str): The percent encoded value to decode.
+        plus(bool): Parse a plus symbol as a space.
+
+    Returns:
+        str: The decoded version of the percent encoded of ``d``.
+
+    Example:
+        >>> from pwny import *
+        >>> deurlquote('Foo+Bar/Baz')
+        'Foo Bar/Baz'
+    """
+    return unquote_plus(d) if plus else unquote(d)
+
+
 frequency = lambda v: dict(Counter(v))
 frequency.__doc__ = """
 Perform a frequency analysis on a byte sequence or string.
@@ -337,6 +416,28 @@ def dehex_app(parser, cmd, args):  # pragma: no cover
     parser.add_argument('value', help='the value to base64 decode, read from stdin if omitted', nargs='?')
     args = parser.parse_args(args)
     return dehex(pwnypack.main.string_value_or_stdin(args.value))
+
+
+@pwnypack.main.register('enurlform')
+def enurlform_app(parser, cmd, args):  # pragma: no cover
+    """
+    encode a series of key=value pairs into a query string.
+    """
+
+    parser.add_argument('values', help='the key=value pairs to URL encode', nargs='+')
+    args = parser.parse_args(args)
+    return enurlform(dict(v.split('=', 1) for v in args.values))
+
+
+@pwnypack.main.register('deurlform')
+def deurlform_app(parser, cmd, args):  # pragma: no cover
+    """
+    decode a query string into its key value pairs.
+    """
+
+    parser.add_argument('value', help='the query string to decode')
+    args = parser.parse_args(args)
+    return ' '.join('%s=%s' % (key, value) for key, values in deurlform(args.value).items() for value in values)
 
 
 @pwnypack.main.register('frequency')

@@ -34,5 +34,33 @@ def test_deb64():
     assert pwny.deb64('QUJDRA==') == b'ABCD'
 
 
+def test_deurlform():
+    assert pwny.deurlform('foo=bar&baz=quux&baz=corge') == {'foo': ['bar'], 'baz': ['quux', 'corge']}
+
+
+def test_enurlform():
+    assert pwny.enurlform((('foo', 'bar'), ('baz', ['quux', 'corge']))) == 'foo=bar&baz=quux&baz=corge'
+
+
+def test_enurlquote():
+    assert pwny.enurlquote('Foo Bar/Baz') == 'Foo%20Bar/Baz'
+
+
+def test_enurlquote_plus():
+    assert pwny.enurlquote('Foo Bar/Baz', plus=True) == 'Foo+Bar%2FBaz'
+
+
+def test_deurlquote():
+    assert pwny.deurlquote('Foo%20Bar%2FBaz') == 'Foo Bar/Baz'
+
+
+def test_deurlquote_no_plus():
+    assert pwny.deurlquote('Foo+Bar%2FBaz') == 'Foo+Bar/Baz'
+
+
+def test_deurlquote_plus():
+    assert pwny.deurlquote('Foo+Bar%2FBaz', True) == 'Foo Bar/Baz'
+
+
 def test_frequency():
     assert pwny.frequency('ABCD') == {'A': 1, 'B': 1, 'C': 1, 'D': 1}
