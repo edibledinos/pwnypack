@@ -83,32 +83,31 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
             tmp_bin_fd, tmp_bin_name = tempfile.mkstemp()
             os.close(tmp_bin_fd)
 
-            p = subprocess.Popen(
-                [
-                    'nasm',
-                    '-o', tmp_bin_name,
-                    '-f', 'bin',
-                    tmp_asm.name,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            stdout, stderr = p.communicate()
+            try:
+                p = subprocess.Popen(
+                    [
+                        'nasm',
+                        '-o', tmp_bin_name,
+                        '-f', 'bin',
+                        tmp_asm.name,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                stdout, stderr = p.communicate()
 
-            if os.path.exists(tmp_bin_name):
+                if p.returncode:
+                    raise SyntaxError(stderr.decode('utf-8'))
+
+                tmp_bin = open(tmp_bin_name, 'rb')
+                result = tmp_bin.read()
+                tmp_bin.close()
+                return result
+            finally:
                 try:
-                    tmp_bin = open(tmp_bin_name, 'rb')
-                    result = tmp_bin.read()
-                    tmp_bin.close()
-                finally:
                     os.unlink(tmp_bin_name)
-            else:
-                result = b''
-
-            if p.returncode:
-                raise SyntaxError(stderr.decode('utf-8'))
-
-            return result
+                except OSError:
+                    pass
     else:
         raise NotImplementedError('Unsupported syntax for host platform.')
 
