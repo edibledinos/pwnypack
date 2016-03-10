@@ -1030,7 +1030,7 @@ def checksec_app(parser, _, args):  # pragma: no cover
     elf = ELF(args.file)
 
     relro = 0
-    nx = True
+    nx = False
     pie = 0
     rpath = False
     runpath = False
@@ -1039,8 +1039,8 @@ def checksec_app(parser, _, args):  # pragma: no cover
         if header.type == ELF.ProgramHeader.Type.gnu_relro:
             relro = 1
         elif header.type == ELF.ProgramHeader.Type.gnu_stack:
-            if header.flags == ELF.ProgramHeader.Flags.r | ELF.ProgramHeader.Flags.w | ELF.ProgramHeader.Flags.x:
-                nx = False
+            if not header.flags & ELF.ProgramHeader.Flags.x:
+                nx = True
 
     if elf.type == ELF.Type.shared:
         pie = 1
