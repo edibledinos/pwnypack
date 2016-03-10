@@ -1,6 +1,11 @@
 Release history
 ###############
 
+next release
+============
+
+* Added support for .dynamic section parsing to ELF class.
+
 0.7.1 (2016-03-07)
 ==================
 

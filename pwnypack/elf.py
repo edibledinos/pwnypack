@@ -363,6 +363,160 @@ class ELF(Target):
 
             return self._content
 
+    class DynamicSectionEntry(object):
+        """
+        Contains information about the entry in the .dynamic section.
+
+        Args:
+            type_id(int): The type id of the .dynamic section entry.
+            value(int): The value of the .dynamic section entry.
+        """
+
+        class Type(IntEnum):
+            """
+            Describes the dynamic section entry type.
+            """
+
+            unknown = -1                   #: Unknown dynamic section entry type, check :attr:`type_id`.
+            null = 0                       #: Marks the end of the dynamic section.
+            needed = 1                     #: String table offset of the name of a needed dependency.
+            pltrelsz = 2                   #: Total size of the relocation entries in the PLT.
+            pltgot = 3                     #: Address of PLT/GOT.
+            hash = 4                       #: Address of symbol hash table within SYMTAB.
+            strtab = 5                     #: Address of the string table.
+            symtab = 6                     #: Address of the symbol table.
+            rela = 7                       #: Address of the relocation table.
+            relasz = 8                     #: The size of the relocation table.
+            relaent = 9                    #: The size a relocation table entry.
+            strsz = 10                     #: The size of the string table.
+            syment = 11                    #: The size of a symbol table entry.
+            init = 12                      #: The address of the initialization function.
+            fini = 13                      #: The address of the termination function.
+            soname = 14                    #: String table offset for the name of the shared object.
+            rpath = 15                     #: String table offset of a library search path.
+            symbolic = 16                  #: Object contains symbolic bindings.
+            rel = 17                       #: Similar to rela but with implicit addends.
+            relsz = 18                     #: Size of the rel relocation section.
+            relent = 19                    #: Size of a rel relocation section entry.
+            pltrel = 20                    #: Type of relocation entry in the PLT table. Either rel or rela.
+            debug = 21                     #: Used for debugging.
+            textrel = 22                   #: One or more relocation entries resides in a read-only segement.
+            jmprel = 23                    #: Address of relocation entries that are only associated with the PLT.
+            bind_now = 24                  #: All relocations must be performed before code is executed.
+            init_array = 25                #: Address of array of initialization functions.
+            fini_array = 26                #: Address of array of termination functions.
+            init_arraysz = 27              #: The size of the initialization function array.
+            fini_arraysz = 28              #: The size of the termination function array.
+            runpath = 29                   #: String table offset of a library search path.
+            flags = 30                     #: Flags for this object.
+            preinit_array = 32             #: Address of array of pre-initialization functions.
+            preinit_arraysz = 33           #: Size of pre-initialization function array.
+            max_postags = 34               #: Number of dynamic array tags.
+            sunw_auxiliary = 0x6000000d    #: String table offset for one or more per-symbol, auxiliary filtees.
+            sunw_rtldinf = 0x6000000e      #: Reserved for internal use by the runtime-linker.
+            sunw_filter = 0x6000000e       #: String table offset for one or more per-symbol, standard filtee
+            sunw_cap = 0x60000010          #: Address of the capabilities section.
+            sunw_symtab = 0x60000011       #: Address of symbol table for local function symbols.
+            sunw_symsz = 0x60000012        #: Combined size of regular and local symbol table.
+            sunw_sortent = 0x60000013      #: Size of symbol sort entries.
+            sunw_symsort = 0x60000014      #: Address of symbol sort section.
+            sunw_symsortsz = 0x60000015    #: Size of symbol sort section.
+            sunw_tlssort = 0x60000016      #: Address of thread local symbol sort section.
+            sunw_tlssortsz = 0x60000017    #: Size of thread local symbol sort section.
+            sunw_capinfo = 0x60000018      #: Address of capability requirement symbol association table.
+            sunw_strpad = 0x60000019       #: Size of dynamic string table padding.
+            sunw_capchain = 0x6000001a     #: Address of the array of capability family indices.
+            sunw_ldmach = 0x6000001b       #: Machine architecture of the link-editor that produced this binary.
+            sunw_capchainent = 0x6000001d  #: Size of the capability family index entry size.
+            sunw_capchainsz = 0x6000001f   #: The size of the capability family index array.
+            checksum = 0x6ffffdf8          #: A checksum of selected sections of the object.
+            pltpadsz = 0x6ffffdf9          #: Size of padding of the PLT.
+            moveent = 0x6ffffdfa           #: Size of move table entries.
+            movesz = 0x6ffffdfb            #: Total size of move table.
+            posflags_1 = 0x6ffffdfd        #: State flags applied to next dynamic section entry.
+            syminsz = 0x6ffffdfe           #: Size of the symbol info table.
+            syminent = 0x6ffffdff          #: Size of a sumbol info table entry.
+            gnu_hash = 0x6ffffef5          #: Address of the GNU hash section.
+            config = 0x6ffffefa            #: String table offset to the path of the configuration file.
+            depaudit = 0x6ffffefb          #: String table offset defining an audit library.
+            audit = 0x6ffffefc             #: String table offset defining an audit library.
+            pltpad = 0x6ffffefd            #: Address of the padding of the PLT.
+            movetab = 0x6ffffefe           #: Address of the move table.
+            syminfo = 0x6ffffeff           #: Address of the symbol info table.
+            relacount = 0x6ffffff9         #: Relative relocation count.
+            relcount = 0x6ffffffa          #: Relative relocation count.
+            flags_1 = 0x6ffffffb           #: Object-specific flags.
+            verdef = 0x6ffffffc            #: Address of the version definition table.
+            verdefnum = 0x6ffffffd         #: Number of entries in the version definition table.
+            verneed = 0x6ffffffe           #: Address of the version dependency table.
+            verneednum = 0x6fffffff        #: Number of entries in the version dependency table.
+            sparc_register = 0x70000001    #: STT_SPARC_REGISTER symbol index within the symbol table.
+            auxiliary = 0x7ffffffd         #: String table offset that names an auxiliary file.
+            used = 0x7ffffffe              #: Same as needed.
+
+        class Flags(IntEnum):
+            """
+            Flags when :attr:`~ELF.DynamicSectionEntry.type` is :attr:`~ELF.DynamicSectionEntry.Type.flags`.
+            """
+
+            origin = 1 << 0      #: $ORIGIN processing is required.
+            symbolic = 1 << 1    #: Symbol resolution is required.
+            textrel = 1 << 2     #: Text relocations exist.
+            bind_now = 1 << 3    #: Non-lazy binding required.
+            static_tls = 1 << 4  #: Object uses static thread local storage.
+
+        class Flags_1(IntEnum):
+            """
+            Flags when :attr:`~ELF.DynamicSectionEntry.type` is :attr:`~ELF.DynamicSectionEntry.Type.flags_1`.
+            """
+
+            now = 1 << 0          #: Perform complete relocation processing.
+            global_ = 1 << 1      #: Unused.
+            group = 1 << 2        #: Object is a member of a group.
+            nodelete = 1 << 3     #: Object cannot be removed from a process.
+            loadfltr = 1 << 4     #: Make sure filtees are loaded immediately.
+            initfirst = 1 << 5    #: Objects' initialization occurs first.
+            noopen = 1 << 6       #: Object cannot be used with dlopen.
+            origin = 1 << 7       #: $ORIGIN processing is required.
+            direct = 1 << 8       #: Direct bindings are enabled.
+            interpose = 1 << 9    #: Object is an interposer.
+            nodeflib = 1 << 10    #: Ignore the default library search path.
+            nodump = 1 << 11      #: Object cannot be dumped.
+            confalt = 1 << 12     #: Object is a configuration alternative.
+            endfiltee = 1 << 13   #: Filtee terminates filter's search.
+            dispreldne = 1 << 14  #: Displacement relocation has been completed.
+            disprelpnd = 1 << 15  #: Displacement relocation is pending.
+            nodirect = 1 << 16    #: Object contains non-direct bindings.
+            ignmuldef = 1 << 17   #: Reserved for internal use.
+            noksyms = 1 << 18     #: Reserved for internal use.
+            nohdr = 1 << 19       #: Reserved for internal use.
+            edited = 1 << 20      #: Object has been modified since it was built.
+            noreloc = 1 << 21     #: Reserved for internal use.
+            symintpose = 1 << 22  #: Individual symbol interposers exist.
+            globaudit = 1 << 23   #: Global auditing is enabled.
+            singleton = 1 << 24   #: Singleton symbols exist.
+
+        class Posflags_1(IntEnum):
+            """
+            Flags when :attr:`~ELF.DynamicSectionEntry.type` is :attr:`ELF.DynamicSectionEntry.Type.posflags_1`.
+            """
+
+            lazyload = 1 << 0   #: Identify lazily loaded dependency.
+            groupperm = 1 << 1  #: Identify group dependency.
+
+        type_id = None  #: The numerical type of this entry.
+        type = None     #: The resolved type of this entry (one of :class:`~ELF.DynamicSectionEntry.Type`).
+        value = None    #: The value of this entry.
+
+        def __init__(self, type_id, value):
+            self.type_id = type_id
+            self.value = value
+
+            try:
+                self.type = self.Type(self.type_id)
+            except ValueError:
+                self.type = self.Type.unknown
+
     class Type(IntEnum):
         """
         Describes the object type.
@@ -523,6 +677,7 @@ class ELF(Target):
     _program_headers = None
     _symbols_by_index = None
     _symbols_by_name = None
+    _dynamic_section_entries = None
 
     def __init__(self, f=None):
         super(ELF, self).__init__()
@@ -760,6 +915,45 @@ class ELF(Target):
             return self._symbols_by_index[symbol]
         else:
             return self._symbols_by_name[symbol]
+
+    def _ensure_dynamic_section_loaded(self):
+        if self._dynamic_section_entries is None:
+            data = self.get_section_header('.dynamic').content
+            if self.bits == 32:
+                fmt = 'iI'
+            else:
+                fmt = 'QQ'
+            fmt_size = pack_size(fmt)
+            self._dynamic_section_entries = [
+                self.DynamicSectionEntry(*unpack(fmt, data[i:i + fmt_size], target=self))
+                for i in range(0, len(data), fmt_size)
+            ]
+
+    @property
+    def dynamic_section_entries(self):
+        """
+        A list of entries in the .dynamic section.
+        """
+
+        self._ensure_dynamic_section_loaded()
+        return self._dynamic_section_entries
+
+    def get_dynamic_section_entry(self, index):
+        """
+        Get a specific .dynamic section entry by index.
+
+        Args:
+            symbol(int): The index of the .dynamic section entry to return.
+
+        Returns:
+            ELF.DynamicSectionEntry: The .dynamic section entry.
+
+        Raises:
+            KeyError: The requested entry does not exist.
+        """
+
+        self._ensure_dynamic_section_loaded()
+        return self._dynamic_section_entries[index]
 
 
 @pwnypack.main.register(name='symbols')
