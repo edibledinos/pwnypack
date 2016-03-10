@@ -1017,3 +1017,53 @@ def extract_symbol_app(parser, _, args):  # pragma: no cover
     parser.add_argument('symbol', help='the symbol to extract')
     args = parser.parse_args(args)
     return ELF(args.file).get_symbol(args.symbol).content
+
+
+@pwnypack.main.register(name='checksec')
+def checksec_app(parser, _, args):  # pragma: no cover
+    """
+    Check security features of an ELF file.
+    """
+
+    parser.add_argument('file', help='ELF file to check security features of')
+    args = parser.parse_args(args)
+    elf = ELF(args.file)
+
+    relro = 0
+    nx = True
+    pie = 0
+    rpath = False
+    runpath = False
+
+    for header in elf.program_headers:
+        if header.type == ELF.ProgramHeader.Type.gnu_relro:
+            relro = 1
+        elif header.type == ELF.ProgramHeader.Type.gnu_stack:
+            if header.flags == ELF.ProgramHeader.Flags.r | ELF.ProgramHeader.Flags.w | ELF.ProgramHeader.Flags.x:
+                nx = False
+
+    if elf.type == ELF.Type.shared:
+        pie = 1
+
+    for entry in elf.dynamic_section_entries:
+        if entry.type == elf.DynamicSectionEntry.Type.bind_now and relro == 1:
+            relro = 2
+        elif entry.type == elf.DynamicSectionEntry.Type.debug and pie == 1:
+            pie = 2
+        elif entry.type == elf.DynamicSectionEntry.Type.rpath:
+            rpath = True
+        elif entry.type == elf.DynamicSectionEntry.Type.runpath:
+            runpath = True
+
+    try:
+        elf.get_symbol('__stack_chk_fail')
+        canary = True
+    except KeyError:
+        canary = False
+
+    print(('No RELRO', 'Partial RELRO', 'Full RELRO')[relro])
+    print('Canary found' if canary else 'No canary found')
+    print('NX enabled' if nx else 'NX disabled')
+    print(('No PIE', 'DSO', 'PIE enabled')[pie])
+    print('RPATH' if rpath else 'No RPATH')
+    print('RUNPATH' if runpath else 'No RUNPATH')
