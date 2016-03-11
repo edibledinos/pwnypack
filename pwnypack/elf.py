@@ -706,8 +706,16 @@ class ELF(Target):
 
         (type_, machine, version), data = unpack('HHI', data[:8], endian=self.endian), data[8:]
 
-        self.type = self.Type(type_)
-        self.machine = ELF.Machine(machine)
+        try:
+            self.type = self.Type(type_)
+        except ValueError:
+            self.type = self.Type.unknown
+
+        try:
+            self.machine = ELF.Machine(machine)
+        except ValueError:
+            self.machine = ELF.Machine.unknown
+
         assert version == 1, 'Invalid version'
 
         if self.machine is ELF.Machine.i386:
