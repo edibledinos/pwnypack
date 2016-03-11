@@ -23,6 +23,8 @@ def read_file(filename):
 
 
 setup(
+    setup_requires=['setuptools>=17.1'],
+
     name='pwnypack',
     packages=['pwny', 'pwnypack'],
     version=__version__,
