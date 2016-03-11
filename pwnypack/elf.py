@@ -1040,7 +1040,7 @@ def checksec_app(_parser, _, args):  # pragma: no cover
     import csv
     import os.path
 
-    def checksec(elf, path):
+    def checksec(elf, path, fortifiable_funcs):
         relro = 0
         nx = False
         pie = 0
@@ -1073,11 +1073,22 @@ def checksec_app(_parser, _, args):  # pragma: no cover
             elif entry.type == ELF.DynamicSectionEntry.Type.runpath:
                 runpath = True
 
-        try:
-            elf.get_symbol('__stack_chk_fail')
-            canary = True
-        except KeyError:
-            canary = False
+        rtl_symbol_names = set((
+            symbol.name
+            for symbol in elf.symbols
+            if symbol.shndx == ELF.Symbol.SpecialSection.undef
+        ))
+
+        fortified = set()
+        fortifiable = set()
+        for symbol_name in rtl_symbol_names:
+            if symbol_name in fortifiable_funcs:
+                fortified.add(symbol_name)
+                fortifiable.add(symbol_name)
+            elif '__%s_chk' % symbol_name in fortifiable_funcs:
+                fortifiable.add('__%s_chk' % symbol_name)
+
+        canary = '__stack_chk_fail' in rtl_symbol_names
 
         return {
             'path': path,
@@ -1087,12 +1098,17 @@ def checksec_app(_parser, _, args):  # pragma: no cover
             'rpath': rpath,
             'runpath': runpath,
             'canary': canary,
+            'fortified': len(fortified),
+            'fortifiable': len(fortifiable),
         }
 
-    def check_paths(paths):
+    def check_paths(paths, fortifiable_funcs):
         for path in paths:
             if os.path.isdir(path):
-                for data in check_paths(os.path.join(path, fn) for fn in os.listdir(path) if fn not in ('.', '..')):
+                for data in check_paths(
+                        (os.path.join(path, fn) for fn in os.listdir(path) if fn not in ('.', '..')),
+                        fortifiable_funcs,
+                ):
                     yield data
             else:
                 try:
@@ -1100,7 +1116,7 @@ def checksec_app(_parser, _, args):  # pragma: no cover
                 except:
                     continue
 
-                yield checksec(elf, path)
+                yield checksec(elf, path, fortifiable_funcs)
 
     parser = argparse.ArgumentParser(
         prog=_parser.prog,
@@ -1114,24 +1130,54 @@ def checksec_app(_parser, _, args):  # pragma: no cover
         default='text',
         help='set output format'
     )
+    parser.add_argument(
+        '-l', '--libc',
+        dest='libc',
+        help='path to the applicable libc.so'
+    )
     args = parser.parse_args(args)
 
+    if args.libc:
+        libc = ELF(args.libc)
+        fortifiable_funcs = set([
+            symbol.name
+            for symbol in libc.symbols
+            if symbol.name.startswith('__') and symbol.name.endswith('_chk')
+        ])
+    else:
+        fortifiable_funcs = set('''__wctomb_chk __wcsncat_chk __mbstowcs_chk __strncpy_chk __syslog_chk __mempcpy_chk
+                                   __fprintf_chk __recvfrom_chk __readlinkat_chk __wcsncpy_chk __fread_chk
+                                   __getlogin_r_chk __vfwprintf_chk __recv_chk __strncat_chk __printf_chk __confstr_chk
+                                   __pread_chk __ppoll_chk __ptsname_r_chk __wcscat_chk __snprintf_chk __vwprintf_chk
+                                   __memset_chk __memmove_chk __gets_chk __fgetws_unlocked_chk __asprintf_chk __poll_chk
+                                   __fdelt_chk __fgets_unlocked_chk __strcat_chk __vsyslog_chk __stpcpy_chk
+                                   __vdprintf_chk __strcpy_chk __obstack_printf_chk __getwd_chk __pread64_chk
+                                   __wcpcpy_chk __fread_unlocked_chk __dprintf_chk __fgets_chk __wcpncpy_chk
+                                   __obstack_vprintf_chk __wprintf_chk __getgroups_chk __wcscpy_chk __vfprintf_chk
+                                   __fgetws_chk __vswprintf_chk __ttyname_r_chk __mbsrtowcs_chk
+                                   __wmempcpy_chk __wcsrtombs_chk __fwprintf_chk __read_chk __getcwd_chk __vsnprintf_chk
+                                   __memcpy_chk __wmemmove_chk __vasprintf_chk __sprintf_chk __vprintf_chk
+                                   __mbsnrtowcs_chk __wcrtomb_chk __realpath_chk __vsprintf_chk __wcsnrtombs_chk
+                                   __gethostname_chk __swprintf_chk __readlink_chk __wmemset_chk __getdomainname_chk
+                                   __wmemcpy_chk __longjmp_chk __stpncpy_chk __wcstombs_chk'''.split())
+
     if args.format == 'text':
-        print('RELRO    CANARY  NX   PIE  RPATH  RUNPATH  PATH')
-        for data in check_paths(args.path):
-            print('{:7}  {:6}  {:3}  {:3}  {:5}  {:7}  {}'.format(
+        print('RELRO    CANARY  NX   PIE  RPATH  RUNPATH  FORTIFIED  PATH')
+        for data in check_paths(args.path, fortifiable_funcs):
+            print('{:7}  {:6}  {:3}  {:3}  {:5}  {:7}  {:>9}  {}'.format(
                 ('No', 'Partial', 'Full')[data['relro']],
                 'Yes' if data['canary'] else 'No',
                 'Yes' if data['nx'] else 'No',
                 ('No', 'DSO', 'Yes')[data['pie']],
                 'Yes' if data['rpath'] else 'No',
                 'Yes' if data['runpath'] else 'No',
+                '{}/{}'.format(data['fortified'], data['fortifiable']),
                 data['path']
             ))
     else:
         writer = csv.writer(sys.stdout)
-        writer.writerow(['path', 'relro', 'canary', 'nx', 'pie', 'rpath', 'runpath'])
-        for data in check_paths(args.path):
+        writer.writerow(['path', 'relro', 'canary', 'nx', 'pie', 'rpath', 'runpath', 'fortified', 'fortifiable'])
+        for data in check_paths(args.path, fortifiable_funcs):
             writer.writerow([
                 data['path'],
                 ('no', 'partial', 'full')[data['relro']],
@@ -1140,4 +1186,6 @@ def checksec_app(_parser, _, args):  # pragma: no cover
                 ('no', 'dso', 'yes')[data['pie']],
                 'yes' if data['rpath'] else 'no',
                 'yes' if data['runpath'] else 'no',
+                data['fortified'],
+                data['fortifiable'],
             ])
