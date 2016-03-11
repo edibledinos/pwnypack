@@ -14,18 +14,6 @@ requires = [
 ]
 
 
-if sys.version_info[:2] < (2, 7):
-    requires.extend([
-        'counter',
-        'ordereddict',
-        'argparse',
-    ])
-
-
-if sys.version_info[:2] < (3, 4):
-    requires.append('enum34')
-
-
 def read_file(filename):
     try:
         with open(os.path.join(os.path.dirname(__file__), filename)) as f:
@@ -45,6 +33,10 @@ setup(
     url='https://github.com/edibledinos/pwnypack/',
     download_url='https://github.com/edibledinos/pwnypack/tarball/v%s' % __version__,
     install_requires=requires,
+    extras_require={
+        ':python_version<"2.7"': ['counter', 'ordereddict', 'argparse'],
+        ':python_version<"3.4"': ['enum34'],
+    },
     tests_require=['mock', 'coverage'],
     entry_points={
         'console_scripts': [

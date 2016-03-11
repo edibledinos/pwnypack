@@ -5,4 +5,4 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-python setup.py sdist upload -r "$1"
+python setup.py sdist bdist_wheel upload -r "$1"
