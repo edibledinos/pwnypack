@@ -1,11 +1,12 @@
 Release history
 ###############
 
-next release
-============
+0.7.2 (2016-03-11)
+==================
 
 * Added support for .dynamic section parsing to ELF class.
 * Added checksec command line app.
+* Make pwnypack available as a universal wheel.
 
 0.7.1 (2016-03-07)
 ==================
