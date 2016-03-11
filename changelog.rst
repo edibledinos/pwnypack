@@ -5,6 +5,7 @@ next release
 ============
 
 * Added support for .dynamic section parsing to ELF class.
+* Added checksec command line app.
 
 0.7.1 (2016-03-07)
 ==================

@@ -3,6 +3,8 @@ This module contains a parser for, and methods to extract information from
 ELF files.
 """
 
+from __future__ import print_function
+
 from pwnypack.target import Target
 from pwnypack.packing import U16, U32, unpack, pack_size
 import pwnypack.main
@@ -1028,50 +1030,114 @@ def extract_symbol_app(parser, _, args):  # pragma: no cover
 
 
 @pwnypack.main.register(name='checksec')
-def checksec_app(parser, _, args):  # pragma: no cover
+def checksec_app(_parser, _, args):  # pragma: no cover
     """
     Check security features of an ELF file.
     """
 
-    parser.add_argument('file', help='ELF file to check security features of')
+    import sys
+    import argparse
+    import csv
+    import os.path
+
+    def checksec(elf, path):
+        relro = 0
+        nx = False
+        pie = 0
+        rpath = False
+        runpath = False
+
+        for header in elf.program_headers:
+            if header.type == ELF.ProgramHeader.Type.gnu_relro:
+                relro = 1
+            elif header.type == ELF.ProgramHeader.Type.gnu_stack:
+                if not header.flags & ELF.ProgramHeader.Flags.x:
+                    nx = True
+
+        if elf.type == ELF.Type.shared:
+            pie = 1
+
+        for entry in elf.dynamic_section_entries:
+            if entry.type == ELF.DynamicSectionEntry.Type.bind_now and relro == 1:
+                relro = 2
+            elif entry.type == ELF.DynamicSectionEntry.Type.flags and \
+                    entry.value & ELF.DynamicSectionEntry.Flags.bind_now:
+                relro = 2
+            elif entry.type == ELF.DynamicSectionEntry.Type.flags_1 and \
+                    entry.value & ELF.DynamicSectionEntry.Flags_1.now:
+                relro = 2
+            elif entry.type == ELF.DynamicSectionEntry.Type.debug and pie == 1:
+                pie = 2
+            elif entry.type == ELF.DynamicSectionEntry.Type.rpath:
+                rpath = True
+            elif entry.type == ELF.DynamicSectionEntry.Type.runpath:
+                runpath = True
+
+        try:
+            elf.get_symbol('__stack_chk_fail')
+            canary = True
+        except KeyError:
+            canary = False
+
+        return {
+            'path': path,
+            'relro': relro,
+            'nx': nx,
+            'pie': pie,
+            'rpath': rpath,
+            'runpath': runpath,
+            'canary': canary,
+        }
+
+    def check_paths(paths):
+        for path in paths:
+            if os.path.isdir(path):
+                for data in check_paths(os.path.join(path, fn) for fn in os.listdir(path) if fn not in ('.', '..')):
+                    yield data
+            else:
+                try:
+                    elf = ELF(path)
+                except:
+                    continue
+
+                yield checksec(elf, path)
+
+    parser = argparse.ArgumentParser(
+        prog=_parser.prog,
+        description=_parser.description,
+    )
+    parser.add_argument('path', nargs='+', help='ELF file to check security features of')
+    parser.add_argument(
+        '-f', '--format',
+        dest='format',
+        choices=['text', 'csv'],
+        default='text',
+        help='set output format'
+    )
     args = parser.parse_args(args)
-    elf = ELF(args.file)
 
-    relro = 0
-    nx = False
-    pie = 0
-    rpath = False
-    runpath = False
-
-    for header in elf.program_headers:
-        if header.type == ELF.ProgramHeader.Type.gnu_relro:
-            relro = 1
-        elif header.type == ELF.ProgramHeader.Type.gnu_stack:
-            if not header.flags & ELF.ProgramHeader.Flags.x:
-                nx = True
-
-    if elf.type == ELF.Type.shared:
-        pie = 1
-
-    for entry in elf.dynamic_section_entries:
-        if entry.type == elf.DynamicSectionEntry.Type.bind_now and relro == 1:
-            relro = 2
-        elif entry.type == elf.DynamicSectionEntry.Type.debug and pie == 1:
-            pie = 2
-        elif entry.type == elf.DynamicSectionEntry.Type.rpath:
-            rpath = True
-        elif entry.type == elf.DynamicSectionEntry.Type.runpath:
-            runpath = True
-
-    try:
-        elf.get_symbol('__stack_chk_fail')
-        canary = True
-    except KeyError:
-        canary = False
-
-    print(('No RELRO', 'Partial RELRO', 'Full RELRO')[relro])
-    print('Canary found' if canary else 'No canary found')
-    print('NX enabled' if nx else 'NX disabled')
-    print(('No PIE', 'DSO', 'PIE enabled')[pie])
-    print('RPATH' if rpath else 'No RPATH')
-    print('RUNPATH' if runpath else 'No RUNPATH')
+    if args.format == 'text':
+        print('RELRO    CANARY  NX   PIE  RPATH  RUNPATH  PATH')
+        for data in check_paths(args.path):
+            print('{:7}  {:6}  {:3}  {:3}  {:5}  {:7}  {}'.format(
+                ('No', 'Partial', 'Full')[data['relro']],
+                'Yes' if data['canary'] else 'No',
+                'Yes' if data['nx'] else 'No',
+                ('No', 'DSO', 'Yes')[data['pie']],
+                'Yes' if data['rpath'] else 'No',
+                'Yes' if data['runpath'] else 'No',
+                data['path']
+            ))
+    else:
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['path', 'relro', 'canary', 'nx', 'pie', 'rpath', 'runpath'])
+        for data in check_paths(args.path):
+            writer.writerow([
+                data['path'],
+                ('no', 'partial', 'full')[data['relro']],
+                'yes' if data['canary'] else 'no',
+                'yes' if data['nx'] else 'no',
+                ('no', 'dso', 'yes')[data['pie']],
+                'yes' if data['rpath'] else 'no',
+                'yes' if data['runpath'] else 'no',
+            ])
