@@ -1073,20 +1073,14 @@ def checksec_app(_parser, _, args):  # pragma: no cover
             elif entry.type == ELF.DynamicSectionEntry.Type.runpath:
                 runpath = True
 
-        rtl_symbol_names = set((
+        rtl_symbol_names = set(
             symbol.name
             for symbol in elf.symbols
-            if symbol.shndx == ELF.Symbol.SpecialSection.undef
-        ))
+            if symbol.name and symbol.shndx == ELF.Symbol.SpecialSection.undef
+        )
 
-        fortified = set()
-        fortifiable = set()
-        for symbol_name in rtl_symbol_names:
-            if symbol_name in fortifiable_funcs:
-                fortified.add(symbol_name)
-                fortifiable.add(symbol_name)
-            elif '__%s_chk' % symbol_name in fortifiable_funcs:
-                fortifiable.add('__%s_chk' % symbol_name)
+        fortified = fortifiable_funcs & rtl_symbol_names
+        unfortified = fortifiable_funcs & set('__%s_chk' % symbol_name for symbol_name in rtl_symbol_names)
 
         canary = '__stack_chk_fail' in rtl_symbol_names
 
@@ -1099,7 +1093,8 @@ def checksec_app(_parser, _, args):  # pragma: no cover
             'runpath': runpath,
             'canary': canary,
             'fortified': len(fortified),
-            'fortifiable': len(fortifiable),
+            'unfortified': len(unfortified),
+            'fortifiable': len(fortified | unfortified),
         }
 
     def check_paths(paths, fortifiable_funcs):
@@ -1171,12 +1166,13 @@ def checksec_app(_parser, _, args):  # pragma: no cover
                 ('No', 'DSO', 'Yes')[data['pie']],
                 'Yes' if data['rpath'] else 'No',
                 'Yes' if data['runpath'] else 'No',
-                '{}/{}'.format(data['fortified'], data['fortifiable']),
+                '{}/{}/{}'.format(data['fortified'], data['unfortified'], data['fortifiable']),
                 data['path']
             ))
     else:
         writer = csv.writer(sys.stdout)
-        writer.writerow(['path', 'relro', 'canary', 'nx', 'pie', 'rpath', 'runpath', 'fortified', 'fortifiable'])
+        writer.writerow(['path', 'relro', 'canary', 'nx', 'pie', 'rpath', 'runpath', 'fortified', 'unfortified',
+                         'fortifiable'])
         for data in check_paths(args.path, fortifiable_funcs):
             writer.writerow([
                 data['path'],
@@ -1187,5 +1183,6 @@ def checksec_app(_parser, _, args):  # pragma: no cover
                 'yes' if data['rpath'] else 'no',
                 'yes' if data['runpath'] else 'no',
                 data['fortified'],
+                data['unfortified'],
                 data['fortifiable'],
             ])
