@@ -73,14 +73,8 @@ def shell(_parser, cmd, args):  # pragma: no cover
         embed(pwny_locals, banner=BANNER)
     elif args.shell == 'ipython':
         from IPython import start_ipython
-        from IPython.config import get_config
-
-        config = get_config()
-        config.InteractiveShell.confirm_exit = False
         start_ipython(
-            argv=[],
-            config=config,
-            user_ns=pwny_locals,
+            argv=['--ext=pwnypack.ipython_ext'],
         )
     else:
         import code
