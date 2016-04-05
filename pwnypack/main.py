@@ -112,7 +112,7 @@ def symlink(parser, cmd, args):
             print('Not creating symlink %s (file already exists)' % dest)
 
 
-def main():
+def main(args=sys.argv):
     def usage():
         global MAIN_FUNCTIONS
         print('Welcome to pwny!')
@@ -131,11 +131,11 @@ def main():
 
     global MAIN_FUNCTIONS
 
-    app = os.path.basename(sys.argv[0])
-    app_args = sys.argv[1:]
+    app = os.path.basename(args[0])
+    app_args = args[1:]
 
     if app not in MAIN_FUNCTIONS:
-        if len(sys.argv) < 2 or app_args[0] not in MAIN_FUNCTIONS:
+        if len(args) < 2 or app_args[0] not in MAIN_FUNCTIONS:
             usage()
         prog = '%s %s' % (app, app_args[0])
         app, app_args = app_args[0], app_args[1:]
