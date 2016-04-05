@@ -159,7 +159,7 @@ def main():
         dest='no_newline',
         action='store_const',
         const=True,
-        help='inhibit newline after output'
+        help='inhibit newline after output (off when run from tty)'
     )
 
     output = f(parser, app, app_args)
@@ -171,7 +171,7 @@ def main():
             output_bytes = output
 
         args = parser.parse_args(app_args)
-        if args.no_newline:
+        if args.no_newline or not sys.stdout.isatty():
             end = ''
         else:
             end = '\n'
