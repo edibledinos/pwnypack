@@ -179,8 +179,8 @@ def main():
         if args.format == 'raw':
             if isinstance(output, six.binary_type):
                 writer = io.open(sys.stdout.fileno(), mode='wb', closefd=False)
-                writer.write(output_bytes)
-                writer.write(end)
+                writer.write(output)
+                writer.write(end if not six.PY3 else os.fsencode(end))
                 writer.close()
             else:
                 print(output, end=end)
