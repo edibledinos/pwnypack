@@ -928,7 +928,11 @@ class ELF(Target):
 
     def _ensure_dynamic_section_loaded(self):
         if self._dynamic_section_entries is None:
-            data = self.get_section_header('.dynamic').content
+            try:
+                section = self.get_section_header('.dynamic')
+                data = section.content
+            except KeyError:
+                data = []
             if self.bits == 32:
                 fmt = 'iI'
             else:
