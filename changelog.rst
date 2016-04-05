@@ -7,6 +7,8 @@ next release
 * Return empty list when trying to read non-existing .dynamic section.
 * Don't print newline when piping the output of a gadget.
 * Fix output of raw binary data on python 3.
+* Add pwnypack extension for ipython.
+* Add pwnypack jupyter notebook wrapper.
 
 0.7.2 (2016-03-11)
 ==================
