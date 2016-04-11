@@ -13,7 +13,7 @@ class PickleInvoke(object):
         self.func = func
         self.args = args
 
-    def __call__(self):
+    def __call__(self):  # pragma: no cover
         pass
 
     def __reduce__(self):
@@ -83,7 +83,7 @@ def pickle_func(func, *args):
 
     orig_function_type = types.FunctionType
 
-    def FunctionType(*args, **kwargs):
+    def FunctionType(*args, **kwargs):  # pragma: no cover
         return orig_function_type(*args, **kwargs)
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
