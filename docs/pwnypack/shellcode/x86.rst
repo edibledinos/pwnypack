@@ -1,0 +1,6 @@
+:mod:`~pwnypack.shellcode.x86` -- X86
+=====================================
+
+.. autoclass:: pwnypack.shellcode.x86.X86
+    :members:
+    :show-inheritance:

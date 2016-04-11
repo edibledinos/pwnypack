@@ -9,39 +9,43 @@ __all__ = ['X86']
 
 
 class X86(BaseEnvironment):
-    target = Target(arch=Target.Arch.x86, bits=32)
+    """
+    Environment that targets a generic, unrestricted X86 architecture.
+    """
+
+    target = Target(arch=Target.Arch.x86, bits=32)  #: Target architecture
 
     # 8-bit registers on X86
-    AL = Register('al')
-    AH = Register('ah')
-    BL = Register('bl')
-    BH = Register('bh')
-    CL = Register('cl')
-    CH = Register('ch')
-    DL = Register('dl')
-    DH = Register('dh')
+    AL = Register('al')  #: al register
+    AH = Register('ah')  #: ah register
+    BL = Register('bl')  #: bl register
+    BH = Register('bh')  #: bh register
+    CL = Register('cl')  #: cl register
+    CH = Register('ch')  #: ch register
+    DL = Register('dl')  #: dl register
+    DH = Register('dh')  #: dh register
 
     # 16-bit registers on X86
-    AX = Register('ax')
-    BX = Register('bx')
-    CX = Register('cx')
-    DX = Register('dx')
-    SI = Register('si')
-    DI = Register('di')
-    SP = Register('sp')
-    BP = Register('bp')
-    IP = Register('ip')
+    AX = Register('ax')  #: ax register
+    BX = Register('bx')  #: bx register
+    CX = Register('cx')  #: cx register
+    DX = Register('dx')  #: dx register
+    SI = Register('si')  #: si register
+    DI = Register('di')  #: di register
+    SP = Register('sp')  #: sp register
+    BP = Register('bp')  #: bp register
+    IP = Register('ip')  #: ip register
 
     # 32-bit registers on X86
-    EAX = Register('eax')
-    EBX = Register('ebx')
-    ECX = Register('ecx')
-    EDX = Register('edx')
-    ESI = Register('esi')
-    EDI = Register('edi')
-    ESP = Register('esp')
-    EBP = Register('ebp')
-    EIP = Register('eip')
+    EAX = Register('eax')  #: eax register
+    EBX = Register('ebx')  #: ebx register
+    ECX = Register('ecx')  #: ecx register
+    EDX = Register('edx')  #: edx register
+    ESI = Register('esi')  #: esi register
+    EDI = Register('edi')  #: edi register
+    ESP = Register('esp')  #: esp register
+    EBP = Register('ebp')  #: ebp register
+    EIP = Register('eip')  #: eip register
 
     TEMP_REG = {
         32: EAX,

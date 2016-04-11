@@ -17,10 +17,18 @@ __all__ = ['BaseEnvironment']
 
 
 class BaseEnvironment(object):
+    """
+    The abstract base for all shellcode environments.
+    """
+
     class TranslateOutput(IntEnum):
-        code = 0
-        assembly = 1
-        meta = 2
+        """
+        Output format the translate function.
+        """
+
+        code = 0  #: Emit binary, executable code.
+        assembly = 1  #: Emit assembly source.
+        meta = 2  #: Emit the declarative version of the translated function.
 
     def __init__(self):
         self.data = OrderedDict()
@@ -40,6 +48,17 @@ class BaseEnvironment(object):
         return offset
 
     def alloc_data(self, value):
+        """
+        Allocate a piece of data that will be included in the shellcode body.
+
+        Arguments:
+            value(...): The value to add to the shellcode. Can be bytes or
+                string type.
+
+        Returns:
+            ~pwnypack.types.Offset: The offset used to address the data.
+        """
+
         if isinstance(value, six.binary_type):
             return self._alloc_data(value)
         elif isinstance(value, six.text_type):
@@ -48,6 +67,16 @@ class BaseEnvironment(object):
             raise TypeError('No idea how to encode %s' % repr(value))
 
     def alloc_buffer(self, length):
+        """
+        Allocate a buffer (a range of uninitialized memory).
+
+        Arguments:
+            length(int): The length of the buffer to allocate.
+
+        Returns:
+            ~pwnypack.types.Buffer: The object used to address this buffer.
+        """
+
         buf = Buffer(sum(len(v) for v in six.iterkeys(self.data)) + sum(v.length for v in self.buffers), length)
         self.buffers.append(buf)
         return buf
@@ -103,6 +132,16 @@ class BaseEnvironment(object):
         raise NotImplementedError('Target does not define finalize method')
 
     def compile(self, ops):
+        """
+        Translate a list of operations into its assembler source.
+
+        Arguments:
+            ops(list): A list of shellcode operations.
+
+        Returns:
+            str: The assembler source code that implements the shellcode.
+        """
+
         def _compile():
             code = []
 
@@ -122,10 +161,32 @@ class BaseEnvironment(object):
         return '\n'.join(self.finalize(_compile(), self.data))
 
     def assemble(self, ops):
+        """
+        Assemble a list of operations into executable code.
+
+        Arguments:
+            ops(list): A list of shellcode operations.
+
+        Returns:
+            bytes: The executable code that implements the shellcode.
+        """
+
         return pwnypack.asm.asm(self.compile(ops), target=self.target)
 
     @classmethod
     def translate(cls, output=TranslateOutput.code):
+        """
+        Decorator that turns a function into a shellcode emitting function.
+
+        Arguments:
+            output(~pwnypack.shellcode.base.BaseEnvironment.TranslateOutput): The output
+                format the shellcode function will produce.
+
+        Returns:
+            A decorator that will translate the given function into a
+            shellcode generator
+        """
+
         def decorator(f):
             @functools.wraps(f)
             def proxy(*args, **kwargs):

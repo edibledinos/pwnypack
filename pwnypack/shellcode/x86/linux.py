@@ -8,14 +8,18 @@ __all__ = ['LinuxX86', 'LinuxX86NullSafeMutable']
 
 
 class LinuxX86(Linux, X86):
-    sys_iopl = SyscallDef('sys_iopl', NUMERIC)
-    sys_vm86old = SyscallDef('sys_vm86old', PTR)
-    sys_sigreturn = SyscallDef('sys_sigreturn')
-    sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)
-    sys_vm86 = SyscallDef('sys_vm86', NUMERIC, NUMERIC)
-    sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn')
-    sys_set_thread_area = SyscallDef('sys_set_thread_area', PTR)
-    sys_get_thread_area = SyscallDef('sys_get_thread_area', PTR)
+    """
+    An environment that targets a generic Linux X86_64 machine.
+    """
+
+    sys_iopl = SyscallDef('sys_iopl', NUMERIC)  #:
+    sys_vm86old = SyscallDef('sys_vm86old', PTR)  #:
+    sys_sigreturn = SyscallDef('sys_sigreturn')  #:
+    sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)  #:
+    sys_vm86 = SyscallDef('sys_vm86', NUMERIC, NUMERIC)  #:
+    sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn')  #:
+    sys_set_thread_area = SyscallDef('sys_set_thread_area', PTR)  #:
+    sys_get_thread_area = SyscallDef('sys_get_thread_area', PTR)  #:
 
     SYSCALL_REG = X86.EAX
     SYSCALL_ARG_MAP = [X86.EBX, X86.ECX, X86.EDX, X86.ESI, X86.EDI]
@@ -381,4 +385,7 @@ class LinuxX86(Linux, X86):
 
 
 class LinuxX86NullSafeMutable(X86NullSafeMutable, LinuxX86):
-    pass
+    """
+    An environment that targets a Linux X86_32 machine in a writable segment
+    that emits no NUL bytes or carriage return characters.
+    """

@@ -8,11 +8,15 @@ __all__ = ['LinuxX86_64', 'LinuxX86_64NullSafeMutable']
 
 
 class LinuxX86_64(Linux, X86_64):
-    sys_mmap = SyscallDef('sys_mmap', NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)
-    sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn')
-    sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)
-    sys_arch_prctl = SyscallDef('sys_arch_prctl', NUMERIC, NUMERIC)
-    sys_iopl = SyscallDef('sys_iopl', NUMERIC)
+    """
+    An environment that targets a generic Linux X86_64 machine.
+    """
+
+    sys_mmap = SyscallDef('sys_mmap', NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
+    sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn')  #:
+    sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)  #:
+    sys_arch_prctl = SyscallDef('sys_arch_prctl', NUMERIC, NUMERIC)  #:
+    sys_iopl = SyscallDef('sys_iopl', NUMERIC)  #:
 
     SYSCALL_REG = X86_64.RAX
     SYSCALL_ARG_MAP = [X86_64.RDI, X86_64.RSI, X86_64.RDX, X86_64.R10]
@@ -334,4 +338,7 @@ class LinuxX86_64(Linux, X86_64):
 
 
 class LinuxX86_64NullSafeMutable(X86_64NullSafeMutable, LinuxX86_64):
-    pass
+    """
+    An environment that targets a Linux X86_64 machine in a writable segment
+    that emits no NUL bytes or carriage return characters.
+    """

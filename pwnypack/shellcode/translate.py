@@ -14,6 +14,21 @@ __all__ = ['translate']
 
 
 def translate(env, func, *args, **kwargs):
+    """
+    Given a shellcode environment, a function and its parameters, translate
+    the function to binary shellcode.
+
+    Arguments:
+        env(~pwnypack.shellcode.base.Base): An instance of a shellcode
+            environment.
+        func(callable): The function to translate to shellcode.
+        args(...): The positional arguments for the function.
+        kwargs(...): The keyword arguments for the function.
+
+    Returns:
+        bytes: The translated shellcode.
+    """
+
     func_code = six.get_function_code(func)
     ops = bc.disassemble(func_code.co_code)
 
