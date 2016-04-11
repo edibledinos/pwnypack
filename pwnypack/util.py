@@ -3,20 +3,21 @@ The util module contains various utility functions.
 """
 
 from __future__ import print_function
-import argparse
-from six.moves import range, cPickle
-import re
-import binascii
-import sys
-import pwnypack.main
-import pwnypack.codec
 
+import argparse
+import binascii
+import re
+import sys
+
+from six.moves import range
+
+import pwnypack.codec
+import pwnypack.main
 
 __all__ = [
     'cycle',
     'cycle_find',
     'reghex',
-    'pickle_call',
 ]
 
 
@@ -157,34 +158,6 @@ def reghex(pattern):
         return re.compile(b_pattern)
     except (TypeError, binascii.Error, re.error):
         raise SyntaxError('Invalid reghex pattern.')
-
-
-def pickle_call(func, *args):
-    """
-    Create a byte sequence which when unpickled calls a callable with given
-    arguments.
-
-    Arguments:
-        func(callable): The function to call or class to instantiate.
-        args(tuple): The arguments to call the callable with.
-
-    Returns:
-        bytes: The data that when unpickled calls ``func(*args)``.
-
-    Example:
-        >>> from pwny import *
-        >>> import pickle
-        >>> def hello(arg):
-        ...     print('Hello, %s!' % arg)
-        ...
-        >>> pickle.loads(pickle_call(hello, 'world'))
-        Hello, world!
-    """
-
-    class CallFunc(object):
-        def __reduce__(self):
-            return func, tuple(args)
-    return cPickle.dumps(CallFunc(), 0)
 
 
 @pwnypack.main.register('cycle')
