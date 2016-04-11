@@ -7,5 +7,4 @@ package.
 .. toctree::
    :glob:
 
-   pwnypack.*
-
+   pwnypack/*

@@ -1,7 +1,7 @@
-:mod:`pwnypack.elf` -- ELF file parsing
+:mod:`~pwnypack.pickle` -- Pickle tools
 =======================================
 
-.. automodule:: pwnypack.elf
+.. automodule:: pwnypack.pickle
     :members:
     :undoc-members:
     :show-inheritance:

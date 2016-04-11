@@ -1,5 +1,5 @@
-:mod:`pwnypack.rop` -- ROP gadgets
-==================================
+:mod:`~pwnypack.rop` -- ROP gadgets
+===================================
 
 .. automodule:: pwnypack.rop
     :members:

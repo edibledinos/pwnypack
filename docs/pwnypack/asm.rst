@@ -1,5 +1,5 @@
-:mod:`pwnypack.asm` -- (Dis)assembler
-=====================================
+:mod:`~pwnypack.asm` -- (Dis)assembler
+======================================
 
 .. automodule:: pwnypack.asm
     :members:
