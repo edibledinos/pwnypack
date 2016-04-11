@@ -10,3 +10,4 @@ from pwnypack.pwnbook import *
 from pwnypack.rop import *
 from pwnypack.fmtstring import *
 from pwnypack.php import *
+from pwnypack.pickle import *

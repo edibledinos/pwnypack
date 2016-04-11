@@ -9,6 +9,8 @@ next release
 * Fix output of raw binary data on python 3.
 * Add pwnypack extension for ipython.
 * Add pwnypack jupyter notebook wrapper.
+* Moved and renamed util.pickle_call to pickle.pickle_invoke.
+* Added pickle_func that pickles a function and its invocation.
 
 0.7.2 (2016-03-11)
 ==================
