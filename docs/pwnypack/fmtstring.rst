@@ -1,5 +1,5 @@
-:mod:`pwnypack.fmtstring` -- Format strings
-===========================================
+:mod:`~pwnypack.fmtstring` -- Format strings
+============================================
 
 .. automodule:: pwnypack.fmtstring
     :members:

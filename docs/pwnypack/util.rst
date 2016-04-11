@@ -1,5 +1,5 @@
-:mod:`pwnypack.util` -- Utility functions
-=========================================
+:mod:`~pwnypack.util` -- Utility functions
+==========================================
 
 .. automodule:: pwnypack.util
     :members:

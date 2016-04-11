@@ -1,7 +1,7 @@
-:mod:`pwnypack.php` -- PHP related functions
+:mod:`~pwnypack.packing` -- Data (un)packing
 ============================================
 
-.. automodule:: pwnypack.php
+.. automodule:: pwnypack.packing
     :members:
     :undoc-members:
     :show-inheritance:

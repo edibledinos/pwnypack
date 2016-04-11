@@ -1,5 +1,5 @@
-:mod:`pwnypack.target` -- Target definition
-===========================================
+:mod:`~pwnypack.target` -- Target definition
+============================================
 
 .. automodule:: pwnypack.target
     :members:
