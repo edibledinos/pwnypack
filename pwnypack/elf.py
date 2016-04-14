@@ -654,6 +654,7 @@ class ELF(Target):
         nsk = 14      #: Hewlett-Packard Non-Stop Kernel
         aros = 15     #: Amiga Research OS
         arch = 64     #: Architecture specific ABI
+        arm = 97      #: ARM ABI
 
     _ELF_MAGIC = b'\x7fELF'
 
