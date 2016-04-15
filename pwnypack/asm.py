@@ -278,6 +278,30 @@ def prepare_capstone(syntax=AsmSyntax.att, target=None):
             md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
         else:
             md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    elif target.arch == pwnypack.target.Target.Arch.arm:
+        mode = 0
+
+        if target.bits is pwnypack.target.Target.Bits.bits_32:
+            arch = capstone.CS_ARCH_ARM
+
+            if target.mode and pwnypack.target.Target.Mode.arm_thumb:
+                mode = capstone.CS_MODE_THUMB
+            else:
+                mode = capstone.CS_MODE_ARM
+                if target.mode and pwnypack.target.Target.Mode.arm_m_class:
+                    mode |= capstone.CS_MODE_MCLASS
+
+            if target.mode and pwnypack.target.Target.Mode.arm_v8:
+                mode |= capstone.CS_MODE_V8
+        else:
+            arch = capstone.CS_ARCH_ARM64
+
+        if target.endian is pwnypack.target.Target.Endian.little:
+            mode |= capstone.CS_MODE_LITTLE_ENDIAN
+        else:
+            mode |= capstone.CS_MODE_BIG_ENDIAN
+
+        md = capstone.Cs(arch, mode)
     else:
         raise NotImplementedError('Only x86 is currently supported.')
 
@@ -293,16 +317,16 @@ def prepare_capstone(syntax=AsmSyntax.att, target=None):
     return md
 
 
-def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
-    """disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
-
+def disasm(code, addr=0, syntax=None, target=None):
+    """
     Disassemble machine readable code into human readable statements.
 
     Args:
         code(bytes): The machine code that is to be disassembled.
         addr(int): The memory address of the code (used for relative
             references).
-        syntax(AsmSyntax): The output assembler syntax.
+        syntax(AsmSyntax): The output assembler syntax. This defaults to
+            nasm on x86 architectures, AT&T on all other architectures.
         target(~pwnypack.target.Target): The architecture for which the code
             was written.  The global target is used if this argument is
             ``None``.
@@ -322,6 +346,12 @@ def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
 
     if target is None:
         target = pwnypack.target.target
+
+    if syntax is None:
+        if target.arch is pwnypack.target.Target.Arch.x86:
+            syntax = AsmSyntax.nasm
+        else:
+            syntax = AsmSyntax.att
 
     if syntax is AsmSyntax.nasm:
         if target.arch is not pwnypack.target.Target.Arch.x86:
@@ -462,13 +492,16 @@ def disasm_symbol_app(_parser, _, args):  # pragma: no cover
     parser.add_argument(
         '--syntax', '-s',
         choices=AsmSyntax.__members__.keys(),
-        default='nasm',
+        default=None,
     )
     parser.add_argument('file', help='ELF file to extract a symbol from')
     parser.add_argument('symbol', help='the symbol to disassemble')
 
     args = parser.parse_args(args)
-    syntax = AsmSyntax.__members__[args.syntax]
+    if args.syntax is not None:
+        syntax = AsmSyntax.__members__[args.syntax]
+    else:
+        syntax = None
     elf = ELF(args.file)
     symbol = elf.get_symbol(args.symbol)
     print('\n'.join(disasm(symbol.content, symbol.value, syntax=syntax, target=elf)))
