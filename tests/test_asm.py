@@ -1,33 +1,62 @@
 from nose.tools import raises
+from nose.plugins.skip import SkipTest
 import pwny
-
-
-SOURCE_ASM = 'mov al, [0xced]'
-RESULT_BIN_32 = b'\xa0\xed\x0c\x00\x00'
-RESULT_BIN_64 = b'\x8a\x04%\xed\x0c\x00\x00'
-
-
-SOURCE_DISASM = b'\x5f'
-RESULT_DISASM_32 = ['pop edi']
-RESULT_DISASM_64 = ['pop rdi']
 
 
 target_x86_32 = pwny.Target('x86', 32)
 target_x86_64 = pwny.Target('x86', 64)
-target_arm_32 = pwny.Target('arm', 32)
+target_arm_32_le = pwny.Target('arm', 32, pwny.Target.Endian.little)
+target_arm_32_be = pwny.Target('arm', 32, pwny.Target.Endian.big)
+target_armv7m_32_le = pwny.Target('arm', 32, pwny.Target.Endian.little, mode=pwny.Target.Mode.arm_m_class)
+target_armv7m_32_be = pwny.Target('arm', 32, pwny.Target.Endian.big, mode=pwny.Target.Mode.arm_m_class)
+target_arm_64_le = pwny.Target('arm', 64, pwny.Target.Endian.little)
+# target_arm_64_be = pwny.Target('arm', 64, pwny.Target.Endian.big)
+target_unknown_32 = pwny.Target('unknown', 32, pwny.Target.Endian.little)
 
 
-def test_asm_with_default_target():
+ASM_TESTS = [
     # Note: set up sets default arch to x86 32bit
-    assert pwny.asm(SOURCE_ASM) == RESULT_BIN_32
+    (None, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
+    (target_x86_32, None, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
+    (target_x86_32, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
+    (target_x86_32, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\xa0\xed\x0c\x00\x00'),
+
+    (target_x86_64, None, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
+    (target_x86_64, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
+    (target_x86_64, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\x8a\x04%\xed\x0c\x00\x00'),
+
+    (target_arm_32_le, None, 'add r0, r1, #0', b'\x00\x00\x81\xe2'),
+    (target_arm_32_le, pwny.AsmSyntax.att, 'add r0, r1, #0', b'\x00\x00\x81\xe2'),
+
+    (target_arm_32_be, None, 'add r0, r1, #0', b'\xe2\x81\x00\x00'),
+    (target_arm_32_be, pwny.AsmSyntax.att, 'add r0, r1, #0', b'\xe2\x81\x00\x00'),
+
+    (target_armv7m_32_le, None, 'push {r0}', b'\x01\xb4'),
+    (target_armv7m_32_le, pwny.AsmSyntax.att, 'push {r0}', b'\x01\xb4'),
+
+    (target_armv7m_32_be, None, 'push {r0}', b'\xb4\x01'),
+    (target_armv7m_32_be, pwny.AsmSyntax.att, 'push {r0}', b'\xb4\x01'),
+
+    (target_arm_64_le, None, 'add x0, x1, #0', b' \x00\x00\x91'),
+    (target_arm_64_le, pwny.AsmSyntax.att, 'add x0, x1, #0', b' \x00\x00\x91'),
+
+    # (target_arm_64_be, None, 'add x0, x1, #0', b'\x91\x00\x00 '),
+    # (target_arm_64_be, pwny.AsmSyntax.att, 'add x0, x1, #0', b'\x91\x00\x00 '),
+]
 
 
-def test_asm_with_target_x86_32():
-    assert pwny.asm(SOURCE_ASM, target=target_x86_32) == RESULT_BIN_32
+def check_asm(target, syntax, source, result):
+    try:
+        output = pwny.asm(source, syntax=syntax, target=target)
+    except RuntimeError:
+        # Toolchain wasn't found. Unfortunate, but unavoidable on travis-ci atm.
+        raise SkipTest('No suitable binutils was found for %s' % target)
+    assert output == result, 'Got %r, expected %r' % (output, result)
 
 
-def test_asm_with_target_x86_64():
-    assert pwny.asm(SOURCE_ASM, target=target_x86_64) == RESULT_BIN_64
+def test_asm():
+    for target, syntax, source, result in ASM_TESTS:
+        yield check_asm, target, syntax, source, result
 
 
 @raises(SyntaxError)
@@ -37,23 +66,24 @@ def test_asm_syntax_error():
 
 @raises(NotImplementedError)
 def test_asm_unsupported_target():
-    pwny.asm(SOURCE_ASM, target=target_arm_32)
+    pwny.asm('mov al, [0xced]', target=target_unknown_32)
 
 
-def test_disasm_with_default_target():
-    # Note: set up sets default arch to x86 32bit
-    assert pwny.disasm(SOURCE_DISASM) == RESULT_DISASM_32
+@raises(NotImplementedError)
+def test_asm_nasm_unsupported_arch():
+    pwny.asm('mov al, [0xced]', syntax=pwny.AsmSyntax.nasm, target=target_arm_64_le)
 
 
-def test_disasm_with_target_x86_32():
-    assert pwny.disasm(SOURCE_DISASM, target=target_x86_32) == RESULT_DISASM_32
+def check_disasm(target, syntax, source, result):
+    output = pwny.disasm(source, syntax=syntax, target=target)
+    assert output == result, 'Got %r, expected %r' % (output, result)
 
 
-def test_disasm_with_target_x86_64():
-    print(RESULT_DISASM_64, pwny.disasm(SOURCE_DISASM, target=target_x86_64))
-    assert pwny.disasm(SOURCE_DISASM, target=target_x86_64) == RESULT_DISASM_64
+def test_disasm():
+    for target, syntax, result, source in ASM_TESTS:
+        yield check_disasm, target, syntax, source, [result]
 
 
 @raises(NotImplementedError)
 def test_disasm_unsupported_target():
-    pwny.disasm(SOURCE_DISASM, target=target_arm_32)
+    pwny.disasm(b'\x5f', target=target_unknown_32)

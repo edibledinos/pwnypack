@@ -247,7 +247,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
             try:
                 os.unlink(tmp_out_name)
             except OSError:
-                pass
+                pass  # pragma: no cover
 
     else:
         raise NotImplementedError('Unsupported syntax for host platform.')
