@@ -2,21 +2,30 @@
 This module contains functions to assemble and disassemble code for a given
 target platform.
 
-Currently, the only supported architecture is
-:attr:`~pwnypack.target.Target.Arch.x86` (both 32 and 64 bits variants).
+Currently, the only supported architectures are
+:attr:`~pwnypack.target.Target.Arch.x86` (both 32 and 64 bits variants) and
+:attr:`~pwnypack.target.Target.Arch.arm` (both 32 and 64 bits variants).
 Assembly is performed by the *nasm* assembler (only supports
-:attr:`~AsmSyntax.nasm` syntax). Disassembly is performed by *ndisasm*
-(:attr:`~AsmSyntax.nasm` syntax) or *capstone*
+:attr:`~AsmSyntax.nasm` syntax on x86) or *gnu as* (supports
+:attr:`~AsmSyntax.att` syntax on x86 and arm). Disassembly is performed by
+*ndisasm* (:attr:`~AsmSyntax.nasm` syntax) or *capstone*
 (:attr:`~AsmSyntax.intel` & :attr:`~AsmSyntax.att` syntax).
 """
 
 from __future__ import print_function
+
+try:
+    import shutilwhich
+except ImportError:
+    pass
+
 import argparse
 import os
 import subprocess
 import sys
 import capstone
 from enum import IntEnum
+import shutil
 from pwnypack.elf import ELF
 import pwnypack.target
 import pwnypack.main
@@ -31,6 +40,32 @@ __all__ = [
 ]
 
 
+BINUTILS_SUFFIXES = [
+    'none-eabi-',
+    'unknown-linux-gnu-',
+    'linux-gnu-',
+    'linux-gnueabi-',
+]
+BINUTILS_PREFIXES = {}
+
+
+def find_binutils_prefix(arch):
+    global BINUTILS_PREFIXES
+
+    prefix = BINUTILS_PREFIXES.get(arch)
+    if prefix is not None:
+        return prefix
+
+    for suffix in BINUTILS_SUFFIXES:
+        prefix = '%s-%s' % (arch, suffix)
+        if shutil.which('%sas' % prefix) and \
+                shutil.which('%sld' % prefix):
+            BINUTILS_PREFIXES[arch] = prefix
+            return prefix
+    else:
+        raise RuntimeError('Could not locate a suitable binutils for %s.' % arch)
+
+
 class AsmSyntax(IntEnum):
     """
     This enumeration is used to specify the assembler syntax.
@@ -41,17 +76,25 @@ class AsmSyntax(IntEnum):
     att = 2    #: AT&T assembler syntax
 
 
-def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
-    """asm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
-
+def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
+    """
     Assemble statements into machine readable code.
 
     Args:
         code(str): The statements to assemble.
         addr(int): The memory address where the code will run.
-        syntax(AsmSyntax): The input assembler syntax.
+        syntax(AsmSyntax): The input assembler syntax. Defaults to nasm
+            on x86/x86_64, AT&T on other platforms.
         target(~pwnypack.target.Target): The target architecture. The
             global target is used if this argument is ``None``.
+        gnu_binutils_prefix(str): When the syntax is AT&T, gnu binutils'
+            as and ld will be used. By default, it selects
+            ``arm-*-as/ld`` for 32bit ARM targets,
+            ``aarch64-*-as/ld`` for 64 bit ARM targets,
+            ``i386-*-as/ld`` for 32bit X86 targets and
+            ``amd64-*-as/ld`` for 64bit X86 targets (all for various flavors
+            of ``*``. This option allows you to pick a different toolchain.
+            The prefix should always end with a '-' (or be empty).
 
     Returns:
         bytes: The assembled machine code.
@@ -71,6 +114,12 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
 
     if target is None:
         target = pwnypack.target.target
+
+    if syntax is None:
+        if target.arch is pwnypack.target.Target.Arch.x86:
+            syntax = AsmSyntax.nasm
+        else:
+            syntax = AsmSyntax.att
 
     if syntax is AsmSyntax.nasm:
         if target.arch is not pwnypack.target.Target.Arch.x86:
@@ -108,6 +157,98 @@ def asm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
                     os.unlink(tmp_bin_name)
                 except OSError:
                     pass
+    elif syntax is AsmSyntax.att:
+        as_flags = []
+        ld_flags = []
+
+        if target.arch is pwnypack.target.Target.Arch.x86:
+            if target.bits == 32:
+                binutils_arch = 'i386'
+            else:
+                binutils_arch = 'amd64'
+            ld_flags.extend(['--oformat', 'binary'])
+        elif target.arch is pwnypack.target.Target.Arch.arm:
+            if target.bits == 32:
+                binutils_arch = 'arm'
+                if target.mode & pwnypack.target.Target.Mode.arm_v8:
+                    as_flags.append('-march=armv8-a')
+                elif target.mode & pwnypack.target.Target.Mode.arm_m_class:
+                    as_flags.append('-march=armv7m')
+            else:
+                binutils_arch = 'aarch64'
+
+            if target.endian is pwnypack.target.Target.Endian.little:
+                as_flags.append('-mlittle-endian')
+                ld_flags.append('-EL')
+            else:
+                as_flags.append('-mbig-endian')
+                ld_flags.append('-EB')
+
+            if target.mode & pwnypack.target.Target.Mode.arm_thumb:
+                as_flags.append('-mthumb')
+        else:
+            raise NotImplementedError('pwnypack only supports AT&T syntax on x86 and arm.')
+
+        if gnu_binutils_prefix is None:
+            gnu_binutils_prefix = find_binutils_prefix(binutils_arch)
+
+        tmp_out_fd, tmp_out_name = tempfile.mkstemp()
+        try:
+            os.close(tmp_out_fd)
+
+            p = subprocess.Popen(
+                [
+                    '%sas' % gnu_binutils_prefix,
+                    '-o', tmp_out_name
+                ] + as_flags,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = p.communicate(code)
+
+            if p.returncode:
+                raise SyntaxError(stderr.decode('utf-8'))
+
+            tmp_bin_fd, tmp_bin_name = tempfile.mkstemp()
+            try:
+                os.close(tmp_bin_fd)
+
+                p = subprocess.Popen(
+                    [
+                        '%sld' % gnu_binutils_prefix,
+                        '-Ttext', str(addr),
+                    ] + ld_flags + [
+                        '-o', tmp_bin_name,
+                        tmp_out_name,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                stdout, stderr = p.communicate()
+
+                if p.returncode:
+                    raise SyntaxError(stderr.decode('utf-8'))
+
+                if 'binary' in ld_flags:
+                    tmp_bin = open(tmp_bin_name, 'rb')
+                    result = tmp_bin.read()
+                    tmp_bin.close()
+                    return result
+                else:
+                    tmp_bin = ELF(tmp_bin_name)
+                    return tmp_bin.get_section_header('.text').content
+            finally:
+                try:
+                    os.unlink(tmp_bin_name)
+                except OSError:
+                    pass
+        finally:
+            try:
+                os.unlink(tmp_out_name)
+            except OSError:
+                pass  # pragma: no cover
+
     else:
         raise NotImplementedError('Unsupported syntax for host platform.')
 
@@ -137,6 +278,30 @@ def prepare_capstone(syntax=AsmSyntax.att, target=None):
             md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
         else:
             md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    elif target.arch == pwnypack.target.Target.Arch.arm:
+        mode = 0
+
+        if target.bits is pwnypack.target.Target.Bits.bits_32:
+            arch = capstone.CS_ARCH_ARM
+
+            if target.mode and pwnypack.target.Target.Mode.arm_thumb:
+                mode = capstone.CS_MODE_THUMB
+            else:
+                mode = capstone.CS_MODE_ARM
+                if target.mode and pwnypack.target.Target.Mode.arm_m_class:
+                    mode |= capstone.CS_MODE_MCLASS
+
+            if target.mode and pwnypack.target.Target.Mode.arm_v8:
+                mode |= capstone.CS_MODE_V8
+        else:
+            arch = capstone.CS_ARCH_ARM64
+
+        if target.endian is pwnypack.target.Target.Endian.little:
+            mode |= capstone.CS_MODE_LITTLE_ENDIAN
+        else:
+            mode |= capstone.CS_MODE_BIG_ENDIAN
+
+        md = capstone.Cs(arch, mode)
     else:
         raise NotImplementedError('Only x86 is currently supported.')
 
@@ -152,16 +317,16 @@ def prepare_capstone(syntax=AsmSyntax.att, target=None):
     return md
 
 
-def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
-    """disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None)
-
+def disasm(code, addr=0, syntax=None, target=None):
+    """
     Disassemble machine readable code into human readable statements.
 
     Args:
         code(bytes): The machine code that is to be disassembled.
         addr(int): The memory address of the code (used for relative
             references).
-        syntax(AsmSyntax): The output assembler syntax.
+        syntax(AsmSyntax): The output assembler syntax. This defaults to
+            nasm on x86 architectures, AT&T on all other architectures.
         target(~pwnypack.target.Target): The architecture for which the code
             was written.  The global target is used if this argument is
             ``None``.
@@ -181,6 +346,12 @@ def disasm(code, addr=0, syntax=AsmSyntax.nasm, target=None):
 
     if target is None:
         target = pwnypack.target.target
+
+    if syntax is None:
+        if target.arch is pwnypack.target.Target.Arch.x86:
+            syntax = AsmSyntax.nasm
+        else:
+            syntax = AsmSyntax.att
 
     if syntax is AsmSyntax.nasm:
         if target.arch is not pwnypack.target.Target.Arch.x86:
@@ -234,7 +405,7 @@ def asm_app(parser, cmd, args):  # pragma: no cover
     parser.add_argument(
         '--syntax', '-s',
         choices=AsmSyntax.__members__.keys(),
-        default='nasm',
+        default=None,
     )
     parser.add_argument(
         '--address', '-o',
@@ -245,7 +416,10 @@ def asm_app(parser, cmd, args):  # pragma: no cover
 
     args = parser.parse_args(args)
     target = pwnypack.main.target_from_arguments(args)
-    syntax = AsmSyntax.__members__[args.syntax]
+    if args.syntax is not None:
+        syntax = AsmSyntax.__members__[args.syntax]
+    else:
+        syntax = None
     if args.source is None:
         args.source = sys.stdin.read()
     else:
@@ -318,13 +492,16 @@ def disasm_symbol_app(_parser, _, args):  # pragma: no cover
     parser.add_argument(
         '--syntax', '-s',
         choices=AsmSyntax.__members__.keys(),
-        default='nasm',
+        default=None,
     )
     parser.add_argument('file', help='ELF file to extract a symbol from')
     parser.add_argument('symbol', help='the symbol to disassemble')
 
     args = parser.parse_args(args)
-    syntax = AsmSyntax.__members__[args.syntax]
+    if args.syntax is not None:
+        syntax = AsmSyntax.__members__[args.syntax]
+    else:
+        syntax = None
     elf = ELF(args.file)
     symbol = elf.get_symbol(args.symbol)
     print('\n'.join(disasm(symbol.content, symbol.value, syntax=syntax, target=elf)))

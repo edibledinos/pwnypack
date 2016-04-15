@@ -38,6 +38,7 @@ setup(
     extras_require={
         ':python_version<"2.7"': ['counter', 'ordereddict', 'argparse'],
         ':python_version<"3.4"': ['enum34'],
+        ':python_version<"3.3"': ['shutilwhich'],
     },
     tests_require=['mock', 'coverage'],
     entry_points={

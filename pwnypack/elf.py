@@ -654,6 +654,7 @@ class ELF(Target):
         nsk = 14      #: Hewlett-Packard Non-Stop Kernel
         aros = 15     #: Amiga Research OS
         arch = 64     #: Architecture specific ABI
+        arm = 97      #: ARM ABI
 
     _ELF_MAGIC = b'\x7fELF'
 
@@ -706,7 +707,8 @@ class ELF(Target):
         self.osabi = self.OSABI(osabi)
         self.abi_version = abi_version
 
-        (type_, machine, version), data = unpack('HHI', data[:8], endian=self.endian), data[8:]
+        endian = Target.Endian(byte_order - 1)
+        (type_, machine, version), data = unpack('HHI', data[:8], endian=endian), data[8:]
 
         try:
             self.type = self.Type(type_)
@@ -723,11 +725,11 @@ class ELF(Target):
         if self.machine is ELF.Machine.i386:
             arch = Target.Arch.x86
             assert word_size == 1, 'Unexpected ELF64 for machine type x86'
-            assert byte_order == 1, 'Unexpected big-endian for machine type x86'
+            assert endian is Target.Endian.little, 'Unexpected big-endian for machine type x86'
         elif self.machine is ELF.Machine.x86_64:
             arch = Target.Arch.x86
             assert word_size == 2, 'Unexpected ELF32 for machine type x64_64'
-            assert byte_order == 1, 'Unexpected big-endian for machine type x86'
+            assert endian is Target.Endian.little, 'Unexpected big-endian for machine type x86'
         elif self.machine is ELF.Machine.arm:
             arch = Target.Arch.arm
             assert word_size == 1, 'Unexpected ELF64 for machine type arm'
@@ -739,7 +741,7 @@ class ELF(Target):
 
         self.arch = arch
         self.bits = 32 * word_size
-        self.endian = byte_order - 1
+        self.endian = endian
 
         if self.bits == 32:
             fmt = 'IIIIHHHHHH'
