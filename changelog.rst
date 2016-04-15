@@ -11,6 +11,8 @@ next release
 * Add pwnypack jupyter notebook wrapper.
 * Moved and renamed util.pickle_call to pickle.pickle_invoke.
 * Added pickle_func that pickles a function and its invocation.
+* Added support for using GNU binutils to assemble AT&T syntax.
+* Added support for assembling / disassembling ARM.
 
 0.7.2 (2016-03-11)
 ==================
