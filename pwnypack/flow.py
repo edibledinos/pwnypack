@@ -33,7 +33,11 @@ import subprocess
 import sys
 import socket
 import select
-import paramiko
+try:
+    import paramiko
+    HAVE_PARAMIKO = True
+except ImportError:
+    HAVE_PARAMIKO = False
 
 
 __all__ = [
@@ -255,65 +259,70 @@ class TCPServerSocketChannel(SocketChannel):
         super(TCPServerSocketChannel, self).__init__(cs)
 
 
-class SSHClient(paramiko.client.SSHClient):
-    """
-    Wrapper around Paramiko's SSHClient that produces Flow instances when
-    calling :meth:`SSHClient.execute` and :meth:`SSHClient.invoke_shell`.
-
-    Since `pwnypack` is usually used for CTFs, the missing host key policy
-    is set to warn and accept.
-    """
-
-    def __init__(self):
-        super(SSHClient, self).__init__()
-        self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
-
-    def execute(self, command, pty=False, echo=False):
+if HAVE_PARAMIKO:
+    class SSHClient(paramiko.client.SSHClient):
         """
-        Execute `command` on the server this :class:`SSHClient` instance is connected
-        to.
+        Wrapper around Paramiko's SSHClient that produces Flow instances when
+        calling :meth:`SSHClient.execute` and :meth:`SSHClient.invoke_shell`.
 
-        Args:
-            command(str): The command to execute on the remote server.
-            pty(bool): Request a pseudo-terminal from the server. Note: If
-                this is `False` (the default) then `stderr` will be combined
-                into `stdout` to prevent the buffers from filling up.
-            echo(bool): Whether to write the read data to stdout.
-
-        Returns:
-            :class:`Flow`: A Flow instance initialised with the SSH channel.
+        Since `pwnypack` is usually used for CTFs, the missing host key policy
+        is set to warn and accept.
         """
 
-        channel = self.get_transport().open_session()
-        if pty:
-            channel.get_pty()
-        else:
-            channel.set_combine_stderr(True)
-        channel.exec_command(command)
-        return Flow(SocketChannel(channel), echo=echo)
+        def __init__(self):
+            super(SSHClient, self).__init__()
+            self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
 
-    def invoke_shell(self, pty=True, echo=False):
-        """
-        Start a new shell on the server this :class:`SSHClient` is connected
-        to.
+        def execute(self, command, pty=False, echo=False):
+            """
+            Execute `command` on the server this :class:`SSHClient` instance is connected
+            to.
 
-        Args:
-            pty(bool): Request a pseudo-terminal from the server. Note: If
-                this is `False` then `stderr` will be combined into `stdout`
-                to prevent the buffers from filling up.
-            echo(bool): Whether to write the read data to stdout.
+            Args:
+                command(str): The command to execute on the remote server.
+                pty(bool): Request a pseudo-terminal from the server. Note: If
+                    this is `False` (the default) then `stderr` will be combined
+                    into `stdout` to prevent the buffers from filling up.
+                echo(bool): Whether to write the read data to stdout.
 
-        Returns:
-            :class:`Flow`: A Flow instance initialised with the SSH channel.
-        """
+            Returns:
+                :class:`Flow`: A Flow instance initialised with the SSH channel.
+            """
 
-        channel = self.get_transport().open_session()
-        if pty:
-            channel.get_pty()
-        else:
-            channel.set_combine_stderr(True)
-        channel.invoke_shell()
-        return Flow(SocketChannel(channel), echo=echo)
+            channel = self.get_transport().open_session()
+            if pty:
+                channel.get_pty()
+            else:
+                channel.set_combine_stderr(True)
+            channel.exec_command(command)
+            return Flow(SocketChannel(channel), echo=echo)
+
+        def invoke_shell(self, pty=True, echo=False):
+            """
+            Start a new shell on the server this :class:`SSHClient` is connected
+            to.
+
+            Args:
+                pty(bool): Request a pseudo-terminal from the server. Note: If
+                    this is `False` then `stderr` will be combined into `stdout`
+                    to prevent the buffers from filling up.
+                echo(bool): Whether to write the read data to stdout.
+
+            Returns:
+                :class:`Flow`: A Flow instance initialised with the SSH channel.
+            """
+
+            channel = self.get_transport().open_session()
+            if pty:
+                channel.get_pty()
+            else:
+                channel.set_combine_stderr(True)
+            channel.invoke_shell()
+            return Flow(SocketChannel(channel), echo=echo)
+else:
+    class SSHClient(object):
+        def __init__(self):
+            raise NotImplementedError('pwnypack\'s ssh functionality depends on paramiko, please install it.')
 
 
 class Flow(object):
