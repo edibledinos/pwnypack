@@ -13,6 +13,7 @@ next release
 * Added pickle_func that pickles a function and its invocation.
 * Added support for using GNU binutils to assemble AT&T syntax.
 * Added support for assembling / disassembling ARM.
+* Use extras_require to make capstone, paramiko and jupyter optional.
 
 0.7.2 (2016-03-11)
 ==================

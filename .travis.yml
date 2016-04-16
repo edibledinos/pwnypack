@@ -11,7 +11,8 @@ addons:
     - nasm
 sudo: false
 install:
-  - pip install -U setuptools py pytest
-  - python setup.py install
+  - pip install -U setuptools pip
+  - pip install -U py pytest
+  - pip install --no-binary capstone -e .[disasm,rop,ssh]
 script:
   - python setup.py test

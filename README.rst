@@ -19,14 +19,45 @@ out of curiosity.
 Installation
 ------------
 
-To install the latest released version of pwnypack, use:
+First, make sure your `setuptools` and `pip` packages are up to date:
+
+.. code:: bash
+
+    $ pip install -U setuptools pip
+
+To install the latest released version of pwnypack with all optional
+dependencies, run:
+
+.. code:: bash
+
+    $ pip install --no-binary capstone pwnypack[all]
+
+To install the latest released version of pwnypack with minimal
+dependencies, run:
 
 .. code:: bash
 
     $ pip install pwnypack
 
+Other available install targets are:
+
+- ``--no-binary capstone pwnypack[disasm]`` - installs ``capstone`` for AT&T
+  and intel syntax disassembly, required to disassemble ARM binaries).
+
+- ``--no-binary capstone pwnypack[rop]`` - installs ``capstone`` to validate
+  ROP gadgets.
+
+- ``pwnypack[ssh]`` - installs ``paramiko`` to enable the ``Flow`` module to
+  connect to SSH servers.
+
+- ``pwnypack[shell]`` - installs ``ipython`` to support the enhanced pwnypack
+  REPL environment.
+
+- ``pwnypack[pwnbook]`` - installs ``jupyter`` to support the ``pwnbook`` jupyter
+  notebook.
+
 If you want to use the interactive shell I highly recommend installing
-either `bpython` or `ipython` as those packages can make your time in
+either ``bpython`` or ``ipython`` as those packages can make your time in
 the shell a lot more enjoyable.
 
 Usage
@@ -54,6 +85,42 @@ and thus overly polluting your global namespace.
 For an example, check out the `Big Prison
 Fence <https://github.com/edibledinos/pwnypack/wiki/Big-Prison-Fence>`__
 example in the wiki.
+
+Common errors
+-------------
+
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+     File "/home/ingmar/.virtualenvs/pp/lib/python3.5/site-packages/capstone/__init__.py", line 230, in <module>
+       raise ImportError("ERROR: fail to load the dynamic library.")
+   ImportError: ERROR: fail to load the dynamic library.
+
+The ``capstone`` package has a bug which when used with a new verion of
+``pip`` will end up installing the capstone library in the wrong location on
+linux. Re-install ``capstone`` using:
+
+.. code:: bash
+    pip install --no-binary capstone capstone
+
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+     File "pwny/__init__.py", line 9, in <module>
+       from pwnypack.pwnbook import *
+     File "pwnypack/pwnbook.py", line 2, in <module>
+       from jupyter_client import kernelspec as kernelspec
+     File "/Users/ingmar/.virtualenvs/pwny26/lib/python2.6/site-packages/jupyter_client/__init__.py", line 4, in <module>
+       from .connect import *
+     File "/Users/ingmar/.virtualenvs/pwny26/lib/python2.6/site-packages/jupyter_client/connect.py", line 23, in <module>
+       from traitlets.config import LoggingConfigurable
+     File "/Users/ingmar/.virtualenvs/pwny26/lib/python2.6/site-packages/traitlets/__init__.py", line 1, in <module>
+       from .traitlets import *
+     File "/Users/ingmar/.virtualenvs/pwny26/lib/python2.6/site-packages/traitlets/traitlets.py", line 1331
+       return {n: t for (n, t) in cls.class_traits(**metadata).items()
+                      ^
+   SyntaxError: invalid syntax
+
+You've installed jupyter notebooks on python 2.6. Use a more modern version
+of python.
 
 Documentation
 -------------

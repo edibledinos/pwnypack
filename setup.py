@@ -25,13 +25,6 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 
-requires = [
-    'six',
-    'capstone',
-    'paramiko',
-]
-
-
 def read_file(filename):
     try:
         with open(os.path.join(os.path.dirname(__file__), filename)) as f:
@@ -52,11 +45,17 @@ setup(
     author_email='iksteen@gmail.com',
     url='https://github.com/edibledinos/pwnypack/',
     download_url='https://github.com/edibledinos/pwnypack/tarball/v%s' % __version__,
-    install_requires=requires,
+    install_requires=['six'],
     extras_require={
         ':python_version<"2.7"': ['counter', 'ordereddict', 'argparse'],
         ':python_version<"3.4"': ['enum34'],
         ':python_version<"3.3"': ['shutilwhich'],
+        'disasm': ['capstone'],
+        'rop': ['capstone'],
+        'ssh': ['paramiko'],
+        'shell': ['ipython'],
+        'pwnbook': ['jupyter'],
+        'all': ['capstone', 'paramiko', 'ipython', 'jupyter'],
     },
     tests_require=['mock', 'pytest-cov', 'pytest'],
     cmdclass = {'test': PyTest},
