@@ -23,7 +23,6 @@ import argparse
 import os
 import subprocess
 import sys
-import capstone
 from enum import IntEnum
 import shutil
 from pwnypack.elf import ELF
@@ -31,6 +30,12 @@ import pwnypack.target
 import pwnypack.main
 import pwnypack.codec
 import tempfile
+
+try:
+    import capstone
+    HAVE_CAPSTONE = True
+except ImportError:
+    HAVE_CAPSTONE = False
 
 
 __all__ = [
@@ -269,6 +274,9 @@ def prepare_capstone(syntax=AsmSyntax.att, target=None):
     Raises:
         NotImplementedError: If the specified target isn't supported.
     """
+
+    if not HAVE_CAPSTONE:
+        raise NotImplementedError('pwnypack requires capstone to disassemble to AT&T and Intel syntax')
 
     if target is None:
         target = pwnypack.target.target

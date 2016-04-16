@@ -6,7 +6,6 @@ be used to create ROP chains.
 from __future__ import print_function
 import argparse
 import re
-import capstone
 import six
 import sys
 import pwnypack.codec
@@ -16,13 +15,20 @@ import pwnypack.asm
 import pwnypack.target
 import pwnypack.util
 
+try:
+    import capstone
+    HAVE_CAPSTONE = True
+except ImportError:
+    HAVE_CAPSTONE = False
+
 
 __all__ = [
     'find_gadget',
 ]
 
 
-INVALID_GROUPS = set((capstone.CS_GRP_CALL, capstone.CS_GRP_JUMP))
+if HAVE_CAPSTONE:
+    INVALID_GROUPS = set((capstone.CS_GRP_CALL, capstone.CS_GRP_JUMP))
 
 
 def find_gadget(elf, gadget, align=1, unique=True):
@@ -50,6 +56,9 @@ def find_gadget(elf, gadget, align=1, unique=True):
             - asm: A list of disassembled instructions.
 
     """
+
+    if not HAVE_CAPSTONE:
+        raise NotImplementedError('pwnypack requires capstone to find ROP gadgets')
 
     if not isinstance(elf, pwnypack.elf.ELF):
         elf = pwnypack.elf.ELF(elf)
