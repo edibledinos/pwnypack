@@ -1,5 +1,5 @@
-from nose.tools import raises
-from nose.plugins.skip import SkipTest
+import pytest
+
 import pwny
 
 
@@ -10,7 +10,7 @@ target_arm_32_be = pwny.Target('arm', 32, pwny.Target.Endian.big)
 target_armv7m_32_le = pwny.Target('arm', 32, pwny.Target.Endian.little, mode=pwny.Target.Mode.arm_m_class)
 target_armv7m_32_be = pwny.Target('arm', 32, pwny.Target.Endian.big, mode=pwny.Target.Mode.arm_m_class)
 target_arm_64_le = pwny.Target('arm', 64, pwny.Target.Endian.little)
-# target_arm_64_be = pwny.Target('arm', 64, pwny.Target.Endian.big)
+target_arm_64_be = pwny.Target('arm', 64, pwny.Target.Endian.big)
 target_unknown_32 = pwny.Target('unknown', 32, pwny.Target.Endian.little)
 
 
@@ -40,50 +40,43 @@ ASM_TESTS = [
     (target_arm_64_le, None, 'add x0, x1, #0', b' \x00\x00\x91'),
     (target_arm_64_le, pwny.AsmSyntax.att, 'add x0, x1, #0', b' \x00\x00\x91'),
 
-    # (target_arm_64_be, None, 'add x0, x1, #0', b'\x91\x00\x00 '),
-    # (target_arm_64_be, pwny.AsmSyntax.att, 'add x0, x1, #0', b'\x91\x00\x00 '),
+    # The output of as/ld and capstone disagree. Assume a failure will happen.
+    pytest.mark.xfail()((target_arm_64_be, None, 'add x0, x1, #0', b'\x91\x00\x00 ')),
+    pytest.mark.xfail()((target_arm_64_be, pwny.AsmSyntax.att, 'add x0, x1, #0', b'\x91\x00\x00 ')),
 ]
 
 
-def check_asm(target, syntax, source, result):
+@pytest.mark.parametrize(('test_target', 'syntax', 'source', 'result'), ASM_TESTS)
+def test_asm(test_target, syntax, source, result, target):
     try:
-        output = pwny.asm(source, syntax=syntax, target=target)
+        output = pwny.asm(source, syntax=syntax, target=test_target)
     except RuntimeError:
         # Toolchain wasn't found. Unfortunate, but unavoidable on travis-ci atm.
-        raise SkipTest('No suitable binutils was found for %s' % target)
+        pytest.skip('No suitable binutils was found for %s' % target)
     assert output == result, 'Got %r, expected %r' % (output, result)
 
 
-def test_asm():
-    for target, syntax, source, result in ASM_TESTS:
-        yield check_asm, target, syntax, source, result
-
-
-@raises(SyntaxError)
+@pytest.mark.xfail(raises=SyntaxError)
 def test_asm_syntax_error():
     pwny.asm('mov ced, 3')
 
 
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_asm_unsupported_target():
     pwny.asm('mov al, [0xced]', target=target_unknown_32)
 
 
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_asm_nasm_unsupported_arch():
     pwny.asm('mov al, [0xced]', syntax=pwny.AsmSyntax.nasm, target=target_arm_64_le)
 
 
-def check_disasm(target, syntax, source, result):
-    output = pwny.disasm(source, syntax=syntax, target=target)
-    assert output == result, 'Got %r, expected %r' % (output, result)
+@pytest.mark.parametrize(('test_target', 'syntax', 'result', 'source'), ASM_TESTS)
+def test_disasm(test_target, syntax, source, result, target):
+    output = pwny.disasm(source, syntax=syntax, target=test_target)
+    assert output == [result], 'Got %r, expected %r' % (output, result)
 
 
-def test_disasm():
-    for target, syntax, result, source in ASM_TESTS:
-        yield check_disasm, target, syntax, source, [result]
-
-
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_disasm_unsupported_target():
     pwny.disasm(b'\x5f', target=target_unknown_32)

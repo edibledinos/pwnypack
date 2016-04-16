@@ -1,5 +1,6 @@
 import mock
-from nose.tools import raises
+import pytest
+
 import pwny
 
 
@@ -54,7 +55,7 @@ def test_default_bits_x86():
     assert target.bits == 32
 
 
-@raises(NotImplementedError)
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_default_bits_unsupported():
     target = pwny.Target(arch=pwny.Target.Arch.unknown)
     _ = target.bits
@@ -65,7 +66,7 @@ def test_set__bits():
     assert target.bits == 64
 
 
-@raises(ValueError)
+@pytest.mark.xfail(raises=ValueError)
 def test_set_invalid_bits():
     pwny.Target(bits=33)
 
