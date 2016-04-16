@@ -111,6 +111,10 @@ example in the wiki.
 Common errors
 -------------
 
+Capstone fails to import the dynamic library.
+
+.. code::
+
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
      File "/home/ingmar/.virtualenvs/pp/lib/python3.5/site-packages/capstone/__init__.py", line 230, in <module>
@@ -122,7 +126,12 @@ The ``capstone`` package has a bug which when used with a new verion of
 linux. Re-install ``capstone`` using:
 
 .. code:: bash
-    pip install --no-binary capstone capstone
+
+    $ pip install --no-binary capstone capstone
+
+SyntaxError when importing pwnypack.
+
+.. code::
 
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
