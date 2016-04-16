@@ -14,6 +14,7 @@ next release
 * Added support for using GNU binutils to assemble AT&T syntax.
 * Added support for assembling / disassembling ARM.
 * Use extras_require to make capstone, paramiko and jupyter optional.
+* Add Dockerfile for pwnypack shell and pwnbook.
 
 0.7.2 (2016-03-11)
 ==================

@@ -60,6 +60,28 @@ If you want to use the interactive shell I highly recommend installing
 either ``bpython`` or ``ipython`` as those packages can make your time in
 the shell a lot more enjoyable.
 
+Docker
+------
+
+You can also use our published docker images.
+
+To start an ipython powered pwnypack shell:
+
+.. code:: bash
+
+    docker pull edibledinos/pwnypack
+    docker run --rm -it edibledinos/pwnypack
+
+Or, to run pwnbook:
+
+.. code:: bash
+
+    docker pull edibledinos/pwnbook
+    docker run --rm -it -p 8888:8888 edibledinos/pwnbook
+
+Both images expose a volume (``/projects``). Feel free to mount something
+interesting there.
+
 Usage
 -----
 
