@@ -69,18 +69,23 @@ To start an ipython powered pwnypack shell:
 
 .. code:: bash
 
-    docker pull edibledinos/pwnypack
-    docker run --rm -it edibledinos/pwnypack
+    docker pull edibledinos/pwnypack:latest
+    docker run --rm -it edibledinos/pwnypack:latest
 
 Or, to run pwnbook:
 
 .. code:: bash
 
-    docker pull edibledinos/pwnbook
-    docker run --rm -it -p 8888:8888 edibledinos/pwnbook
+    docker pull edibledinos/pwnbook:latest
+    docker run --rm -it -p 8888:8888 edibledinos/pwnbook:latest
 
 Both images expose a volume (``/projects``). Feel free to mount something
 interesting there.
+
+Three tags are available:
+
+- ``py3`` (or: ``latest``) installs python 3 and pwnypack/pwnbook.
+- ``py2`` installs python 2 and pwnypack/pwnbook.
 
 Usage
 -----
