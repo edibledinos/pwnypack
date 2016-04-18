@@ -7,7 +7,7 @@ def func_to_invoke(a):
 
 
 def test_pickle_invoke():
-    data = pwny.pickle_invoke(func_to_invoke, (8,))
+    data = pwny.pickle_invoke(func_to_invoke, 8)
     assert cPickle.loads(data) == 8
 
 

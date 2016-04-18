@@ -5,6 +5,7 @@ import warnings
 
 import six
 from six.moves import cPickle, copyreg
+from kwonly_args import kwonly_defaults
 
 
 __all__ = ['pickle_invoke', 'pickle_func']
@@ -56,8 +57,10 @@ def get_protocol_version(target=None, protocol=None):
     return protocol
 
 
-def pickle_invoke(func, args=(), protocol=None):
-    """
+@kwonly_defaults
+def pickle_invoke(func, target=None, protocol=None, *args):
+    """pickle_invoke(func, *args, target=None, protocol=None)
+
     Create a byte sequence which when unpickled calls a callable with given
     arguments.
 
@@ -68,6 +71,9 @@ def pickle_invoke(func, args=(), protocol=None):
     Arguments:
         func(callable): The function to call or class to instantiate.
         args(tuple): The arguments to call the callable with.
+        target: The python version that will be unpickling the data (None,
+            26, 27 or 30).
+        protocol: The pickle protocol version to use (use None for default).
 
     Returns:
         bytes: The data that when unpickled calls ``func(*args)``.
@@ -78,11 +84,11 @@ def pickle_invoke(func, args=(), protocol=None):
         >>> def hello(arg):
         ...     print('Hello, %s!' % arg)
         ...
-        >>> pickle.loads(pickle_invoke(hello, ('world',)))
+        >>> pickle.loads(pickle_invoke(hello, 'world'))
         Hello, world!
     """
 
-    protocol = get_protocol_version(None, protocol)
+    protocol = get_protocol_version(target, protocol)
     return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
