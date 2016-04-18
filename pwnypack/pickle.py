@@ -22,6 +22,40 @@ class PickleInvoke(object):
         return self.func, self.args
 
 
+def get_protocol_version(target=None, protocol=None):
+    """
+    Return a suitable pickle protocol version for a given target.
+
+    Arguments:
+        target(None or int): The target python version (26, 27, 30 or None for
+            the currently running python version.
+        protocol(None or int): The requested protocol version (or None for the
+            default of the currently running python version.
+
+    Returns:
+        int: A suitable pickle protocol version.
+    """
+
+    if target and target not in (26, 27, 30):
+        raise ValueError('Unsupported target python %r. Use 26, 27 or 30.' % target)
+
+    if protocol is None:
+        if target is None or target >= 30:
+            protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 0)
+        else:
+            protocol = 0
+
+    if protocol > cPickle.HIGHEST_PROTOCOL:
+        warnings.warn('Downgrading pickle protocol, running python support up to %d.' % cPickle.HIGHEST_PROTOCOL)
+        protocol = cPickle.HIGHEST_PROTOCOL
+
+    if protocol > 2 and target and target < 30:
+        warnings.warn('Downgrading pickle protocol, python 2 supports versions up to 2.')
+        protocol = 2
+
+    return protocol
+
+
 def pickle_invoke(func, args=(), protocol=None):
     """
     Create a byte sequence which when unpickled calls a callable with given
@@ -48,9 +82,7 @@ def pickle_invoke(func, args=(), protocol=None):
         Hello, world!
     """
 
-    if protocol is None:
-        protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 2)
-
+    protocol = get_protocol_version(None, protocol)
     return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
@@ -189,19 +221,12 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
 
-    if protocol is None:
-        protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 2)
-
-    if target and target not in (26, 27, 30):
-        raise ValueError('Unsupported target python %r. Use 26, 27 or 30.' % target)
+    protocol = get_protocol_version(target, protocol)
 
     code = six.get_function_code(func)
 
     old_code_reduce = copyreg.dispatch_table.pop(types.CodeType, None)
     if target in (26, 27) or (target is None and six.PY2):
-        if protocol > 2:
-            warnings.warn('Downgrading pickle protocol, python 2 supports versions up to 2.')
-            protocol = 2
         copyreg.pickle(types.CodeType, code_reduce_v2)
     else:
         if six.PY2:
