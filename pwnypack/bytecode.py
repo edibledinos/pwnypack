@@ -542,10 +542,7 @@ def rebuild_func(func, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=
                  co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
                  co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
                  co_cellvars=BORROW):
-    """rebuild_func(func, *, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW,
-                    co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
-                    co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
-                    co_cellvars=BORROW)
+    """rebuild_func(func, *, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW, co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW, co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW, co_cellvars=BORROW)
 
     Create a new function from a donor but replace the code object
     properties that are specified. If this function is run on python 2,
@@ -556,8 +553,8 @@ def rebuild_func(func, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=
             explicitly specified will be borrowed from this function.
 
     Returns:
-        func: The new function with the provided and borrowed functions in
-            place.
+        function: The new function with the provided and borrowed functions
+        in place.
     """
 
     func_code = six.get_function_code(func)
@@ -605,6 +602,9 @@ def rebuild_func_from_ops(func, ops, **kwargs):
             :func:`disassemble`).
         **kwargs: All specified keyword arguments will be passed to
             :func:`rebuild_func` except for ``co_code`` and ``co_stacksize``.
+
+    Returns:
+        function: The function with the updated bytecode.
     """
 
     kwargs.update({
