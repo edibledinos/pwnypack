@@ -185,6 +185,15 @@ class Target(object):
         self._endian = other._endian
         self._mode = other._mode
 
+    def __repr__(self):
+        return '%s(arch=%s,bits=%s,endian=%s,mode=%s)' % (
+            self.__class__.__name__,
+            self.arch.name,
+            self.bits.value,
+            self.endian.name,
+            self.mode
+        )
+
 
 target = Target()
 """
