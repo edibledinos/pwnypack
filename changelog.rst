@@ -16,6 +16,7 @@ next release
 * Use extras_require to make capstone, paramiko and jupyter optional.
 * Add Dockerfile for pwnypack shell and pwnbook.
 * Fix interact on python 3 in Flow.
+* Add python bytecode manipulation functions.
 
 0.7.2 (2016-03-11)
 ==================
