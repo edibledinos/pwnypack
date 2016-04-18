@@ -517,7 +517,7 @@ class Flow(object):
             ready = select.select(sockets, [], [])[0]
 
             if sys.stdin in ready:
-                line = sys.stdin.readline()
+                line = sys.stdin.readline().encode('latin1')
                 if not line:
                     break
                 self.write(line)
