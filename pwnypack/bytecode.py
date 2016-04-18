@@ -1,3 +1,35 @@
+"""
+The bytecode module lets you manipulate python bytecode in a
+version-independent way. To facilitate this, this module provides a couple
+of function to disassemble and assemble python bytecode into a high-level
+representation and some functions to manipulate those structures.
+
+The python version independent function take an op_specs parameter which
+represents the specifics of bytecode on that particular version of
+python. The global OP_SPECS dictionary provides these opcode specifics
+for various python versions.
+
+Examples:
+    Disassemble a very simple function, change an opcode and reassemble it:
+
+    >>> from pwny import *
+    >>> import six
+    >>> def foo(a):
+    >>>     return a - 1
+    ...
+    >>> print(foo, six.get_function_code(foo).co_code, foo(5))
+    <function foo at 0x10590ba60> b'|\x00\x00d\x01\x00\x18S' 4
+    >>> ops = bc.disassemble(foo)
+    >>> print(ops)
+    [LOAD_FAST 0, LOAD_CONST 1, BINARY_SUBTRACT, RETURN_VALUE]
+    >>> ops[2].name = 'BINARY_ADD'
+    >>> print(ops)
+    [LOAD_FAST 0, LOAD_CONST 1, BINARY_ADD, RETURN_VALUE]
+    >>> bar = bc.rebuild_func_from_ops(foo, ops, co_name='bar')
+    >>> print(bar, six.get_function_code(bar).co_code, bar(5))
+    <function bar at 0x10590bb70> b'|\x00\x00d\x01\x00\x17S' 6
+"""
+
 from __future__ import print_function
 
 import inspect
@@ -8,6 +40,12 @@ import sys
 import six
 from kwonly_args import kwonly_defaults
 
+
+__all__ = ['OP_SPECS', 'Op', 'Label', 'disassemble', 'assemble', 'blocks_from_ops', 'calculate_max_stack_depth',
+           'rebuild_func', 'rebuild_func_from_ops']
+
+
+#: Stack effects which are shared between more than one python version.
 COMMON_STACK_EFFECT = {'COMPARE_OP': -1, 'STORE_SLICE+2': -3, 'INPLACE_MODULO': -1, 'DELETE_ATTR': -1,
                        'MAKE_FUNCTION': lambda arg: -arg, 'LOAD_LOCALS': 1, 'BINARY_POWER': -1,
                        'BUILD_TUPLE_UNPACK': lambda arg: 1 - arg, 'LOAD_ATTR': 0, 'PRINT_ITEM': -1,
@@ -50,6 +88,7 @@ COMMON_STACK_EFFECT = {'COMPARE_OP': -1, 'STORE_SLICE+2': -3, 'INPLACE_MODULO': 
                        'SET_ADD': -1, 'BINARY_SUBTRACT': -1}
 
 
+#: Mapping that holds the relevant information per python version.
 OP_SPECS = {
     26: {
         'opmap': {'CALL_FUNCTION': 131, 'DUP_TOP': 4, 'INPLACE_FLOOR_DIVIDE': 28, 'BINARY_XOR': 65, 'END_FINALLY': 88, 'RETURN_VALUE': 83, 'POP_BLOCK': 87, 'SETUP_LOOP': 120, 'POP_TOP': 1, 'EXTENDED_ARG': 143, 'SETUP_FINALLY': 122, 'INPLACE_TRUE_DIVIDE': 29, 'CALL_FUNCTION_KW': 141, 'INPLACE_AND': 77, 'SETUP_EXCEPT': 121, 'STORE_NAME': 90, 'IMPORT_NAME': 107, 'LOAD_GLOBAL': 116, 'LOAD_NAME': 101, 'FOR_ITER': 93, 'EXEC_STMT': 85, 'DELETE_NAME': 91, 'BUILD_LIST': 103, 'COMPARE_OP': 106, 'BINARY_OR': 66, 'INPLACE_MULTIPLY': 57, 'STORE_FAST': 125, 'CALL_FUNCTION_VAR': 140, 'LOAD_LOCALS': 82, 'CONTINUE_LOOP': 119, 'PRINT_EXPR': 70, 'DELETE_GLOBAL': 98, 'GET_ITER': 68, 'STOP_CODE': 0, 'UNARY_NOT': 12, 'BINARY_LSHIFT': 62, 'JUMP_IF_TRUE': 112, 'LOAD_CLOSURE': 135, 'IMPORT_STAR': 84, 'INPLACE_OR': 79, 'BINARY_SUBTRACT': 24, 'STORE_MAP': 54, 'INPLACE_ADD': 55, 'INPLACE_LSHIFT': 75, 'INPLACE_MODULO': 59, 'STORE_ATTR': 95, 'BUILD_MAP': 104, 'BINARY_DIVIDE': 21, 'INPLACE_RSHIFT': 76, 'PRINT_ITEM_TO': 73, 'UNPACK_SEQUENCE': 92, 'BINARY_MULTIPLY': 20, 'MAKE_FUNCTION': 132, 'PRINT_NEWLINE_TO': 74, 'NOP': 9, 'LIST_APPEND': 18, 'INPLACE_XOR': 78, 'STORE_GLOBAL': 97, 'INPLACE_SUBTRACT': 56, 'INPLACE_POWER': 67, 'ROT_FOUR': 5, 'DELETE_SUBSCR': 61, 'BINARY_AND': 64, 'BREAK_LOOP': 80, 'JUMP_IF_FALSE': 111, 'DELETE_SLICE+1': 51, 'DELETE_SLICE+0': 50, 'DUP_TOPX': 99, 'CALL_FUNCTION_VAR_KW': 142, 'LOAD_ATTR': 105, 'BINARY_TRUE_DIVIDE': 27, 'ROT_TWO': 2, 'IMPORT_FROM': 108, 'DELETE_FAST': 126, 'BINARY_ADD': 23, 'LOAD_CONST': 100, 'STORE_DEREF': 137, 'UNARY_NEGATIVE': 11, 'UNARY_POSITIVE': 10, 'STORE_SUBSCR': 60, 'BUILD_TUPLE': 102, 'BINARY_POWER': 19, 'BUILD_CLASS': 89, 'UNARY_CONVERT': 13, 'BINARY_MODULO': 22, 'DELETE_SLICE+3': 53, 'DELETE_SLICE+2': 52, 'WITH_CLEANUP': 81, 'DELETE_ATTR': 96, 'PRINT_ITEM': 71, 'RAISE_VARARGS': 130, 'SLICE+0': 30, 'SLICE+1': 31, 'SLICE+2': 32, 'SLICE+3': 33, 'LOAD_DEREF': 136, 'LOAD_FAST': 124, 'BINARY_FLOOR_DIVIDE': 26, 'BINARY_RSHIFT': 63, 'BINARY_SUBSCR': 25, 'YIELD_VALUE': 86, 'ROT_THREE': 3, 'STORE_SLICE+0': 40, 'STORE_SLICE+1': 41, 'STORE_SLICE+2': 42, 'STORE_SLICE+3': 43, 'UNARY_INVERT': 15, 'PRINT_NEWLINE': 72, 'INPLACE_DIVIDE': 58, 'BUILD_SLICE': 133, 'JUMP_ABSOLUTE': 113, 'MAKE_CLOSURE': 134, 'JUMP_FORWARD': 110},
@@ -122,6 +161,10 @@ OP_SPECS = {
 
 
 def _build_opnames():
+    """
+    Takes each python version's opmap and makes an opname list out of it.
+    """
+
     for version, op_spec in six.iteritems(OP_SPECS):
         reverse_opmap = dict((v, k) for k, v in six.iteritems(op_spec['opmap']))
         op_spec['opname'] = [
@@ -132,6 +175,12 @@ _build_opnames()
 
 
 def _build_stack_effect():
+    """
+    Merge common stack effects with version specific ones.
+
+    Also defines the stack effects of the currently running version.
+    """
+
     for version, op_spec in six.iteritems(OP_SPECS):
         if version is None:
             continue
@@ -151,10 +200,26 @@ def _build_stack_effect():
 _build_stack_effect()
 
 
+class Label(object):
+    """
+    Used to define a label in a series of opcodes.
+    """
+
+
 class Op(object):
-    def __init__(self, name, arg):
-        self.name = name
-        self.arg = arg
+    """
+    Describe a single bytecode operation.
+
+    Arguments:
+        name(str): The name of the opcode.
+        arg: The argument of the opcode. Should be ``None`` for opcodes
+            without arguments, should be a :class:`Label` for opcodes that
+            define a jump, should be an ``int`` otherwise.
+    """
+
+    def __init__(self, name, arg=None):
+        self.name = name  #: The name of the opcode.
+        self.arg = arg  #: The opcode's argument (or ``None``).
 
     def __repr__(self):
         if self.arg is not None:
@@ -163,11 +228,22 @@ class Op(object):
             return self.name
 
 
-class Label(object):
-    pass
-
-
 def disassemble(code, op_specs=None):
+    """
+    Disassemble python bytecode into a series of :class:`Op` and
+    :class:`Label` instances.
+
+    Arguments:
+        code(bytes): The bytecode (a code object's ``co_code`` property). You
+            can also provide a function.
+        op_specs(dict): The opcode specification of the python version that
+            generated ``code``. If you provide ``None``, the specs for the
+            currently running python version will be used.
+
+    Returns:
+        list: A list of opcodes and labels.
+    """
+
     if inspect.isfunction(code):
         code = six.get_function_code(code).co_code
 
@@ -224,6 +300,21 @@ def disassemble(code, op_specs=None):
 
 
 def assemble(ops, op_specs=None):
+    """
+    Assemble a set of :class:`Op` and :class:`Label` instance back into
+    bytecode.
+
+    Arguments:
+        ops(list): A list of opcodes and labels (as returned by
+            :func:`disassemble`).
+        op_specs: The opcode specification of the targeted python version. If
+            this is ``None`` the specification of the currently running python
+            version will be used.
+
+    Returns:
+        bytes: The assembled bytecode.
+    """
+
     def encode_op(op_code, op_arg=None):
         if op_arg is None:
             return six.int2byte(op_code)
@@ -319,13 +410,38 @@ def assemble(ops, op_specs=None):
 
 
 class Block(object):
+    """
+    A group of python bytecode ops. Produced by :func:`blocks_from_ops`.
+
+    Arguments:
+        label(:class:`Label`): The label of this block. Will be ``None`` for
+            the first block.
+    """
+
     def __init__(self, label=None):
-        self.label = label
-        self.ops = []
-        self.next = None
+        self.label = label  #: The label the block represents.
+        self.ops = []  #: The opcodes contained within this block.
+        self.next = None  #: A pointer to the next block.
 
 
 def blocks_from_ops(ops):
+    """
+    Group a list of :class:`Op` and :class:`Label` instances by label.
+
+    Everytime a label is found, a new :class:`Block` is created. The resulting
+    blocks are returned as a dictionary to easily access the target block of a
+    jump operation. The keys of this dictionary will be the labels, the values
+    will be the :class:`Block` instances. The initial block can be accessed
+    by getting the ``None`` item from the dictionary.
+
+    Arguments:
+        ops(list): The list of :class:`Op` and :class:`Label` instances (as
+            returned by :func:`disassemble`.
+
+    Returns:
+        dict: The resulting dictionary of blocks grouped by label.
+    """
+
     blocks = {}
     current_block = blocks[None] = Block()
     for op in ops:
@@ -339,7 +455,23 @@ def blocks_from_ops(ops):
 
 
 def calculate_max_stack_depth(ops, op_specs=None):
-    # This is a re-implementation of python's stackdepth / stackdepth_walk.
+    """
+    Calculate the maximum stack depth (and required stack size) from a series
+    of :class:`Op` and :class:`Label` instances. This is required when you
+    manipulate the opcodes in such a way that the stack layout might change
+    and you want to re-create a working function from it.
+
+    This is a fairly literal re-implementation of python's stackdepth and
+    stackdepth_walk.
+
+    Arguments:
+        ops(list): A list of opcodes and labels (as returned by
+            :func:`disassemble`).
+
+    Returns:
+        int: The calculated maximum stack depth.
+    """
+
     blocks = blocks_from_ops(ops)
 
     block = blocks[None]
@@ -410,6 +542,24 @@ def rebuild_func(func, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=
                  co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
                  co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
                  co_cellvars=BORROW):
+    """rebuild_func(func, *, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW,
+                    co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
+                    co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
+                    co_cellvars=BORROW)
+
+    Create a new function from a donor but replace the code object
+    properties that are specified. If this function is run on python 2,
+    ``co_kwonlyargcount`` is ignored as it is only available on python 3.
+
+    Arguments:
+        func(function): The donor function. All code object properties not
+            explicitly specified will be borrowed from this function.
+
+    Returns:
+        func: The new function with the provided and borrowed functions in
+            place.
+    """
+
     func_code = six.get_function_code(func)
 
     co_argcount = co_argcount if co_argcount is not BORROW else func_code.co_argcount
@@ -443,6 +593,20 @@ def rebuild_func(func, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=
 
 
 def rebuild_func_from_ops(func, ops, **kwargs):
+    """
+    Rebuild a function from a list of :class:`Op` and :class:`Label`
+    instances. It will assemble the opcodes to bytecode and calculate the new
+    maximum stack depth. All other properties will be borrowed from the donor
+    function unless explicitly specified.
+
+    Arguments:
+        func(function): The donor function.
+        ops(list): A list of opcodes and labels (as returned by
+            :func:`disassemble`).
+        **kwargs: All specified keyword arguments will be passed to
+            :func:`rebuild_func` except for ``co_code`` and ``co_stacksize``.
+    """
+
     kwargs.update({
         'co_code': assemble(ops),
         'co_stacksize': calculate_max_stack_depth(ops),
