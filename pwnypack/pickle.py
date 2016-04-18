@@ -219,12 +219,12 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
                                 code.co_filename, code.co_name, code.co_firstlineno, co_lnotab)
 
     # Stubs to trick cPickle into pickling calls to CodeType/FunctionType.
-    def CodeType(*args):  # pragma: no cover
+    class CodeType(object):  # pragma: no cover
         pass
     CodeType.__module__ = 'types'
     CodeType.__qualname__ = 'CodeType'
 
-    def FunctionType(*args, **kwargs):  # pragma: no cover
+    class FunctionType(object):  # pragma: no cover
         pass
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
