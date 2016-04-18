@@ -11,9 +11,9 @@ __all__ = ['pickle_invoke', 'pickle_func']
 
 
 class PickleInvoke(object):
-    def __init__(self, func, args=()):
+    def __init__(self, func, *args):
         self.func = func
-        self.args = tuple(args)
+        self.args = args
 
     def __call__(self):  # pragma: no cover
         pass
@@ -51,7 +51,7 @@ def pickle_invoke(func, args=(), protocol=None):
     if protocol is None:
         protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 2)
 
-    return cPickle.dumps(PickleInvoke(func, args), protocol)
+    return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
 # Opcode mappings for various python versions.
@@ -137,8 +137,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
 
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, (base64.b64encode(co_code),))
-            co_lnotab = PickleInvoke(base64.b64decode, (base64.b64encode(code.co_lnotab),))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
         else:
             co_lnotab = code.co_lnotab
 
@@ -164,8 +164,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
 
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, (base64.b64encode(co_code),))
-            co_lnotab = PickleInvoke(base64.b64decode, (base64.b64encode(code.co_lnotab),))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
         else:
             co_lnotab = code.co_lnotab
 
@@ -215,8 +215,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     old_function_type, types.FunctionType = types.FunctionType, FunctionType
 
     try:
-        build_func = PickleInvoke(types.FunctionType, (code, PickleInvoke(globals)))
-        return cPickle.dumps(PickleInvoke(build_func, args), protocol)
+        build_func = PickleInvoke(types.FunctionType, code, PickleInvoke(globals))
+        return cPickle.dumps(PickleInvoke(build_func, *args), protocol)
     finally:
         types.CodeType = old_code_type
         types.FunctionType = old_function_type
