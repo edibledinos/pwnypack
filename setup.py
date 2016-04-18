@@ -45,7 +45,7 @@ setup(
     author_email='iksteen@gmail.com',
     url='https://github.com/edibledinos/pwnypack/',
     download_url='https://github.com/edibledinos/pwnypack/tarball/v%s' % __version__,
-    install_requires=['six'],
+    install_requires=['six', 'kwonly-args'],
     extras_require={
         ':python_version<"2.7"': ['counter', 'ordereddict', 'argparse'],
         ':python_version<"3.4"': ['enum34'],

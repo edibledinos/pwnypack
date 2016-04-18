@@ -5,15 +5,16 @@ import warnings
 
 import six
 from six.moves import cPickle, copyreg
+from kwonly_args import kwonly_defaults
 
 
 __all__ = ['pickle_invoke', 'pickle_func']
 
 
 class PickleInvoke(object):
-    def __init__(self, func, args=()):
+    def __init__(self, func, *args):
         self.func = func
-        self.args = tuple(args)
+        self.args = args
 
     def __call__(self):  # pragma: no cover
         pass
@@ -22,8 +23,44 @@ class PickleInvoke(object):
         return self.func, self.args
 
 
-def pickle_invoke(func, args=(), protocol=None):
+def get_protocol_version(target=None, protocol=None):
     """
+    Return a suitable pickle protocol version for a given target.
+
+    Arguments:
+        target(None or int): The target python version (26, 27, 30 or None for
+            the currently running python version.
+        protocol(None or int): The requested protocol version (or None for the
+            default of the currently running python version.
+
+    Returns:
+        int: A suitable pickle protocol version.
+    """
+
+    if target and target not in (26, 27, 30):
+        raise ValueError('Unsupported target python %r. Use 26, 27 or 30.' % target)
+
+    if protocol is None:
+        if target is None or target >= 30:
+            protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 0)
+        else:
+            protocol = 0
+
+    if protocol > cPickle.HIGHEST_PROTOCOL:
+        warnings.warn('Downgrading pickle protocol, running python support up to %d.' % cPickle.HIGHEST_PROTOCOL)
+        protocol = cPickle.HIGHEST_PROTOCOL
+
+    if protocol > 2 and target and target < 30:
+        warnings.warn('Downgrading pickle protocol, python 2 supports versions up to 2.')
+        protocol = 2
+
+    return protocol
+
+
+@kwonly_defaults
+def pickle_invoke(func, target=None, protocol=None, *args):
+    """pickle_invoke(func, *args, target=None, protocol=None)
+
     Create a byte sequence which when unpickled calls a callable with given
     arguments.
 
@@ -34,6 +71,9 @@ def pickle_invoke(func, args=(), protocol=None):
     Arguments:
         func(callable): The function to call or class to instantiate.
         args(tuple): The arguments to call the callable with.
+        target: The python version that will be unpickling the data (None,
+            26, 27 or 30).
+        protocol: The pickle protocol version to use (use None for default).
 
     Returns:
         bytes: The data that when unpickled calls ``func(*args)``.
@@ -44,14 +84,12 @@ def pickle_invoke(func, args=(), protocol=None):
         >>> def hello(arg):
         ...     print('Hello, %s!' % arg)
         ...
-        >>> pickle.loads(pickle_invoke(hello, ('world',)))
+        >>> pickle.loads(pickle_invoke(hello, 'world'))
         Hello, world!
     """
 
-    if protocol is None:
-        protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 2)
-
-    return cPickle.dumps(PickleInvoke(func, args), protocol)
+    protocol = get_protocol_version(target, protocol)
+    return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
 # Opcode mappings for various python versions.
@@ -92,8 +130,10 @@ def translate_opcodes(src_code, dst_opmap):
     return dst_code
 
 
-def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
-    """
+@kwonly_defaults
+def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
+    """pickle_func(func, *args, target=None, protocol=None, b64encode=None)
+
     Encode a function in such a way that when it's unpickled, the function is
     reconstructed and called with the given arguments.
 
@@ -107,14 +147,14 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     Arguments:
         func(callable): The function to serialize and call when unpickled.
         args(tuple): The arguments to call the callable with.
+        target(int): The target python version (``26`` for python 2.6, ``27``
+            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
+            which case the current python version is assumed.
         protocol(int): The pickle protocol version to use.
         b64encode(bool): Whether to base64 certain code object fields. Required
             when you prepare a pickle for python 3 on python 2. If it's
             ``None`` it defaults to ``False`` unless pickling from python 2 to
             python 3.
-        target(int): The target python version (``26`` for python 2.6, ``27``
-            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
-            which case the current python version is assumed.
 
     Returns:
         bytes: The data that when unpickled calls ``func(*args)``.
@@ -125,7 +165,7 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
         >>> def hello(arg):
         ...     print('Hello, %s!' % arg)
         ...
-        >>> p = pickle_func(hello, ('world',))
+        >>> p = pickle_func(hello, 'world')
         >>> del hello
         >>> pickle.loads(p)
         Hello, world!
@@ -137,8 +177,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
 
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, (base64.b64encode(co_code),))
-            co_lnotab = PickleInvoke(base64.b64decode, (base64.b64encode(code.co_lnotab),))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
         else:
             co_lnotab = code.co_lnotab
 
@@ -164,8 +204,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
 
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, (base64.b64encode(co_code),))
-            co_lnotab = PickleInvoke(base64.b64decode, (base64.b64encode(code.co_lnotab),))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
         else:
             co_lnotab = code.co_lnotab
 
@@ -189,19 +229,12 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
 
-    if protocol is None:
-        protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 2)
-
-    if target and target not in (26, 27, 30):
-        raise ValueError('Unsupported target python %r. Use 26, 27 or 30.' % target)
+    protocol = get_protocol_version(target, protocol)
 
     code = six.get_function_code(func)
 
     old_code_reduce = copyreg.dispatch_table.pop(types.CodeType, None)
     if target in (26, 27) or (target is None and six.PY2):
-        if protocol > 2:
-            warnings.warn('Downgrading pickle protocol, python 2 supports versions up to 2.')
-            protocol = 2
         copyreg.pickle(types.CodeType, code_reduce_v2)
     else:
         if six.PY2:
@@ -215,8 +248,8 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     old_function_type, types.FunctionType = types.FunctionType, FunctionType
 
     try:
-        build_func = PickleInvoke(types.FunctionType, (code, PickleInvoke(globals)))
-        return cPickle.dumps(PickleInvoke(build_func, args), protocol)
+        build_func = PickleInvoke(types.FunctionType, code, PickleInvoke(globals))
+        return cPickle.dumps(PickleInvoke(build_func, *args), protocol)
     finally:
         types.CodeType = old_code_type
         types.FunctionType = old_function_type
