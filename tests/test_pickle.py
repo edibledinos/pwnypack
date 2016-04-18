@@ -15,7 +15,7 @@ def test_pickle_func():
     def func_to_invoke_2(a):
         return a
 
-    data = pwny.pickle_func(func_to_invoke_2, (8,))
+    data = pwny.pickle_func(func_to_invoke_2, 8)
 
     del func_to_invoke_2
 

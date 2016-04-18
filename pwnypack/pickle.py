@@ -130,8 +130,10 @@ def translate_opcodes(src_code, dst_opmap):
     return dst_code
 
 
-def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
-    """
+@kwonly_defaults
+def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
+    """pickle_func(func, *args, target=None, protocol=None, b64encode=None)
+
     Encode a function in such a way that when it's unpickled, the function is
     reconstructed and called with the given arguments.
 
@@ -145,14 +147,14 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
     Arguments:
         func(callable): The function to serialize and call when unpickled.
         args(tuple): The arguments to call the callable with.
+        target(int): The target python version (``26`` for python 2.6, ``27``
+            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
+            which case the current python version is assumed.
         protocol(int): The pickle protocol version to use.
         b64encode(bool): Whether to base64 certain code object fields. Required
             when you prepare a pickle for python 3 on python 2. If it's
             ``None`` it defaults to ``False`` unless pickling from python 2 to
             python 3.
-        target(int): The target python version (``26`` for python 2.6, ``27``
-            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
-            which case the current python version is assumed.
 
     Returns:
         bytes: The data that when unpickled calls ``func(*args)``.
@@ -163,7 +165,7 @@ def pickle_func(func, args=(), protocol=None, b64encode=None, target=None):
         >>> def hello(arg):
         ...     print('Hello, %s!' % arg)
         ...
-        >>> p = pickle_func(hello, ('world',))
+        >>> p = pickle_func(hello, 'world')
         >>> del hello
         >>> pickle.loads(p)
         Hello, world!
