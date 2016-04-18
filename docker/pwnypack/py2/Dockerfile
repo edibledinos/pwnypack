@@ -5,7 +5,8 @@ MAINTAINER Ingmar Steen <iksteen@gmail.com>
 RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -qy \
 		git nasm build-essential python \
-		python-dev python-pip python-virtualenv python-setuptools && \
+		python-dev python-pip python-virtualenv python-setuptools \
+		binutils-aarch64-linux-gnu binutils-arm-none-eabi && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
