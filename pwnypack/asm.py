@@ -210,7 +210,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            stdout, stderr = p.communicate(code)
+            stdout, stderr = p.communicate(code.encode('utf-8'))
 
             if p.returncode:
                 raise SyntaxError(stderr.decode('utf-8'))
