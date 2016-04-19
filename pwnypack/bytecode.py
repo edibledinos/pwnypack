@@ -36,13 +36,11 @@ import inspect
 import types
 
 import six
-from kwonly_args import kwonly_defaults
 
 import pwnypack.py_internals
 
 
-__all__ = ['Op', 'Label', 'disassemble', 'assemble', 'blocks_from_ops', 'calculate_max_stack_depth',
-           'rebuild_func', 'rebuild_func_from_ops']
+__all__ = ['Op', 'Label', 'disassemble', 'assemble', 'blocks_from_ops', 'calculate_max_stack_depth', 'CodeObject']
 
 
 class Label(object):
@@ -383,78 +381,93 @@ def calculate_max_stack_depth(ops, py_internals=None):
 BORROW = object()
 
 
-@kwonly_defaults
-def rebuild_func(func, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW,
-                 co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
-                 co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
-                 co_cellvars=BORROW):
-    """rebuild_func(func, *, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW, co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW, co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW, co_cellvars=BORROW)
+class CodeObject(object):
+    def __init__(self, co_argcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts,
+                 co_names, co_varnames, co_filename, co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars,
+                 py_internals=None):
+        self.co_argcount = co_argcount
+        self.co_kwonlyargcount = co_kwonlyargcount
+        self.co_nlocals = co_nlocals
+        self.co_stacksize = co_stacksize
+        self.co_flags = co_flags
+        self.co_code = co_code
+        self.co_consts = co_consts
+        self.co_names = co_names
+        self.co_varnames = co_varnames
+        self.co_filename = co_filename
+        self.co_name = co_name
+        self.co_firstlineno = co_firstlineno
+        self.co_lnotab = co_lnotab
+        self.co_freevars = co_freevars
+        self.co_cellvars = co_cellvars
+        if py_internals is None:
+            self.py_internals = pwnypack.py_internals.PY_INTERNALS[None]
+        else:
+            self.py_internals = py_internals
 
-    Create a new function from a donor but replace the code object
-    properties that are specified. If this function is run on python 2,
-    ``co_kwonlyargcount`` is ignored as it is only available on python 3.
+    @classmethod
+    def from_code(cls, code, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW,
+                  co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
+                  co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
+                  co_cellvars=BORROW):
+        if six.PY2:
+            co_kwonlyargcount = co_kwonlyargcount if co_kwonlyargcount is not BORROW else 0
+        else:
+            co_kwonlyargcount = co_kwonlyargcount if co_kwonlyargcount is not BORROW else code.co_kwonlyargcount
 
-    Arguments:
-        func(function): The donor function. All code object properties not
-            explicitly specified will be borrowed from this function.
-
-    Returns:
-        function: The new function with the provided and borrowed functions
-        in place.
-    """
-
-    func_code = six.get_function_code(func)
-
-    co_argcount = co_argcount if co_argcount is not BORROW else func_code.co_argcount
-    co_nlocals = co_nlocals if co_nlocals is not BORROW else func_code.co_nlocals
-    co_stacksize = co_stacksize if co_stacksize is not BORROW else func_code.co_stacksize
-    co_flags = co_flags if co_flags is not BORROW else func_code.co_flags
-    co_code = co_code if co_code is not BORROW else func_code.co_code
-    co_consts = co_consts if co_consts is not BORROW else func_code.co_consts
-    co_names = co_names if co_names is not BORROW else func_code.co_names
-    co_varnames = co_varnames if co_varnames is not BORROW else func_code.co_varnames
-    co_filename = co_filename if co_filename is not BORROW else func_code.co_filename
-    co_name = co_name if co_name is not BORROW else func_code.co_name
-    co_firstlineno = co_firstlineno if co_firstlineno is not BORROW else func_code.co_firstlineno
-    co_lnotab = co_lnotab if co_lnotab is not BORROW else func_code.co_lnotab
-    co_freevars = co_freevars if co_freevars is not BORROW else func_code.co_freevars
-    co_cellvars = co_cellvars if co_cellvars is not BORROW else func_code.co_cellvars
-
-    if six.PY2:
-        code_obj = types.CodeType(
-            co_argcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts, co_names, co_varnames, co_filename,
-            co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars
+        return cls(
+            co_argcount if co_argcount is not BORROW else code.co_argcount,
+            co_kwonlyargcount,
+            co_nlocals if co_nlocals is not BORROW else code.co_nlocals,
+            co_stacksize if co_stacksize is not BORROW else code.co_stacksize,
+            co_flags if co_flags is not BORROW else code.co_flags,
+            co_code if co_code is not BORROW else code.co_code,
+            co_consts if co_consts is not BORROW else code.co_consts,
+            co_names if co_names is not BORROW else code.co_names,
+            co_varnames if co_varnames is not BORROW else code.co_varnames,
+            co_filename if co_filename is not BORROW else code.co_filename,
+            co_name if co_name is not BORROW else code.co_name,
+            co_firstlineno if co_firstlineno is not BORROW else code.co_firstlineno,
+            co_lnotab if co_lnotab is not BORROW else code.co_lnotab,
+            co_freevars if co_freevars is not BORROW else code.co_freevars,
+            co_cellvars if co_cellvars is not BORROW else code.co_cellvars,
         )
-    else:
-        co_kwonlyargcount = co_kwonlyargcount if co_kwonlyargcount is not BORROW else func_code.co_kwonlyargcount
-        code_obj = types.CodeType(
-            co_argcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts, co_names,
-            co_varnames, co_filename, co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars
-        )
 
-    return types.FunctionType(code_obj, globals())
+    @classmethod
+    def from_function(cls, f, *args, **kwargs):
+        return cls.from_code(six.get_function_code(f), *args, **kwargs)
 
+    def disassemble(self):
+        return disassemble(self.co_code, self.py_internals)
 
-def rebuild_func_from_ops(func, ops, **kwargs):
-    """
-    Rebuild a function from a list of :class:`Op` and :class:`Label`
-    instances. It will assemble the opcodes to bytecode and calculate the new
-    maximum stack depth. All other properties will be borrowed from the donor
-    function unless explicitly specified.
+    def assemble(self, ops, py_internals=None):
+        if py_internals is None:
+            py_internals = self.py_internals
+        else:
+            self.py_internals = py_internals
+        self.co_code = assemble(ops, py_internals)
+        self.co_stacksize = calculate_max_stack_depth(ops, py_internals)
+        return self
 
-    Arguments:
-        func(function): The donor function.
-        ops(list): A list of opcodes and labels (as returned by
-            :func:`disassemble`).
-        **kwargs: All specified keyword arguments will be passed to
-            :func:`rebuild_func` except for ``co_code`` and ``co_stacksize``.
+    def to_code(self):
+        if self.py_internals is not pwnypack.py_internals.PY_INTERNALS[None]:
+            raise ValueError('CodeObject is not compatible with the running python internals.')
 
-    Returns:
-        function: The function with the updated bytecode.
-    """
+        if six.PY2:
+            return types.CodeType(
+                self.co_argcount, self.co_nlocals, self.co_stacksize, self.co_flags, self.co_code, self.co_consts,
+                self.co_names, self.co_varnames, self.co_filename, self.co_name, self.co_firstlineno, self.co_lnotab,
+                self.co_freevars, self.co_cellvars
+            )
+        else:
+            return types.CodeType(
+                self.co_argcount, self.co_kwonlyargcount, self.co_nlocals, self.co_stacksize, self.co_flags,
+                self.co_code, self.co_consts, self.co_names, self.co_varnames, self.co_filename, self.co_name,
+                self.co_firstlineno, self.co_lnotab, self.co_freevars, self.co_cellvars
+            )
 
-    kwargs.update({
-        'co_code': assemble(ops),
-        'co_stacksize': calculate_max_stack_depth(ops),
-    })
-    return rebuild_func(func, **kwargs)
+    def to_function(self):
+        return types.FunctionType(self.to_code(), globals())
+
+    def __call__(self, *args, **kwargs):
+        return self.to_function()(*args, **kwargs)
