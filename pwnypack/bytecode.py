@@ -48,6 +48,9 @@ class Label(object):
     Used to define a label in a series of opcodes.
     """
 
+    def __repr__(self):
+        return '<Label:0x%x>' % id(self)
+
 
 class Op(object):
     """
