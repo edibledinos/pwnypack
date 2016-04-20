@@ -11,4 +11,5 @@ from pwnypack.rop import *
 from pwnypack.fmtstring import *
 from pwnypack.php import *
 from pwnypack.pickle import *
+from pwnypack.py_internals import *
 from pwny import bc

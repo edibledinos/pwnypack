@@ -135,15 +135,21 @@ import sys
 import warnings
 
 
-__all__ = ['PY_INTERNALS', {}]
+__all__ = ['get_py_internals']
 
-'''.format(', '.join([repr('PY_{}'.format(version)) for version, _ in versions])))
+''')
 
     for version, info in versions:
+        opmap = '{{{}}}'.format(
+            ', '.join(
+                '{0!r}: {1!r}'.format(k, v)
+                for k, v in sorted(six.iteritems(info['opmap']), key=lambda i: i[0])
+            )
+        )
         stackeffect = '{{{}}}'.format(
             ', '.join(
                 '{0!r}: {1}'.format(k, v)
-                for k, v in six.iteritems(info['stackeffect'])
+                for k, v in sorted(six.iteritems(info['stackeffect']), key=lambda i: i[0])
             )
         )
         print('''#: This dictionary describes the internals of CPython {major}.{minor}.
@@ -162,7 +168,7 @@ PY_{version} = {{
     'hasjrel': {info[hasjrel]!r},
     'hasjabs': {info[hasjabs]!r},
     'cmp_op': {info[cmp_op]},
-    'opmap': {info[opmap]},
+    'opmap': {opmap},
     'opname': {info[opname]},
     'stackeffect': {stackeffect},
     'stackeffect_traits': {stackeffect_traits},
@@ -172,6 +178,7 @@ PY_{version} = {{
             major=version // 10,
             minor=version % 10,
             info=info,
+            opmap=opmap,
             stackeffect=stackeffect,
             stackeffect_traits=STACK_TRAITS[version]
         ))
@@ -185,4 +192,30 @@ PY_INTERNALS = {''')
 
     print('''PY_INTERNALS[None] = PY_INTERNALS.get(sys.version_info[0] * 10 + sys.version_info[1])
 if PY_INTERNALS[None] is None:
-    warnings.warn('The running python version is unsupported, explicit internals will be required.')''')
+    warnings.warn('The running python version is unsupported, explicit internals will be required.')
+
+
+def get_py_internals(version=None, default=None):
+    """
+    Given a version specification. It can be any dict which is returned
+    verbatim, an index into :data:`PY_INTERNALS` or ``None``.
+
+    Arguments:
+        version: The python version to return the internals of.
+        default: The python version that will be looked up if ``version`` is
+            None.
+
+    Returns:
+        dict: The python internals for the requested version.
+    """
+
+    if version is None:
+        version = default
+
+    if isinstance(version, dict):
+        return version
+    elif version in PY_INTERNALS:
+        return PY_INTERNALS[version]
+    else:
+        return ValueError('Unsupported python version %r requested.' % version)
+''')

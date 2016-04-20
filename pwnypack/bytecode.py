@@ -37,7 +37,7 @@ import types
 
 import six
 
-import pwnypack.py_internals
+from pwnypack.py_internals import get_py_internals
 
 
 __all__ = ['Op', 'Label', 'disassemble', 'assemble', 'blocks_from_ops', 'calculate_max_stack_depth', 'CodeObject']
@@ -71,7 +71,7 @@ class Op(object):
             return self.name
 
 
-def disassemble(code, py_internals=None):
+def disassemble(code, origin=None):
     """
     Disassemble python bytecode into a series of :class:`Op` and
     :class:`Label` instances.
@@ -79,7 +79,7 @@ def disassemble(code, py_internals=None):
     Arguments:
         code(bytes): The bytecode (a code object's ``co_code`` property). You
             can also provide a function.
-        py_internals(dict): The opcode specification of the python version that
+        origin(dict): The opcode specification of the python version that
             generated ``code``. If you provide ``None``, the specs for the
             currently running python version will be used.
 
@@ -90,15 +90,14 @@ def disassemble(code, py_internals=None):
     if inspect.isfunction(code):
         code = six.get_function_code(code).co_code
 
-    if py_internals is None:
-        py_internals = pwnypack.py_internals.PY_INTERNALS[None]
+    origin = get_py_internals(origin)
 
-    opname = py_internals['opname']
-    hasjrel = py_internals['hasjrel']
-    hasjabs = py_internals['hasjabs']
+    opname = origin['opname']
+    hasjrel = origin['hasjrel']
+    hasjabs = origin['hasjabs']
     hasjump = set(hasjrel) | set(hasjabs)
 
-    ext_arg_name = opname[py_internals['extended_arg']]
+    ext_arg_name = opname[origin['extended_arg']]
     ext_arg = 0
 
     addr_labels = {}
@@ -106,7 +105,7 @@ def disassemble(code, py_internals=None):
 
     code_iter = enumerate(six.iterbytes(code))
     for op_addr, op_code in code_iter:
-        if op_code >= py_internals['have_argument']:
+        if op_code >= origin['have_argument']:
             _, a = next(code_iter)
             _, b = next(code_iter)
             arg = a + (b << 8) + ext_arg
@@ -142,7 +141,7 @@ def disassemble(code, py_internals=None):
     return ops
 
 
-def assemble(ops, py_internals=None):
+def assemble(ops, target=None):
     """
     Assemble a set of :class:`Op` and :class:`Label` instance back into
     bytecode.
@@ -150,7 +149,7 @@ def assemble(ops, py_internals=None):
     Arguments:
         ops(list): A list of opcodes and labels (as returned by
             :func:`disassemble`).
-        py_internals: The opcode specification of the targeted python
+        target: The opcode specification of the targeted python
             version. If this is ``None`` the specification of the currently
             running python version will be used.
 
@@ -164,15 +163,14 @@ def assemble(ops, py_internals=None):
         else:
             return six.int2byte(op_code) + six.int2byte(op_arg & 255) + six.int2byte(op_arg >> 8)
 
-    if py_internals is None:
-        py_internals = pwnypack.py_internals.PY_INTERNALS[None]
+    target = get_py_internals(target)
 
-    opmap = py_internals['opmap']
-    hasjrel = py_internals['hasjrel']
-    hasjabs = py_internals['hasjabs']
+    opmap = target['opmap']
+    hasjrel = target['hasjrel']
+    hasjabs = target['hasjabs']
     hasjump = set(hasjrel) | set(hasjabs)
-    have_argument = py_internals['have_argument']
-    extended_arg = py_internals['extended_arg']
+    have_argument = target['have_argument']
+    extended_arg = target['extended_arg']
 
     # A bit of a chicken and egg problem: The address of a label depends on the instructions before it. However,
     # the instructions before a label might depend on the label itself: For very large functions, jumps may
@@ -297,7 +295,7 @@ def blocks_from_ops(ops):
     return blocks
 
 
-def calculate_max_stack_depth(ops, py_internals=None):
+def calculate_max_stack_depth(ops, target=None):
     """
     Calculate the maximum stack depth (and required stack size) from a series
     of :class:`Op` and :class:`Label` instances. This is required when you
@@ -310,12 +308,16 @@ def calculate_max_stack_depth(ops, py_internals=None):
     Arguments:
         ops(list): A list of opcodes and labels (as returned by
             :func:`disassemble`).
+        target: The opcode specification of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
 
     Returns:
         int: The calculated maximum stack depth.
     """
 
     blocks = blocks_from_ops(ops)
+    target = get_py_internals(target)
 
     block = blocks[None]
     while block:
@@ -323,11 +325,8 @@ def calculate_max_stack_depth(ops, py_internals=None):
         block.startdepth = -1
         block = block.next
 
-    if py_internals is None:
-        py_internals = pwnypack.py_internals.PY_INTERNALS[None]
-
-    stackeffect = py_internals['stackeffect']
-    stackeffect_traits = py_internals['stackeffect_traits']
+    stackeffect = target['stackeffect']
+    stackeffect_traits = target['stackeffect_traits']
 
     def walk(block=None, depth=0, max_depth=0):
         if not isinstance(block, Block):
@@ -348,8 +347,8 @@ def calculate_max_stack_depth(ops, py_internals=None):
             if depth > max_depth:
                 max_depth = depth
 
-            op_code = py_internals['opmap'][op.name]
-            if op_code in py_internals['hasjrel'] or op_code in py_internals['hasjabs']:
+            op_code = target['opmap'][op.name]
+            if op_code in target['hasjrel'] or op_code in target['hasjabs']:
                 target_depth = depth
 
                 if stackeffect_traits & 1:
@@ -384,7 +383,7 @@ BORROW = object()
 class CodeObject(object):
     def __init__(self, co_argcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts,
                  co_names, co_varnames, co_filename, co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars,
-                 py_internals=None):
+                 origin=None):
         self.co_argcount = co_argcount
         self.co_kwonlyargcount = co_kwonlyargcount
         self.co_nlocals = co_nlocals
@@ -400,10 +399,7 @@ class CodeObject(object):
         self.co_lnotab = co_lnotab
         self.co_freevars = co_freevars
         self.co_cellvars = co_cellvars
-        if py_internals is None:
-            self.py_internals = pwnypack.py_internals.PY_INTERNALS[None]
-        else:
-            self.py_internals = py_internals
+        self.internals = get_py_internals(origin)
 
     @classmethod
     def from_code(cls, code, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW,
@@ -438,19 +434,16 @@ class CodeObject(object):
         return cls.from_code(six.get_function_code(f), *args, **kwargs)
 
     def disassemble(self):
-        return disassemble(self.co_code, self.py_internals)
+        return disassemble(self.co_code, self.internals)
 
-    def assemble(self, ops, py_internals=None):
-        if py_internals is None:
-            py_internals = self.py_internals
-        else:
-            self.py_internals = py_internals
-        self.co_code = assemble(ops, py_internals)
-        self.co_stacksize = calculate_max_stack_depth(ops, py_internals)
+    def assemble(self, ops, target=None):
+        self.internals = target = get_py_internals(target, self.internals)
+        self.co_code = assemble(ops, target)
+        self.co_stacksize = calculate_max_stack_depth(ops, target)
         return self
 
     def to_code(self):
-        if self.py_internals is not pwnypack.py_internals.PY_INTERNALS[None]:
+        if self.internals is not get_py_internals():
             raise ValueError('CodeObject is not compatible with the running python internals.')
 
         if six.PY2:

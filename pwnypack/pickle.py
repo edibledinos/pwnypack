@@ -7,7 +7,7 @@ from six.moves import cPickle, copyreg
 from kwonly_args import kwonly_defaults
 
 import pwnypack.bytecode
-import pwnypack.py_internals
+from pwnypack.py_internals import get_py_internals
 
 
 __all__ = ['pickle_invoke', 'pickle_func']
@@ -25,13 +25,14 @@ class PickleInvoke(object):
         return self.func, self.args
 
 
-def get_protocol_version(target=None, protocol=None):
+def get_protocol_version(protocol=None, target=None):
     """
     Return a suitable pickle protocol version for a given target.
 
     Arguments:
-        target(None or int): The target python version (26, 27, 31, 32, 33,
-            34, 35) or None for the currently running python version.
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol(None or int): The requested protocol version (or None for the
             default of the target python version).
 
@@ -39,17 +40,16 @@ def get_protocol_version(target=None, protocol=None):
         int: A suitable pickle protocol version.
     """
 
-    if target not in pwnypack.py_internals.PY_INTERNALS:
-        raise ValueError('Unsupported target python %r.' % target)
+    target = get_py_internals(target)
 
     if protocol is None:
-        protocol = pwnypack.py_internals.PY_INTERNALS[target]['pickle_default_protocol']
+        protocol = target['pickle_default_protocol']
 
     if protocol > cPickle.HIGHEST_PROTOCOL:
         warnings.warn('Downgrading pickle protocol, running python supports up to %d.' % cPickle.HIGHEST_PROTOCOL)
         protocol = cPickle.HIGHEST_PROTOCOL
 
-    target_highest_protocol = pwnypack.py_internals.PY_INTERNALS[target]['pickle_highest_protocol']
+    target_highest_protocol = target['pickle_highest_protocol']
     if protocol > target_highest_protocol:
         warnings.warn('Downgrading pickle protocol, target python supports up to %d.' % target_highest_protocol)
         protocol = target_highest_protocol
@@ -71,8 +71,9 @@ def pickle_invoke(func, target=None, protocol=None, *args):
     Arguments:
         func(callable): The function to call or class to instantiate.
         args(tuple): The arguments to call the callable with.
-        target: The python version that will be unpickling the data (None,
-            26, 27, 31, 32, 33, 34 or 35).
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol: The pickle protocol version to use (use None for default).
 
     Returns:
@@ -88,11 +89,11 @@ def pickle_invoke(func, target=None, protocol=None, *args):
         Hello, world!
     """
 
-    protocol = get_protocol_version(target, protocol)
+    protocol = get_protocol_version(protocol, target)
     return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
-def translate_opcodes(code_obj, dst_py_internals):
+def translate_opcodes(code_obj, target):
     """
     Very crude inter-python version opcode translator. Raises SyntaxError when
     the opcode doesn't exist in the destination opmap. Used to transcribe
@@ -101,12 +102,14 @@ def translate_opcodes(code_obj, dst_py_internals):
     Arguments:
         code_obj(pwnypack.bytecode.CodeObject): The code object representation
             to translate.
-        dst_py_internals(dict): The py_internals structure for the target
+        target(dict): The py_internals structure for the target
             python version.
     """
 
+    target = get_py_internals(target)
     src_ops = code_obj.disassemble()
-    dst_opmap = dst_py_internals['opmap']
+
+    dst_opmap = target['opmap']
     dst_ops = []
 
     op_iter = enumerate(src_ops)
@@ -147,7 +150,7 @@ def translate_opcodes(code_obj, dst_py_internals):
         else:
             dst_ops.append(op)
 
-    code_obj.assemble(dst_ops, dst_py_internals)
+    code_obj.assemble(dst_ops, target)
 
 
 @kwonly_defaults
@@ -168,7 +171,7 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
 
         - Python 2.6 and 2.7/3.0 use very different, incompatible opcodes for
           conditional jumps (if, while, etc). Serializing those is not
-          always possible between python 2.6 to 2.7/3.0.
+          always possible between python 2.6 and 2.7/3.0.
 
         - Exception handling uses different, incompatible opcodes between
           python 2 and 3.
@@ -180,9 +183,9 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
     Arguments:
         func(callable): The function to serialize and call when unpickled.
         args(tuple): The arguments to call the callable with.
-        target(int): The target python version (``26`` for python 2.6, ``27``
-            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
-            which case the current python version is assumed.
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol(int): The pickle protocol version to use.
         b64encode(bool): Whether to base64 certain code object fields. Required
             when you prepare a pickle for python 3 on python 2. If it's
@@ -204,9 +207,11 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
         Hello, world!
     """
 
+    target = get_py_internals(target)
+
     code = six.get_function_code(func)
     code_obj = pwnypack.bytecode.CodeObject.from_code(code)
-    translate_opcodes(code_obj, pwnypack.py_internals.PY_INTERNALS[target])
+    translate_opcodes(code_obj, target)
 
     def code_reduce_v2(_):
         if b64encode:
@@ -258,10 +263,10 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
 
-    protocol = get_protocol_version(target, protocol)
+    protocol = get_protocol_version(protocol, target)
 
     old_code_reduce = copyreg.dispatch_table.pop(types.CodeType, None)
-    if (target and target < 30) or (target is None and six.PY2):
+    if target['version'] < 30:
         copyreg.pickle(types.CodeType, code_reduce_v2)
     else:
         if six.PY2:

@@ -16,6 +16,8 @@ if __name__ == '__main__':
 =================================================
 
 .. automodule:: pwnypack.py_internals
+
+   .. autofunction:: get_py_internals
 ''')
 
     for version in versions:

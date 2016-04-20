@@ -3,6 +3,8 @@
 
 .. automodule:: pwnypack.py_internals
 
+   .. autofunction:: get_py_internals
+
    .. autodata:: PY_26
         :annotation: = {...}
 
