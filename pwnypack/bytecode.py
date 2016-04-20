@@ -36,6 +36,7 @@ import inspect
 import types
 
 import six
+from kwonly_args import kwonly_defaults
 
 from pwnypack.py_internals import get_py_internals
 
@@ -383,6 +384,46 @@ def calculate_max_stack_depth(ops, target=None):
 BORROW = object()
 
 
+class AnnotatedOp(object):
+    def __init__(self, code_obj, name, arg):
+        self.name = name
+        self.code_obj = code_obj
+
+        self.code = code_obj.internals['opmap'][name]
+
+        self.has_arg = self.code >= code_obj.internals['have_argument']
+        self.has_compare = self.code in code_obj.internals['hascompare']
+        self.has_const = self.code in code_obj.internals['hasconst']
+        self.has_free = self.code in code_obj.internals['hasfree']
+        self.has_local = self.code in code_obj.internals['haslocal']
+        self.has_name = self.code in code_obj.internals['hasname']
+
+        if self.has_arg:
+            if self.has_compare:
+                self.arg = code_obj.internals['cmp_op'][arg]
+            elif self.has_const:
+                self.arg = code_obj.co_consts[arg]
+            elif self.has_free:
+                self.arg = (code_obj.co_cellvars + code_obj.co_freevars)[arg]
+            elif self.has_local:
+                self.arg = code_obj.co_varnames[arg]
+            elif self.has_name:
+                self.arg = code_obj.co_names[arg]
+            else:
+                self.arg = arg
+        else:
+            self.arg = None
+
+    def __repr__(self):
+        if self.has_arg:
+            if self.has_compare or self.has_local or self.has_name:
+                return '%s %s' % (self.name, self.arg)
+            else:
+                return '%s %r' % (self.name, self.arg)
+        else:
+            return self.name
+
+
 class CodeObject(object):
     def __init__(self, co_argcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts,
                  co_names, co_varnames, co_filename, co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars,
@@ -436,8 +477,23 @@ class CodeObject(object):
     def from_function(cls, f, *args, **kwargs):
         return cls.from_code(six.get_function_code(f), *args, **kwargs)
 
-    def disassemble(self):
-        return disassemble(self.co_code, self.internals)
+    def annotate(self, op):
+        if isinstance(op, Label):
+            return op
+        else:
+            return AnnotatedOp(self, op.name, op.arg)
+
+    @kwonly_defaults
+    def disassemble(self, annotate=False, blocks=False):
+        ops = disassemble(self.co_code, self.internals)
+
+        if annotate:
+            ops = [self.annotate(op) for op in ops]
+
+        if blocks:
+            return blocks_from_ops(ops)
+        else:
+            return ops
 
     def assemble(self, ops, target=None):
         self.internals = target = get_py_internals(target, self.internals)
