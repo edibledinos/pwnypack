@@ -412,7 +412,7 @@ class Linux(BaseEnvironment):
                 syscall_code, syscall_reg = self.syscall(arg)
                 code.extend(syscall_code)
                 code.extend(self.reg_push(syscall_reg))
-                return ['pop %s' % reg]
+                return self.reg_pop(reg)
             else:
                 return self.reg_load(reg, arg)
 
