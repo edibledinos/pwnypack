@@ -14,7 +14,7 @@ class ARM(BaseEnvironment):
     Environment that targets a generic, unrestricted ARM architecture.
     """
 
-    target = Target(arch=Target.Arch.arm, bits=32)  #: Target architecture
+    target = None  #: Target architecture, initialized in __init__.
 
     R0 = Register('r0')
     R1 = Register('r1')
@@ -32,23 +32,18 @@ class ARM(BaseEnvironment):
     TEMP_REG2 = R4
     STACK_REG = SP
 
-    ARCH_SET_TYPE = '.arm'
-
-    @property
-    def PREAMBLE(self):
-        return [
-            '.global _start',
-            '',
-            self.ARCH_SET_TYPE,
-            '_start:',
-        ]
+    PREAMBLE = [
+        '.global _start',
+        '_start:',
+    ]
 
     GETPC = [
         '\tadr %s, __data' % OFFSET_REG,
         '__realstart:'
     ]
 
-    def __init__(self):
+    def __init__(self, endian=None):
+        self.target = Target(Target.Arch.arm, 32, endian)
         super(ARM, self).__init__()
 
     def reg_push(self, reg):
