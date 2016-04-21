@@ -60,14 +60,6 @@ class ARM(BaseEnvironment):
     def reg_add_reg(self, reg, add_reg):
         return ['add %s, %s' % (reg, add_reg)]
 
-    def reg_add_imm(self, reg, value):
-        if not value:
-            return []
-        elif value < 2:
-            return ['inc %s' % reg] * value
-        else:
-            return ['add %s, %d' % (reg, value)]
-
     def reg_load_imm(self, reg, value):
         if not value:
             return ['eor %s, %s' % (reg, reg)]
