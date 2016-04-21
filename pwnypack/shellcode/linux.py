@@ -417,7 +417,7 @@ class Linux(BaseEnvironment):
                 return self.reg_load(reg, arg)
 
         arg_code = []
-        for arg_reg, arg_value in reversed(zip(self.SYSCALL_ARG_MAP, op.args)):
+        for arg_reg, arg_value in reversed(list(zip(self.SYSCALL_ARG_MAP, op.args))):
             arg_code.extend(handle_arg(arg_reg, arg_value))
         code.extend(arg_code)
 

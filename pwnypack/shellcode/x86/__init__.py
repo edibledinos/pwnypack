@@ -151,7 +151,7 @@ class X86(BaseEnvironment):
         if data:
             return ['__data:'] + \
                 [
-                    '\tdb ' + b','.join(hex(b) for b in six.iterbytes(datum)) + '  ; ' + repr(orig_datum)
+                    '\tdb ' + ','.join(hex(b) for b in six.iterbytes(datum)) + '  ; ' + repr(orig_datum)
                     for datum, (_, orig_datum) in six.iteritems(data)
                 ]
         else:
