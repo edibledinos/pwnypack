@@ -1,5 +1,6 @@
 import functools
 from enum import IntEnum
+from kwonly_args import kwonly_defaults
 
 try:
     from collections import OrderedDict
@@ -177,13 +178,18 @@ class BaseEnvironment(object):
         return pwnypack.asm.asm(self.compile(ops), target=self.target)
 
     @classmethod
-    def translate(cls, output=TranslateOutput.code):
-        """
+    @kwonly_defaults
+    def translate(cls, output=TranslateOutput.code, *args, **kwargs):
+        """translate(*args, output=TranslateOutput.code, **kwargs)
         Decorator that turns a function into a shellcode emitting function.
 
         Arguments:
             output(~pwnypack.shellcode.base.BaseEnvironment.TranslateOutput): The output
                 format the shellcode function will produce.
+            *args: Positional arguments are passed to shellcode environment
+                constructor.
+            **kwargs: Keyword arguments are passed to shellcode environment
+                constructor.
 
         Returns:
             A decorator that will translate the given function into a
@@ -193,7 +199,7 @@ class BaseEnvironment(object):
         def decorator(f):
             @functools.wraps(f)
             def proxy(*args, **kwargs):
-                env = cls()
+                env = cls(*args, **kwargs)
                 result = translate(env, f, *args, **kwargs)
                 if output == cls.TranslateOutput.code:
                     return env.assemble(result)
