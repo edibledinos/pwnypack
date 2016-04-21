@@ -25,11 +25,16 @@ class ARM(BaseEnvironment):
     R6 = Register('r6')
     R7 = Register('r7')
     R8 = Register('r8')
+    R9 = Register('r9')
+    R10 = Register('r10')
+    R11 = Register('r11')
+    R12 = Register('r12')
     SP = Register('sp')
+    LR = Register('lr')
+    PC = Register('pc')
 
-    OFFSET_REG = R5
-    TEMP_REG = R6
-    TEMP_REG2 = R4
+    OFFSET_REG = R6
+    TEMP_REG = R7
     STACK_REG = SP
 
     PREAMBLE = [

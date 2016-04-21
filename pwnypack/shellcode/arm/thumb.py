@@ -14,5 +14,5 @@ class ARMThumb(ARM):
         if value == 0:
             return self.reg_load_reg(reg, self.OFFSET_REG)
         else:
-            return self.reg_load_imm(self.TEMP_REG2, value) + \
-                   ['add %s, %s, %s' % (reg, self.OFFSET_REG, self.TEMP_REG2)]
+            return self.reg_load_imm(reg, value) + \
+                   ['add %s, %s' % (reg, self.OFFSET_REG)]
