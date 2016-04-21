@@ -66,9 +66,7 @@ class ARM(BaseEnvironment):
         elif value < 0xff:
             return ['mov %s, #0x%x' % (reg, value)]
         else:
-            offset = self.alloc_data(U32(value, target=self.target))
-            data_label = 'data_%08x' % offset
-            return ['ldr %s, %s' % (reg, data_label)]
+            return ['ldr %s, =0x%x' % (reg, value)]
 
     def reg_load_reg(self, dest_reg, src_reg):
         if dest_reg is not src_reg:
@@ -100,9 +98,8 @@ class ARM(BaseEnvironment):
         return code
 
     def finalize_data(self, data):
-        return ['.pool', '__data:'] + [
-            'data_%08x:\n\t.byte %s  @ %s' % (
-                offset,
+        return ['', '.pool', '.align', '__data:'] + [
+            '\t.byte %s  @ %s' % (
                 ', '.join(hex(b) for b in six.iterbytes(datum)),
                 orig_datum,
             )
