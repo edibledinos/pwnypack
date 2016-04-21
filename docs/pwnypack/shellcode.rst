@@ -14,16 +14,26 @@ assemble and the environment fills in the specifics.
 Currently, two concrete shellcode environment types exist each in two
 different flavors:
 
-The generic environments target X86 and X86_64 on the Linux OS. No
-restrictions are made on what kind of bytes end up in the binary output.
+The generic environments target X86, X86_64, ARM, ARM Thumb and ARM Thumb
+Mixed on the Linux OS. No restrictions are made on what kind of bytes end
+up in the binary output.
+
+X86 / X86_64:
 
 - :class:`~pwnypack.shellcode.x86.linux.LinuxX86`
 - :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64`
 
-Specialized classes are also provided. The *NullSafeMutable* variants
-attempt to generate binary output that does not contain NUL bytes, carriage
-returns and line feeds.  The shellcode is assumed to be loaded in a mutable
-and executable segment (like an executable stack).
+ARM / AArch64:
+
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARM`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumb`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumbMixed`
+- :class:`~pwnypack.shellcode.aarch64.linux.LinuxAArch64`
+
+Specialized classes are also provided for X86/X86_64. The *NullSafeMutable*
+variants attempt to generate binary output that does not contain NUL bytes,
+carriage returns and line feeds.  The shellcode is assumed to be loaded in a
+mutable and executable segment (like an executable stack).
 
 - :class:`~pwnypack.shellcode.x86.linux.LinuxX86NullSafeMutable`
 - :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64NullSafeMutable`
@@ -48,9 +58,13 @@ There are two ways to use these shellcode environments:
 
    LinuxX86 <shellcode/x86_linux>
    LinuxX86_64 <shellcode/x86_64_linux>
+   LinuxARM <shellcode/arm_linux>
+   LinuxAArch64 <shellcode/aarch64_linux>
 
    X86 <shellcode/x86>
    X86_64 <shellcode/x86_64>
+   ARM <shellcode/arm>
+   AArch64 <shellcode/aarch64>
    Linux <shellcode/linux>
 
    Base <shellcode/base>

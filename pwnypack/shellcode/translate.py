@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import inspect
-import opcode
 
 import six
 
@@ -16,7 +15,9 @@ __all__ = ['translate']
 def translate(env, func, *args, **kwargs):
     """
     Given a shellcode environment, a function and its parameters, translate
-    the function to binary shellcode.
+    the function to a list of shellcode operations ready to be compiled or
+    assembled using :meth:`~pwnypack.shellcode.base.BaseEnvironment.compile`
+    or :meth:`~pwnypack.shellcode.base.BaseEnvironment.assemble`.
 
     Arguments:
         env(~pwnypack.shellcode.base.Base): An instance of a shellcode

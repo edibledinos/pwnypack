@@ -6,6 +6,10 @@ __all__ = ['LinuxAArch64']
 
 
 class LinuxAArch64(Linux, AArch64):
+    """
+    An environment that targets a generic Linux AArch64 machine.
+    """
+
     sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn', PTR)  #:
 
     SYSCALL_ARG_MAP = [AArch64.X0, AArch64.X1, AArch64.X2, AArch64.X3, AArch64.X4, AArch64.X5]

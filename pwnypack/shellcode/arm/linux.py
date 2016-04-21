@@ -8,7 +8,12 @@ __all__ = ['LinuxARM', 'LinuxARMThumb', 'LinuxARMThumbMixed']
 
 
 class LinuxARM(Linux, ARM):
+    """
+    An environment that targets a generic Linux ARM machine.
+    """
+
     SYSCALL_ARG_MAP = [ARM.R0, ARM.R1, ARM.R2, ARM.R3, ARM.R4, ARM.R5]
+
     SYSCALL_REG = ARM.R7
     SYSCALL_RET_REG = ARM.R0
     SYSCALL_INSTR = 'swi #0'
@@ -342,8 +347,13 @@ class LinuxARM(Linux, ARM):
 
 
 class LinuxARMThumb(ARMThumb, LinuxARM):
-    pass
+    """
+    An environment that targets a generic Linux ARM machine in Thumb mode.
+    """
 
 
 class LinuxARMThumbMixed(ARMThumbMixed, LinuxARMThumb):
-    pass
+    """
+    An environment that targets a generic Linux ARM machine that starts out
+    in ARM mode but switches to Thumb mode.
+    """
