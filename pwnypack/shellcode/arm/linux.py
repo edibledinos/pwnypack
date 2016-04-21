@@ -1,16 +1,16 @@
-from pwnypack.shellcode.types import NUMERIC, PTR, SyscallDef
 from pwnypack.shellcode.linux import Linux
 from pwnypack.shellcode.arm import ARM
 from pwnypack.shellcode.arm.thumb import ARMThumb
 from pwnypack.shellcode.arm.thumb_mixed import ARMThumbMixed
 
-__all__ = [ 'LinuxARM', 'LinuxARMThumb', 'LinuxARMThumbMixed' ]
+
+__all__ = ['LinuxARM', 'LinuxARMThumb', 'LinuxARMThumbMixed']
+
 
 class LinuxARM(Linux, ARM):
-    SYSCALL_ARG_MAP = [ ARM.R0, ARM.R1, ARM.R2, ARM.R3 ]
+    SYSCALL_ARG_MAP = [ARM.R0, ARM.R1, ARM.R2, ARM.R3]
     SYSCALL_REG = ARM.R7
     SYSCALL_INSTR = 'swi #0'
-    ARCH_SET_TYPE = '.arm'
 
     SYSCALL_MAP = {
         Linux.sys_restart_syscall: 0,
@@ -338,8 +338,10 @@ class LinuxARM(Linux, ARM):
         Linux.sys_execveat: 387,
     }
 
-class LinuxARMThumb(ARMThumb, LinuxARM):
-    ARCH_SET_TYPE = '.thumb'
 
-class LinuxARMThumbMixed(LinuxARMThumb, ARMThumbMixed):
-    ARCH_SET_TYPE = '.thumb'
+class LinuxARMThumb(ARMThumb, LinuxARM):
+    pass
+
+
+class LinuxARMThumbMixed(ARMThumbMixed, LinuxARMThumb):
+    pass
