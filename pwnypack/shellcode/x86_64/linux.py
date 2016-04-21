@@ -12,7 +12,6 @@ class LinuxX86_64(Linux, X86_64):
     An environment that targets a generic Linux X86_64 machine.
     """
 
-    sys_mmap = SyscallDef('sys_mmap', NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
     sys_rt_sigreturn = SyscallDef('sys_rt_sigreturn')  #:
     sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)  #:
     sys_arch_prctl = SyscallDef('sys_arch_prctl', NUMERIC, NUMERIC)  #:
@@ -32,7 +31,7 @@ class LinuxX86_64(Linux, X86_64):
         Linux.sys_newlstat: 6,
         Linux.sys_poll: 7,
         Linux.sys_lseek: 8,
-        sys_mmap: 9,
+        Linux.sys_mmap: 9,
         Linux.sys_mprotect: 10,
         Linux.sys_munmap: 11,
         Linux.sys_brk: 12,
