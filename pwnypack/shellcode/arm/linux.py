@@ -10,6 +10,7 @@ __all__ = ['LinuxARM', 'LinuxARMThumb', 'LinuxARMThumbMixed']
 class LinuxARM(Linux, ARM):
     SYSCALL_ARG_MAP = [ARM.R0, ARM.R1, ARM.R2, ARM.R3]
     SYSCALL_REG = ARM.R7
+    SYSCALL_RET_REG = ARM.R0
     SYSCALL_INSTR = 'swi #0'
 
     SYSCALL_MAP = {

@@ -20,6 +20,7 @@ class LinuxX86_64(Linux, X86_64):
 
     SYSCALL_REG = X86_64.RAX
     SYSCALL_ARG_MAP = [X86_64.RDI, X86_64.RSI, X86_64.RDX, X86_64.R10]
+    SYSCALL_RET_REG = X86_64.RAX
     SYSCALL_INSTR = 'syscall'
     SYSCALL_MAP = {
         Linux.sys_read: 0,

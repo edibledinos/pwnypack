@@ -23,6 +23,7 @@ class LinuxX86(Linux, X86):
 
     SYSCALL_REG = X86.EAX
     SYSCALL_ARG_MAP = [X86.EBX, X86.ECX, X86.EDX, X86.ESI, X86.EDI]
+    SYSCALL_RET_REG = X86.EAX
     SYSCALL_INSTR = 'int 0x80'
     SYSCALL_MAP = {
         Linux.sys_restart_syscall: 0,
