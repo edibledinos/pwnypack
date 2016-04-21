@@ -84,6 +84,9 @@ class BaseEnvironment(object):
     def reg_push(self, reg):
         raise NotImplementedError('Target does not define reg_push')
 
+    def reg_pop(self, reg):
+        raise NotImplementedError('Target does not define reg_pop')
+
     def reg_load_imm(self, reg, value):
         raise NotImplementedError('Target does not define reg_load_imm')
 

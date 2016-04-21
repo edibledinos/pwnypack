@@ -97,6 +97,9 @@ class X86(BaseEnvironment):
     def reg_push(self, reg):
         return ['push %s' % reg]
 
+    def reg_pop(self, reg):
+        return ['pop %s' % reg]
+
     def reg_add_reg(self, reg, add_reg):
         return ['add %s, %s' % (reg, add_reg)]
 
