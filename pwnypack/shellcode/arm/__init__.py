@@ -1,6 +1,5 @@
 import six
 
-from pwnypack.packing import U32
 from pwnypack.shellcode.base import BaseEnvironment
 from pwnypack.shellcode.types import Register, Offset
 from pwnypack.target import Target
