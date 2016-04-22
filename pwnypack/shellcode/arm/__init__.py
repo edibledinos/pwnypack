@@ -85,6 +85,6 @@ class ARM(BaseEnvironment):
 
     def finalize(self, code, data):
         return self.PREAMBLE + \
-            self.GETPC + \
+            (self.GETPC if data else []) + \
             ['\t%s' % line for line in code] + \
             self.finalize_data(data)
