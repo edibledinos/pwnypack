@@ -37,6 +37,18 @@ class BaseEnvironment(object):
 
     REGISTER_WIDTH = None  #: Mapping of register -> width, filled by __init__ based on REGISTER_WIDTH_MAP
 
+    @property
+    def STACK_REG(self):
+        raise NotImplementedError('Target does not define a stack register')
+
+    @property
+    def OFFSET_REG(self):
+        raise NotImplementedError('Target does not define an offset register')
+
+    @property
+    def TEMP_REG(self):
+        raise NotImplementedError('Target does not define a temporary register mapping')
+
     def __init__(self):
         if self.REGISTER_WIDTH is None:
             self.REGISTER_WIDTH = dict([

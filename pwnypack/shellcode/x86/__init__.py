@@ -47,21 +47,18 @@ class X86(BaseEnvironment):
     EBP = Register('ebp')  #: ebp register
     EIP = Register('eip')  #: eip register
 
-    TEMP_REG = {
-        32: EAX,
-        16: AX,
-        8: AL,
-    }
-
-    TEMP_PTR = TEMP_REG[32]
-    PC = EIP
-    OFFSET_REG = EBP
-    STACK_REG = ESP
-
     REGISTER_WIDTH_MAP = {
         8: (AL, BL, CL, DL, AH, BH, CH, DH),
         16: (AX, BX, CX, DX, SI, DI, BP, SP),
         32: (EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP),
+    }
+
+    STACK_REG = ESP
+    OFFSET_REG = EBP
+    TEMP_REG = {
+        32: EAX,
+        16: AX,
+        8: AL,
     }
 
     @property

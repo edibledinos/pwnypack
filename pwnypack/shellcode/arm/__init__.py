@@ -32,13 +32,13 @@ class ARM(BaseEnvironment):
     LR = Register('lr')
     PC = Register('pc')
 
-    OFFSET_REG = R6
-    TEMP_REG = R7
     REGISTER_WIDTH_MAP = {
         32: [R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, SP, LR, PC]
     }
 
     STACK_REG = SP
+    OFFSET_REG = R6
+    TEMP_REG = {32: R7}
 
     PREAMBLE = [
         '.global _start',

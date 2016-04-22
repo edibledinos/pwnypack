@@ -34,14 +34,15 @@ class X86NullSafeMutable(X86NullSafe):
 
         if xor_offsets:
             # Build code to restore NUL, \r and \n
+            temp_reg = self.TEMP_REG[self.target.bits]
             null_code = self.reg_load(self.BL, 255) + \
-                        self.reg_load(self.TEMP_PTR, self.OFFSET_REG)
+                        self.reg_load(temp_reg, self.OFFSET_REG)
             last_offset = 0
             for offset in xor_offsets:
                 offset -= last_offset
                 null_code.extend(
-                    self.reg_add_imm(self.TEMP_PTR, offset) +
-                    ['xor [%s], bl' % self.TEMP_PTR]
+                    self.reg_add_imm(temp_reg, offset) +
+                    ['xor [%s], bl' % temp_reg]
                 )
                 last_offset += offset
         else:
