@@ -1,7 +1,7 @@
 import six
 
 from pwnypack.shellcode.base import BaseEnvironment
-from pwnypack.shellcode.types import Register, Offset
+from pwnypack.shellcode.types import Register
 from pwnypack.target import Target
 
 
