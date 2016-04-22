@@ -198,9 +198,9 @@ class BaseEnvironment(object):
 
         def decorator(f):
             @functools.wraps(f)
-            def proxy(*args, **kwargs):
+            def proxy(*p_args, **p_kwargs):
                 env = cls(*args, **kwargs)
-                result = translate(env, f, *args, **kwargs)
+                result = translate(env, f, *p_args, **p_kwargs)
                 if output == cls.TranslateOutput.code:
                     return env.assemble(result)
                 elif output == cls.TranslateOutput.assembly:
