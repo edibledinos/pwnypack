@@ -5,6 +5,10 @@
     :show-inheritance:
     :members:
 
-.. autoclass:: pwnypack.shellcode.x86_64.linux.LinuxX86_64NullSafeMutable
+.. autoclass:: pwnypack.shellcode.x86_64.linux.LinuxX86_64Mutable
+    :show-inheritance:
+    :members:
+
+.. autoclass:: pwnypack.shellcode.x86_64.linux.LinuxX86_64MutableNullSafe
     :show-inheritance:
     :members:

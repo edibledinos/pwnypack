@@ -1,10 +1,12 @@
+from pwnypack.shellcode.x86_64.null_safe import X86_64NullSafe
 from pwnypack.shellcode.types import NUMERIC, PTR, SyscallDef
 from pwnypack.shellcode.linux import Linux
+from pwnypack.shellcode.x86.mutable_data import X86MutableData
+from pwnypack.shellcode.x86.xor_data import X86XorData
 from pwnypack.shellcode.x86_64 import X86_64
-from pwnypack.shellcode.x86_64.null_safe_mutable import X86_64NullSafeMutable
 
 
-__all__ = ['LinuxX86_64', 'LinuxX86_64NullSafeMutable']
+__all__ = ['LinuxX86_64Mutable', 'LinuxX86_64MutableNullSafe']
 
 
 class LinuxX86_64(Linux, X86_64):
@@ -337,8 +339,14 @@ class LinuxX86_64(Linux, X86_64):
     }
 
 
-class LinuxX86_64NullSafeMutable(X86_64NullSafeMutable, LinuxX86_64):
+class LinuxX86_64Mutable(LinuxX86_64, X86MutableData):
     """
-    An environment that targets a Linux X86_64 machine in a writable segment
+    An environment that targets a 64-bit Linux X86 machine in a writable segment.
+    """
+
+
+class LinuxX86_64MutableNullSafe(X86_64NullSafe, X86XorData, X86MutableData, LinuxX86_64):
+    """
+    An environment that targets a 64-bit Linux X86 machine in a writable segment
     that emits no NUL bytes or carriage return characters.
     """

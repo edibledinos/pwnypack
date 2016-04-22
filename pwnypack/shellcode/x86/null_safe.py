@@ -72,7 +72,7 @@ class X86NullSafe(X86):
 
         # reduce size until smallest addressable sub-register
         while reg in self.HALF_REG:
-            if value >> (reg_width / 2):
+            if value >= 2 ** (reg_width // 2):
                 break
 
             if not preamble:
@@ -83,7 +83,7 @@ class X86NullSafe(X86):
                     preamble = ['xor %s, %s' % (self.HALF_REG[reg], self.HALF_REG[reg])]
 
             reg = self.HALF_REG[reg]
-            reg_width /= 2
+            reg_width //= 2
 
         zero = preamble + (['xor %s, %s' % (reg, reg)] if not preamble else [])
 
@@ -146,9 +146,11 @@ class X86NullSafe(X86):
                ['add %s, %s' % (reg, self.OFFSET_REG)]
 
     def finalize(self, code, data):
+        prepare_data_code, data = self.prepare_data(data)
+
         if data:
             # Determine length of nullify + shellcode and adjust data pointer
-            code_len = len(asm('\n'.join(code), target=self.target))
+            code_len = len(asm('\n'.join(prepare_data_code + code), target=self.target))
             adjust_ebp = self.reg_add_imm(self.OFFSET_REG, code_len)
             get_pc = self.GETPC1 + ['\t%s' % line for line in adjust_ebp] + self.GETPC2
         else:
@@ -157,5 +159,5 @@ class X86NullSafe(X86):
         # Return finalized code
         return self.PREAMBLE + \
             get_pc + \
-            ['\t%s' % line for line in code] + \
+            ['\t%s' % line for line in prepare_data_code + code] + \
             self.finalize_data(data)

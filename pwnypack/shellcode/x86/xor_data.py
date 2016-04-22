@@ -4,14 +4,14 @@ except ImportError:
     from ordereddict import OrderedDict
 import six
 
-from pwnypack.shellcode.x86.null_safe import X86NullSafe
+from pwnypack.shellcode.x86 import X86
 
 
-__all__ = ['X86NullSafeMutable']
+__all__ = ['X86XorData']
 
 
-class X86NullSafeMutable(X86NullSafe):
-    def finalize(self, code, data):
+class X86XorData(X86):
+    def prepare_data(self, data):
         xor_offsets = []
         masked_data = OrderedDict()
 
@@ -48,4 +48,5 @@ class X86NullSafeMutable(X86NullSafe):
         else:
             null_code = []
 
-        return super(X86NullSafeMutable, self).finalize(null_code + code, masked_data)
+        code, data = super(X86XorData, self).prepare_data(masked_data)
+        return code + null_code, data

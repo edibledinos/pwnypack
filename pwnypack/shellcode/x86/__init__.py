@@ -91,6 +91,9 @@ class X86(BaseEnvironment):
     def reg_pop(self, reg):
         return ['pop %s' % reg]
 
+    def reg_add_imm(self, reg, value):
+        return ['add %s, %d' % (reg, value)]
+
     def reg_load_imm(self, reg, value):
         reg_width = self.REGISTER_WIDTH[reg]
         if value >= 2 ** reg_width:
@@ -107,18 +110,15 @@ class X86(BaseEnvironment):
     def reg_load_offset(self, reg, value):
         return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
 
+    def prepare_data(self, data):
+        raise NotImplementedError('Target does not define a prepare_data method.')
+
     def finalize_data(self, data):
-        if data:
-            return ['__data:'] + \
-                [
-                    '\tdb ' + ','.join(hex(b) for b in six.iterbytes(datum)) + '  ; ' + repr(orig_datum)
-                    for datum, (_, orig_datum) in six.iteritems(data)
-                ]
-        else:
-            return []
+        raise NotImplementedError('Target does not define a finalize_data method.')
 
     def finalize(self, code, data):
+        prepare_data_code, data = self.prepare_data(data)
         return self.PREAMBLE + \
             (self.GETPC if data else []) + \
-            ['\t%s' % line for line in code] + \
+            ['\t%s' % line for line in prepare_data_code + code] + \
             self.finalize_data(data)

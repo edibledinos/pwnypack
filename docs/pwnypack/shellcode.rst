@@ -16,12 +16,13 @@ different flavors:
 
 The generic environments target X86, X86_64, ARM, ARM Thumb and ARM Thumb
 Mixed on the Linux OS. No restrictions are made on what kind of bytes end
-up in the binary output.
+up in the binary output. If you use buffers, the code segment will need
+to be writable.
 
 X86 / X86_64:
 
-- :class:`~pwnypack.shellcode.x86.linux.LinuxX86`
-- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64`
+- :class:`~pwnypack.shellcode.x86.linux.LinuxX86Mutable`
+- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64Mutable`
 
 ARM / AArch64:
 
@@ -35,8 +36,8 @@ variants attempt to generate binary output that does not contain NUL bytes,
 carriage returns and line feeds.  The shellcode is assumed to be loaded in a
 mutable and executable segment (like an executable stack).
 
-- :class:`~pwnypack.shellcode.x86.linux.LinuxX86NullSafeMutable`
-- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64NullSafeMutable`
+- :class:`~pwnypack.shellcode.x86.linux.LinuxX86MutableNullSafe`
+- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64MutableNullSafe`
 
 Each shellcode environment defines a set of registers that are available on
 the architecture and a set of system calls. These are available as properties

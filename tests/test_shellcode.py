@@ -7,7 +7,7 @@ from pwny import *
 @pytest.mark.xfail(sys.version_info < (2, 7),
                    reason="inspect.getcallargs new in python 2.7")
 def test_shellcode_translate():
-    @sc.LinuxX86.translate()
+    @sc.LinuxX86Mutable.translate()
     def shellcode():
         buf = alloc_buffer(64)
         sys_read(0, buf, buf.length)
@@ -18,10 +18,10 @@ def test_shellcode_translate():
 
 
 SHELLCODE_ENVS = [
-    (sc.LinuxX86, ()),
-    (sc.LinuxX86NullSafeMutable, ()),
-    (sc.LinuxX86_64, ()),
-    (sc.LinuxX86_64NullSafeMutable, ()),
+    (sc.LinuxX86Mutable, ()),
+    (sc.LinuxX86MutableNullSafe, ()),
+    (sc.LinuxX86_64Mutable, ()),
+    (sc.LinuxX86_64MutableNullSafe, ()),
 
     (sc.LinuxARM, ()),
     (sc.LinuxARM, (Target.Endian.little,)),
