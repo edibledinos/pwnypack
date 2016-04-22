@@ -31,7 +31,19 @@ class BaseEnvironment(object):
         assembly = 1  #: Emit assembly source.
         meta = 2  #: Emit the declarative version of the translated function.
 
+    @property
+    def REGISTER_WIDTH_MAP(self):
+        raise NotImplementedError('Target does not define a register width map')
+
+    REGISTER_WIDTH = None  #: Mapping of register -> width, filled by __init__ based on REGISTER_WIDTH_MAP
+
     def __init__(self):
+        if self.REGISTER_WIDTH is None:
+            self.REGISTER_WIDTH = dict([
+                (reg_, width)
+                for (width, regs) in self.REGISTER_WIDTH_MAP.items()
+                for reg_ in regs
+            ])
         self.data = OrderedDict()
         self.buffers = []
 

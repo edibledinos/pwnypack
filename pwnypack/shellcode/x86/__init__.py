@@ -63,7 +63,6 @@ class X86(BaseEnvironment):
         16: (AX, BX, CX, DX, SI, DI, BP, SP),
         32: (EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP),
     }
-    REGISTER_WIDTH = None  # Filled by __init__
 
     @property
     def PREAMBLE(self):
@@ -88,11 +87,6 @@ class X86(BaseEnvironment):
 
     def __init__(self):
         super(X86, self).__init__()
-        self.REGISTER_WIDTH = dict([
-            (reg_, width)
-            for (width, regs) in self.REGISTER_WIDTH_MAP.items()
-            for reg_ in regs
-        ])
 
     def reg_push(self, reg):
         return ['push %s' % reg]
