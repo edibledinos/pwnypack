@@ -139,7 +139,7 @@ class BaseEnvironment(object):
 
                 code.extend(self.reg_push(item))
 
-        code.extend(self.reg_load_reg(reg, self.STACK_REG))
+        code.extend(self.reg_load(reg, self.STACK_REG))
         return code
 
     def reg_load(self, reg, value):
@@ -150,7 +150,10 @@ class BaseEnvironment(object):
             return self.reg_load_imm(reg, 0)
 
         elif isinstance(value, Register):
-            return self.reg_load_reg(reg, value)
+            if reg is not value:
+                return self.reg_load_reg(reg, value)
+            else:
+                return []
 
         elif isinstance(value, Offset):
             return self.reg_load_offset(reg, value)

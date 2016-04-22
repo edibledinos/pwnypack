@@ -142,11 +142,8 @@ class X86NullSafe(X86):
                 ]
 
     def reg_load_offset(self, reg, value):
-        if value == 0:
-            return self.reg_load_reg(reg, self.OFFSET_REG)
-        else:
-            return self.reg_load_imm(reg, value) + \
-                   self.reg_add_reg(reg, self.OFFSET_REG)
+        return self.reg_load(reg, int(value)) + \
+               ['add %s, %s' % (reg, self.OFFSET_REG)]
 
     def finalize(self, code, data):
         if data:

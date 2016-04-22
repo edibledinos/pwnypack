@@ -91,17 +91,6 @@ class X86(BaseEnvironment):
     def reg_pop(self, reg):
         return ['pop %s' % reg]
 
-    def reg_add_reg(self, reg, add_reg):
-        return ['add %s, %s' % (reg, add_reg)]
-
-    def reg_add_imm(self, reg, value):
-        if not value:
-            return []
-        elif value < 2:
-            return ['inc %s' % reg] * value
-        else:
-            return ['add %s, %d' % (reg, value)]
-
     def reg_load_imm(self, reg, value):
         reg_width = self.REGISTER_WIDTH[reg]
         if value >= 2 ** reg_width:
@@ -113,16 +102,10 @@ class X86(BaseEnvironment):
             return ['mov %s, %d' % (reg, value)]
 
     def reg_load_reg(self, dest_reg, src_reg):
-        if dest_reg is not src_reg:
-            return ['mov %s, %s' % (dest_reg, src_reg)]
-        else:
-            return []
+        return ['mov %s, %s' % (dest_reg, src_reg)]
 
     def reg_load_offset(self, reg, value):
-        if value == 0:
-            return self.reg_load_reg(reg, self.OFFSET_REG)
-        else:
-            return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
+        return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
 
     def finalize_data(self, data):
         if data:

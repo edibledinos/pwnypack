@@ -69,16 +69,10 @@ class ARM(BaseEnvironment):
             return ['ldr %s, =0x%x' % (reg, value)]
 
     def reg_load_reg(self, dest_reg, src_reg):
-        if dest_reg is not src_reg:
-            return ['mov %s, %s' % (dest_reg, src_reg)]
-        else:
-            return []
+        return ['mov %s, %s' % (dest_reg, src_reg)]
 
     def reg_load_offset(self, reg, value):
-        if value == 0:
-            return self.reg_load_reg(reg, self.OFFSET_REG)
-        else:
-            return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
+       return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
 
     def finalize_data(self, data):
         return ['', '.pool', '.align', '__data:'] + [

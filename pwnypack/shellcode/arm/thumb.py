@@ -11,8 +11,5 @@ class ARMThumb(ARM):
         self.target.mode |= Target.Mode.arm_thumb
 
     def reg_load_offset(self, reg, value):
-        if value == 0:
-            return self.reg_load_reg(reg, self.OFFSET_REG)
-        else:
-            return self.reg_load_imm(reg, value) + \
-                   ['add %s, %s' % (reg, self.OFFSET_REG)]
+        return self.reg_load_imm(reg, value) + \
+               ['add %s, %s' % (reg, self.OFFSET_REG)]
