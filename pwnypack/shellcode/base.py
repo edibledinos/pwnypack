@@ -122,7 +122,25 @@ class BaseEnvironment(object):
         raise NotImplementedError('Target does not define reg_load_offset')
 
     def reg_load_array(self, reg, value):
-        raise NotImplementedError('Target does not define reg_load_array')
+        temp_reg = self.TEMP_REG[self.target.bits]
+        code = []
+
+        if value:
+            for item in reversed(value):
+                if isinstance(item, (six.text_type, six.binary_type)):
+                    item = self.alloc_data(item)
+
+                if isinstance(item, Offset) and not item:
+                    item = self.OFFSET_REG
+
+                if not isinstance(item, Register):
+                    code.extend(self.reg_load(temp_reg, item))
+                    item = temp_reg
+
+                code.extend(self.reg_push(item))
+
+        code.extend(self.reg_load_reg(reg, self.STACK_REG))
+        return code
 
     def reg_load(self, reg, value):
         if isinstance(value, (six.text_type, six.binary_type)):

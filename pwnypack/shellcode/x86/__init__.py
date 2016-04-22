@@ -124,23 +124,6 @@ class X86(BaseEnvironment):
         else:
             return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
 
-    def reg_load_array(self, reg, value):
-        temp_reg = self.TEMP_REG[self.REGISTER_WIDTH[reg]]
-
-        code = []
-        for item in reversed(value):
-            if isinstance(item, (six.text_type, six.binary_type)):
-                item = self.alloc_data(item)
-
-            if isinstance(item, Offset) and not item:
-                code.extend(self.reg_push(self.OFFSET_REG))
-            else:
-                code.extend(self.reg_load(temp_reg, item))
-                code.extend(self.reg_push(temp_reg))
-
-        code.extend(self.reg_load_reg(reg, self.STACK_REG))
-        return code
-
     def finalize_data(self, data):
         if data:
             return ['__data:'] + \
