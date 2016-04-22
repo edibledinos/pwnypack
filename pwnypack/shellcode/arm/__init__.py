@@ -56,9 +56,6 @@ class ARM(BaseEnvironment):
     def reg_pop(self, reg):
         return ['pop {%s}' % reg]
 
-    def reg_add_reg(self, reg, add_reg):
-        return ['add %s, %s' % (reg, add_reg)]
-
     def reg_load_imm(self, reg, value):
         if not value:
             return ['eor %s, %s' % (reg, reg)]
