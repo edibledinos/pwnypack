@@ -33,7 +33,7 @@ class LinuxARM(Linux, ARM):
         Linux.sys_lseek: 19,
         Linux.sys_getpid: 20,
         Linux.sys_mount: 21,
-        Linux.sys_umount: 22,
+        Linux.sys_umount2: 22,
         Linux.sys_setuid: 23,
         Linux.sys_getuid: 24,
         Linux.sys_stime: 25,

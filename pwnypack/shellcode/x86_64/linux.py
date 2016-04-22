@@ -187,7 +187,7 @@ class LinuxX86_64(Linux, X86_64):
         Linux.sys_acct: 163,
         Linux.sys_settimeofday: 164,
         Linux.sys_mount: 165,
-        Linux.sys_umount: 166,
+        Linux.sys_umount2: 166,
         Linux.sys_swapon: 167,
         Linux.sys_swapoff: 168,
         Linux.sys_reboot: 169,

@@ -113,8 +113,8 @@ class Linux(BaseEnvironment):
     sys_fdatasync = SyscallDef('sys_fdatasync', NUMERIC)  #:
     sys_bdflush = SyscallDef('sys_bdflush', NUMERIC, NUMERIC)  #:
     sys_mount = SyscallDef('sys_mount', CHARP, CHARP, CHARP, NUMERIC, PTR)  #:
-    sys_umount = SyscallDef('sys_umount', CHARP, NUMERIC)  #:
-    sys_oldumount = SyscallDef('sys_oldumount', CHARP)  #:
+    sys_umount2 = SyscallDef('sys_umount', CHARP, NUMERIC)  #:
+    sys_umount = SyscallDef('sys_oldumount', CHARP)  #:
     sys_truncate = SyscallDef('sys_truncate', CHARP, NUMERIC)  #:
     sys_ftruncate = SyscallDef('sys_ftruncate', NUMERIC, NUMERIC)  #:
     sys_stat = SyscallDef('sys_stat', CHARP, PTR)  #:
@@ -306,6 +306,7 @@ class Linux(BaseEnvironment):
     sys_sysctl = SyscallDef('sys_sysctl', PTR)  #:
     sys_sysinfo = SyscallDef('sys_sysinfo', PTR)  #:
     sys_sysfs = SyscallDef('sys_sysfs', NUMERIC, NUMERIC, NUMERIC)  #:
+    sys_nfsservctl = SyscallDef(NUMERIC, PTR, PTR)  #:
     sys_syslog = SyscallDef('sys_syslog', NUMERIC, CHARP, NUMERIC)  #:
     sys_uselib = SyscallDef('sys_uselib', CHARP)  #:
     sys_ni_syscall = SyscallDef('sys_ni_syscall')  #:
