@@ -82,7 +82,7 @@ class ARM(BaseEnvironment):
 
     def finalize_data(self, data):
         return ['', '.pool', '.align', '__data:'] + [
-            '\t.byte %s  @ %s' % (
+            '\t.byte %s  @ %r' % (
                 ', '.join(hex(b) for b in six.iterbytes(datum)),
                 orig_datum,
             )
