@@ -45,7 +45,7 @@ class X86NullSafe(X86):
             return []
         elif value < 3:
             return ['inc %s' % reg] * value
-        elif value < 256 and value not in (10, 13):
+        elif value < 128 and value not in (10, 13):
             return ['add %s, %d' % (reg, value)]
         elif reg is not temp_reg:
             return self.reg_load_imm(temp_reg, value) + \
