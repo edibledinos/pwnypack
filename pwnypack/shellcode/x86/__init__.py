@@ -64,7 +64,7 @@ class X86(BaseEnvironment):
     @property
     def PREAMBLE(self):
         return [
-            'BITS %d' % self.target.bits,
+            'BITS %d' % self.target.bits.value,
             'global _start',
             '',
             'SECTION .text',
