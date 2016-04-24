@@ -64,10 +64,7 @@ class X86NullSafe(X86):
         preamble = []
 
         # reduce size until smallest addressable sub-register
-        while reg in self.HALF_REG:
-            if value >= 2 ** (reg_width // 2):
-                break
-
+        while reg in self.HALF_REG and value < 2 ** (reg_width // 2):
             if not preamble:
                 if reg_width <= 32:
                     preamble = ['xor %s, %s' % (reg, reg)]
@@ -123,6 +120,12 @@ class X86NullSafe(X86):
                 return preamble + [
                     'mov %s, %d' % (reg, mask),
                     'xor %s, %d' % (reg, masked_value),
+                ]
+            elif reg is not self.TEMP_REG[reg_width]:
+                return preamble + [
+                    'mov %s, %d' % (self.TEMP_REG[reg_width], mask),
+                    'mov %s, %d' % (reg, masked_value),
+                    'xor %s, %s' % (reg, self.TEMP_REG[reg_width]),
                 ]
             else:
                 # No 64bit immediate xor, use stack
