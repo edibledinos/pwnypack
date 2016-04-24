@@ -160,7 +160,10 @@ class BaseEnvironment(object):
                 return []
 
         elif isinstance(value, Offset):
-            return self.reg_load_offset(reg, value)
+            if value:
+                return self.reg_load_offset(reg, value)
+            else:
+                return self.reg_load(reg, self.OFFSET_REG)
 
         elif isinstance(value, Buffer):
             return self.reg_load_offset(reg, sum(len(v) for v in six.iterkeys(self.data)) + value.offset)
