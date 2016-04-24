@@ -1,4 +1,3 @@
-from pwnypack.asm import asm
 from pwnypack.shellcode.x86 import X86
 
 
@@ -6,21 +5,6 @@ __all__ = ['X86NullSafe']
 
 
 class X86NullSafe(X86):
-    @property
-    def GETPC1(self):
-        return [
-            '\tjmp __getpc1',
-            '__getpc0:',
-            '\tpop %s' % self.OFFSET_REG,
-        ]
-
-    GETPC2 = [
-        '\tjmp __realstart',
-        '__getpc1:',
-        '\tcall __getpc0',
-        '__realstart:',
-    ]
-
     HALF_REG = {}
     for pair in ((X86.EAX, X86.AX, X86.AL), (X86.EBX, X86.BX, X86.BL),
                  (X86.ECX, X86.CX, X86.CL), (X86.EDX, X86.DX, X86.DL),
@@ -144,20 +128,3 @@ class X86NullSafe(X86):
     def reg_load_offset(self, reg, value):
         return self.reg_load(reg, int(value)) + \
                ['add %s, %s' % (reg, self.OFFSET_REG)]
-
-    def finalize(self, code, data):
-        prepare_data_code, data = self.prepare_data(data)
-
-        if data:
-            # Determine length of nullify + shellcode and adjust data pointer
-            code_len = len(asm('\n'.join(prepare_data_code + code), target=self.target))
-            adjust_ebp = self.reg_add_imm(self.OFFSET_REG, code_len)
-            get_pc = self.GETPC1 + ['\t%s' % line for line in adjust_ebp] + self.GETPC2
-        else:
-            get_pc = []
-
-        # Return finalized code
-        return self.PREAMBLE + \
-            get_pc + \
-            ['\t%s' % line for line in prepare_data_code + code] + \
-            self.finalize_data(data)

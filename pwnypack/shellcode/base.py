@@ -1,11 +1,11 @@
-import functools
-from enum import IntEnum
-from kwonly_args import kwonly_defaults
-
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+from enum import IntEnum
+import functools
+
+from kwonly_args import kwonly_defaults
 import six
 
 import pwnypack.asm
@@ -30,6 +30,10 @@ class BaseEnvironment(object):
         code = 0  #: Emit binary, executable code.
         assembly = 1  #: Emit assembly source.
         meta = 2  #: Emit the declarative version of the translated function.
+
+    @property
+    def PREAMBLE(self):
+        raise NotImplementedError('Target does not define a preamble')
 
     @property
     def REGISTER_WIDTH_MAP(self):
@@ -177,8 +181,11 @@ class BaseEnvironment(object):
     def syscall(self, op):
         raise NotImplementedError('Target does not define syscall method')
 
-    def finalize(self, code, data):
-        raise NotImplementedError('Target does not define finalize method')
+    def data_finalizer(self, code, data):
+        raise NotImplementedError('Target does not define a data finalizer')
+
+    def finalize(self, code):
+        return self.PREAMBLE + code
 
     def compile(self, ops):
         """
@@ -203,11 +210,11 @@ class BaseEnvironment(object):
                     code.extend(op.split('\n'))
                 else:
                     raise ValueError('No idea how to assemble "%s"' % repr(op))
-            return code
+            return ['\t%s' % line for line in code]
 
         # We do 2 passes to make sure all data is allocated so buffers point at the right offset.
         _compile()
-        return '\n'.join(self.finalize(_compile(), self.data))
+        return '\n'.join(self.finalize(self.data_finalizer(_compile(), self.data)))
 
     def assemble(self, ops):
         """

@@ -1,8 +1,10 @@
 from pwnypack.shellcode.linux import Linux
 from pwnypack.shellcode.aarch64 import AArch64
+from pwnypack.shellcode.mutable_data import gnu_as_mutable_data_finalizer
 from pwnypack.shellcode.types import SyscallDef, PTR
 
-__all__ = ['LinuxAArch64']
+
+__all__ = ['LinuxAArch64Mutable']
 
 
 class LinuxAArch64(Linux, AArch64):
@@ -289,3 +291,7 @@ class LinuxAArch64(Linux, AArch64):
         Linux.sys_mlock2: 284,
         Linux.sys_copy_file_range: 285,
     }
+
+
+class LinuxAArch64Mutable(LinuxAArch64):
+    data_finalizer = gnu_as_mutable_data_finalizer(lambda env, _: ['\tadr %s, __data' % env.OFFSET_REG], '//')

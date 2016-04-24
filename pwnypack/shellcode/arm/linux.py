@@ -2,9 +2,10 @@ from pwnypack.shellcode.linux import Linux
 from pwnypack.shellcode.arm import ARM
 from pwnypack.shellcode.arm.thumb import ARMThumb
 from pwnypack.shellcode.arm.thumb_mixed import ARMThumbMixed
+from pwnypack.shellcode.mutable_data import gnu_as_mutable_data_finalizer
 
 
-__all__ = ['LinuxARM', 'LinuxARMThumb', 'LinuxARMThumbMixed']
+__all__ = ['LinuxARMMutable', 'LinuxARMThumbMutable', 'LinuxARMThumbMixedMutable']
 
 
 class LinuxARM(Linux, ARM):
@@ -352,8 +353,23 @@ class LinuxARMThumb(ARMThumb, LinuxARM):
     """
 
 
-class LinuxARMThumbMixed(ARMThumbMixed, LinuxARMThumb):
+class LinuxARMThumbMixed(ARMThumbMixed, LinuxARM):
     """
     An environment that targets a generic Linux ARM machine that starts out
     in ARM mode but switches to Thumb mode.
     """
+
+
+_mutable_data_finalizer = gnu_as_mutable_data_finalizer(lambda env, _: ['\tadr %s, __data' % env.OFFSET_REG], '@')
+
+
+class LinuxARMMutable(LinuxARM):
+    data_finalizer = _mutable_data_finalizer
+
+
+class LinuxARMThumbMutable(LinuxARMThumb):
+    data_finalizer = _mutable_data_finalizer
+
+
+class LinuxARMThumbMixedMutable(LinuxARMThumbMixed):
+    data_finalizer = _mutable_data_finalizer

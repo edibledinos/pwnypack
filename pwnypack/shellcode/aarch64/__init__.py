@@ -1,5 +1,3 @@
-import six
-
 from pwnypack.shellcode.base import BaseEnvironment
 from pwnypack.shellcode.types import Register
 from pwnypack.target import Target
@@ -92,11 +90,6 @@ class AArch64(BaseEnvironment):
         '_start:',
     ]
 
-    GETPC = [
-        '\tadr %s, __data' % OFFSET_REG,
-        '__realstart:'
-    ]
-
     REGISTER_WIDTH_MAP = {
         64: [X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13, X14, X15, X16, X17, X18, X19, X20, X21,
              X22, X23, X24, X25, X26, X27, X28, X29, X30, SP, XZR],
@@ -127,21 +120,3 @@ class AArch64(BaseEnvironment):
 
     def reg_load_offset(self, reg, value):
         return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
-
-    def finalize_data(self, data):
-        if data:
-            return ['', '.pool', '.align', '__data:'] + [
-                '\t.byte %s  // %r' % (
-                    ', '.join(hex(b) for b in six.iterbytes(datum)),
-                    orig_datum,
-                )
-                for datum, (_, orig_datum) in six.iteritems(data)
-            ]
-        else:
-            return ['', '.pool']
-
-    def finalize(self, code, data):
-        return self.PREAMBLE + \
-            (self.GETPC if data else []) + \
-            ['\t%s' % line for line in code] + \
-            self.finalize_data(data)

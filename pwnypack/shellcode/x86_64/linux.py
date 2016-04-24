@@ -1,8 +1,7 @@
+from pwnypack.shellcode.x86.mutable_data import nasm_mutable_data_finalizer, nasm_null_safe_mutable_data_finalizer
 from pwnypack.shellcode.x86_64.null_safe import X86_64NullSafe
 from pwnypack.shellcode.types import NUMERIC, PTR, SyscallDef
 from pwnypack.shellcode.linux import Linux
-from pwnypack.shellcode.x86.mutable_data import X86MutableData
-from pwnypack.shellcode.x86.xor_data import X86XorData
 from pwnypack.shellcode.x86_64 import X86_64
 
 
@@ -339,14 +338,18 @@ class LinuxX86_64(Linux, X86_64):
     }
 
 
-class LinuxX86_64Mutable(LinuxX86_64, X86MutableData):
+class LinuxX86_64Mutable(LinuxX86_64):
     """
     An environment that targets a 64-bit Linux X86 machine in a writable segment.
     """
 
+    data_finalizer = nasm_mutable_data_finalizer
 
-class LinuxX86_64MutableNullSafe(X86_64NullSafe, X86XorData, X86MutableData, LinuxX86_64):
+
+class LinuxX86_64MutableNullSafe(X86_64NullSafe, LinuxX86_64):
     """
     An environment that targets a 64-bit Linux X86 machine in a writable segment
     that emits no NUL bytes or carriage return characters.
     """
+
+    data_finalizer = nasm_null_safe_mutable_data_finalizer

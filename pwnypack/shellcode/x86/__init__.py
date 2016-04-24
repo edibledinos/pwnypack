@@ -1,5 +1,3 @@
-import six
-
 from pwnypack.shellcode.base import BaseEnvironment
 from pwnypack.shellcode.types import Register
 from pwnypack.target import Target
@@ -72,16 +70,6 @@ class X86(BaseEnvironment):
             '_start:',
         ]
 
-    @property
-    def GETPC(self):
-        return [
-            '\tcall __getpc0',
-            '__getpc0:',
-            '\tpop %s' % self.OFFSET_REG.name,
-            '\tadd %s, __data - __getpc0' % self.OFFSET_REG.name,
-            '__realstart:',
-        ]
-
     def __init__(self):
         super(X86, self).__init__()
 
@@ -109,16 +97,3 @@ class X86(BaseEnvironment):
 
     def reg_load_offset(self, reg, value):
         return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
-
-    def prepare_data(self, data):
-        raise NotImplementedError('Target does not define a prepare_data method.')
-
-    def finalize_data(self, data):
-        raise NotImplementedError('Target does not define a finalize_data method.')
-
-    def finalize(self, code, data):
-        prepare_data_code, data = self.prepare_data(data)
-        return self.PREAMBLE + \
-            (self.GETPC if data else []) + \
-            ['\t%s' % line for line in prepare_data_code + code] + \
-            self.finalize_data(data)

@@ -1,5 +1,3 @@
-import six
-
 from pwnypack.shellcode.base import BaseEnvironment
 from pwnypack.shellcode.types import Register
 from pwnypack.target import Target
@@ -45,11 +43,6 @@ class ARM(BaseEnvironment):
         '_start:',
     ]
 
-    GETPC = [
-        '\tadr %s, __data' % OFFSET_REG,
-        '__realstart:'
-    ]
-
     def __init__(self, endian=None):
         self.target = Target(Target.Arch.arm, 32, endian)
         super(ARM, self).__init__()
@@ -72,19 +65,7 @@ class ARM(BaseEnvironment):
         return ['mov %s, %s' % (dest_reg, src_reg)]
 
     def reg_load_offset(self, reg, value):
-       return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
+        return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
 
-    def finalize_data(self, data):
-        return ['', '.pool', '.align', '__data:'] + [
-            '\t.byte %s  @ %r' % (
-                ', '.join(hex(b) for b in six.iterbytes(datum)),
-                orig_datum,
-            )
-            for datum, (_, orig_datum) in six.iteritems(data)
-        ]
-
-    def finalize(self, code, data):
-        return self.PREAMBLE + \
-            (self.GETPC if data else []) + \
-            ['\t%s' % line for line in code] + \
-            self.finalize_data(data)
+    def finalize(self, code):
+        return super(ARM, self).finalize(code) + ['.pool']
