@@ -3,9 +3,11 @@ from pwnypack.shellcode.arm import ARM
 from pwnypack.shellcode.arm.thumb import ARMThumb
 from pwnypack.shellcode.arm.thumb_mixed import ARMThumbMixed
 from pwnypack.shellcode.mutable_data import gnu_as_mutable_data_finalizer
+from pwnypack.shellcode.stack_data import stack_data_finalizer
 
 
-__all__ = ['LinuxARMMutable', 'LinuxARMThumbMutable', 'LinuxARMThumbMixedMutable']
+__all__ = ['LinuxARMMutable', 'LinuxARMThumbMutable', 'LinuxARMThumbMixedMutable',
+           'LinuxARMStack', 'LinuxARMThumbStack', 'LinuxARMThumbMixedStack']
 
 
 class LinuxARM(Linux, ARM):
@@ -373,3 +375,18 @@ class LinuxARMThumbMutable(LinuxARMThumb):
 
 class LinuxARMThumbMixedMutable(LinuxARMThumbMixed):
     data_finalizer = _mutable_data_finalizer
+
+
+_stack_data_finalizer = stack_data_finalizer(8)
+
+
+class LinuxARMStack(LinuxARM):
+    data_finalizer = _stack_data_finalizer
+
+
+class LinuxARMThumbStack(LinuxARMThumb):
+    data_finalizer = _stack_data_finalizer
+
+
+class LinuxARMThumbMixedStack(LinuxARMThumbMixed):
+    data_finalizer = _stack_data_finalizer

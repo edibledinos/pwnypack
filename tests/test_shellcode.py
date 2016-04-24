@@ -20,21 +20,39 @@ def test_shellcode_translate():
 SHELLCODE_ENVS = [
     (sc.LinuxX86Mutable, ()),
     (sc.LinuxX86MutableNullSafe, ()),
+
+    (sc.LinuxX86Stack, ()),
+    (sc.LinuxX86StackNullSafe, ()),
+
     (sc.LinuxX86_64Mutable, ()),
     (sc.LinuxX86_64MutableNullSafe, ()),
+
+    (sc.LinuxX86_64Stack, ()),
+    (sc.LinuxX86_64StackNullSafe, ()),
 
     (sc.LinuxARMMutable, ()),
     (sc.LinuxARMMutable, (Target.Endian.little,)),
     (sc.LinuxARMMutable, (Target.Endian.big,)),
 
+    (sc.LinuxARMStack, ()),
+    (sc.LinuxARMStack, (Target.Endian.little,)),
+    (sc.LinuxARMStack, (Target.Endian.big,)),
+
     (sc.LinuxARMThumbMutable, ()),
     (sc.LinuxARMThumbMutable, (Target.Endian.little,)),
     (sc.LinuxARMThumbMutable, (Target.Endian.big,)),
 
+    (sc.LinuxARMThumbStack, ()),
+    (sc.LinuxARMThumbStack, (Target.Endian.little,)),
+    (sc.LinuxARMThumbStack, (Target.Endian.big,)),
 
     (sc.LinuxARMThumbMixedMutable, ()),
     (sc.LinuxARMThumbMixedMutable, (Target.Endian.little,)),
     (sc.LinuxARMThumbMixedMutable, (Target.Endian.big,)),
+
+    (sc.LinuxARMThumbMixedStack, ()),
+    (sc.LinuxARMThumbMixedStack, (Target.Endian.little,)),
+    (sc.LinuxARMThumbMixedStack, (Target.Endian.big,)),
 
     (sc.LinuxAArch64Mutable, ()),
     (sc.LinuxAArch64Mutable, (Target.Endian.little,)),

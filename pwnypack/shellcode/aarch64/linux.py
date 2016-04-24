@@ -1,10 +1,11 @@
 from pwnypack.shellcode.linux import Linux
 from pwnypack.shellcode.aarch64 import AArch64
 from pwnypack.shellcode.mutable_data import gnu_as_mutable_data_finalizer
+from pwnypack.shellcode.stack_data import stack_data_finalizer
 from pwnypack.shellcode.types import SyscallDef, PTR
 
 
-__all__ = ['LinuxAArch64Mutable']
+__all__ = ['LinuxAArch64Mutable', 'LinuxAArch64Stack']
 
 
 class LinuxAArch64(Linux, AArch64):
@@ -295,3 +296,7 @@ class LinuxAArch64(Linux, AArch64):
 
 class LinuxAArch64Mutable(LinuxAArch64):
     data_finalizer = gnu_as_mutable_data_finalizer(lambda env, _: ['\tadr %s, __data' % env.OFFSET_REG], '//')
+
+
+class LinuxAArch64Stack(LinuxAArch64):
+    data_finalizer = stack_data_finalizer(16)

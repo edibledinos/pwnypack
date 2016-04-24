@@ -1,11 +1,13 @@
+from pwnypack.shellcode.stack_data import stack_data_finalizer
 from pwnypack.shellcode.x86.mutable_data import nasm_mutable_data_finalizer, nasm_null_safe_mutable_data_finalizer
 from pwnypack.shellcode.x86_64.null_safe import X86_64NullSafe
 from pwnypack.shellcode.types import NUMERIC, PTR, SyscallDef
 from pwnypack.shellcode.linux import Linux
 from pwnypack.shellcode.x86_64 import X86_64
+from pwnypack.shellcode.x86_64.stack_data import x86_64_null_safe_stack_data_finalizer
 
 
-__all__ = ['LinuxX86_64Mutable', 'LinuxX86_64MutableNullSafe']
+__all__ = ['LinuxX86_64Mutable', 'LinuxX86_64MutableNullSafe', 'LinuxX86_64Stack', 'LinuxX86_64StackNullSafe']
 
 
 class LinuxX86_64(Linux, X86_64):
@@ -353,3 +355,21 @@ class LinuxX86_64MutableNullSafe(X86_64NullSafe, LinuxX86_64):
     """
 
     data_finalizer = nasm_null_safe_mutable_data_finalizer
+
+
+class LinuxX86_64Stack(LinuxX86_64):
+    """
+    An environment that targets a 32-bit Linux X86 machine in a writable segment
+    that emits no NUL bytes or carriage return characters.
+    """
+
+    data_finalizer = stack_data_finalizer(16)
+
+
+class LinuxX86_64StackNullSafe(X86_64NullSafe, LinuxX86_64):
+    """
+    An environment that targets a 32-bit Linux X86 machine in a writable segment
+    that emits no NUL bytes or carriage return characters.
+    """
+
+    data_finalizer = x86_64_null_safe_stack_data_finalizer(16)
