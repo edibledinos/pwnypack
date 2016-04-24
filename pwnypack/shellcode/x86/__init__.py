@@ -82,6 +82,9 @@ class X86(BaseEnvironment):
     def reg_add_imm(self, reg, value):
         return ['add %s, %d' % (reg, value)]
 
+    def reg_sub_imm(self, reg, value):
+        return ['sub %s, %d' % (reg, value)]
+
     def reg_load_imm(self, reg, value):
         reg_width = self.REGISTER_WIDTH[reg]
         if value >= 2 ** reg_width:

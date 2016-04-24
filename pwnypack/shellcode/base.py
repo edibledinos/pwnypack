@@ -116,6 +116,12 @@ class BaseEnvironment(object):
     def reg_pop(self, reg):
         raise NotImplementedError('Target does not define reg_pop')
 
+    def reg_add_imm(self, reg, imm):
+        raise NotImplementedError('Target does not define reg_add_imm')
+
+    def reg_sub_imm(self, reg, imm):
+        raise NotImplementedError('Target does not define reg_sub_imm')
+
     def reg_load_imm(self, reg, value):
         raise NotImplementedError('Target does not define reg_load_imm')
 

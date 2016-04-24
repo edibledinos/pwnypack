@@ -101,6 +101,12 @@ class AArch64(BaseEnvironment):
         self.target = Target(Target.Arch.arm, 64, endian)
         super(AArch64, self).__init__()
 
+    def reg_add_imm(self, reg, imm):
+        return ['add %s, %s, #%d' % (reg, reg, imm)]
+
+    def reg_sub_imm(self, reg, imm):
+        return ['sub %s, %s, #%d' % (reg, reg, imm)]
+
     def reg_push(self, reg):
         return ['str %s, [sp, #-%d]!' % (reg, self.REGISTER_WIDTH[reg] // 8)]
 
@@ -111,9 +117,9 @@ class AArch64(BaseEnvironment):
         if not value:
             return ['eor %s, %s, %s' % (reg, reg, reg)]
         elif value < 0xff:
-            return ['mov %s, #0x%x' % (reg, value)]
+            return ['mov %s, #%d' % (reg, value)]
         else:
-            return ['ldr %s, =0x%x' % (reg, value)]
+            return ['ldr %s, =%d' % (reg, value)]
 
     def reg_load_reg(self, dest_reg, src_reg):
         return ['mov %s, %s' % (dest_reg, src_reg)]

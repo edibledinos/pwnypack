@@ -53,13 +53,19 @@ class ARM(BaseEnvironment):
     def reg_pop(self, reg):
         return ['pop {%s}' % reg]
 
+    def reg_add_imm(self, reg, value):
+        return ['add %s, %s, #%d' % (reg, reg, value)]
+
+    def reg_sub_imm(self, reg, value):
+        return ['sub %s, %s, #%d' % (reg, reg, value)]
+
     def reg_load_imm(self, reg, value):
         if not value:
             return ['eor %s, %s' % (reg, reg)]
         elif value < 0xff:
-            return ['mov %s, #0x%x' % (reg, value)]
+            return ['mov %s, #%d' % (reg, value)]
         else:
-            return ['ldr %s, =0x%x' % (reg, value)]
+            return ['ldr %s, =%d' % (reg, value)]
 
     def reg_load_reg(self, dest_reg, src_reg):
         return ['mov %s, %s' % (dest_reg, src_reg)]

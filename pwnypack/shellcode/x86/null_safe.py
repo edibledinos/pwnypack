@@ -21,25 +21,34 @@ class X86NullSafe(X86):
         X86.DX: X86.DH,
     }
 
-    def reg_add_imm(self, reg, value):
+    def _reg_add_sub_imm(self, insn, insn_1, reg, value):
         reg_width = self.REGISTER_WIDTH[reg]
         temp_reg = self.TEMP_REG[reg_width]
 
         if not value:
             return []
         elif value < 3:
-            return ['inc %s' % reg] * value
+            return ['%s %s' % (insn_1, reg)] * value
+        elif value in (10, 13):
+            return ['%s %s, %d' % (insn, reg, value - 1),
+                    '%s %s' % (insn_1, reg)]
         elif value < 128 and value not in (10, 13):
-            return ['add %s, %d' % (reg, value)]
+            return ['%s %s, %d' % (insn, reg, value)]
         elif reg is not temp_reg:
             return self.reg_load_imm(temp_reg, value) + \
-               ['add %s, %s' % (reg, temp_reg)]
+                   ['%s %s, %s' % (insn, reg, temp_reg)]
         else:
             return ['push %s' % reg] + \
-               self.reg_load_imm(reg, value) + [
-                   'add [%s], %s' % (self.STACK_REG, reg),
-                   'pop %s' % reg,
-               ]
+                   self.reg_load_imm(reg, value) + [
+                       '%s [%s], %s' % (insn, self.STACK_REG, reg),
+                       'pop %s' % reg,
+                   ]
+
+    def reg_add_imm(self, reg, value):
+        return self._reg_add_sub_imm('add', 'inc', reg, value)
+
+    def reg_sub_imm(self, reg, value):
+        return self._reg_add_sub_imm('sub', 'dec', reg, value)
 
     def reg_load_imm(self, reg, value):
         orig_reg = reg
