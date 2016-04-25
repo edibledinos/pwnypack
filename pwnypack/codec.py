@@ -7,8 +7,10 @@ strings and byte sequences.
 import base64
 import re
 import string
+import itertools
 import six
 import codecs
+from kwonly_args import kwonly_defaults
 import pwnypack.main
 import binascii
 from six.moves import range
@@ -21,6 +23,7 @@ except ImportError:
 
 __all__ = [
     'xor',
+    'find_xor_mask',
     'rot13',
     'caesar',
     'enhex',
@@ -70,6 +73,103 @@ def xor(key, data):
         six.int2byte(c ^ six.indexbytes(key, i % key_len))
         for i, c in enumerate(six.iterbytes(data))
     )
+
+
+@kwonly_defaults
+def find_xor_mask(data, alphabet=None, max_depth=3, min_depth=0, iv=None):
+    """
+    Produce a series of bytestrings that when XORed together end up being
+    equal to ``data`` and only contain characters from the giving
+    ``alphabet``. The initial state (or previous state) can be given as
+    ``iv``.
+
+    Arguments:
+        data (bytes): The data to recreate as a series of XOR operations.
+        alphabet (bytes): The bytestring containing the allowed characters
+            for the XOR values. If ``None``, all characters except NUL bytes,
+            carriage returns and newlines will be allowed.
+        max_depth (int): The maximum depth to look for a solution.
+        min_depth (int): The minimum depth to look for a solution.
+        iv (bytes): Initialization vector. If ``None``, it will be assumed the
+            operation starts at an all zero string.
+
+    Returns:
+        A list of bytestrings that, when XOR'ed with ``iv`` (or just eachother
+        if ``iv` is not providede) will be the same as ``data``.
+
+    Examples:
+        Produce a series of strings that when XORed together will result in
+        the string 'pwnypack' using only ASCII characters in the range 65 to
+        96:
+
+        >>> from pwny import *
+        >>> find_xor_mask('pwnypack', alphabet=''.join(chr(c) for c in range(65, 97)))
+        [b'````````', b'AAAAABAA', b'QVOXQCBJ']
+        >>> xor(xor(b'````````', b'AAAAABAA'), b'QVOXQCBJ')
+        'pwnypack'
+    """
+
+    if alphabet is None:
+        alphabet = set(i for i in range(256) if i not in (0, 10, 13))
+    else:
+        alphabet = set(six.iterbytes(alphabet))
+
+    if iv is None:
+        iv = b'\0' * len(data)
+
+    if len(data) != len(iv):
+        raise ValueError('length of iv differs from data')
+
+    if not min_depth and data == iv:
+        return []
+    data = xor(data, iv)
+
+    # Pre-flight check to see if we have all the bits we need.
+    mask = 0
+    for ch in alphabet:
+        mask |= ch
+    mask = ~mask
+
+    # Map all bytes in data into a {byte: [pos...]} dictionary, check
+    # if we have enough bits along the way.
+    data_map_tmpl = {}
+    for i, ch in enumerate(six.iterbytes(data)):
+        if ch & mask:
+            raise ValueError('Alphabet does not contain enough bits.')
+        data_map_tmpl.setdefault(ch, []).append(i)
+
+    # Let's try to find a solution.
+    for depth in range(max(min_depth, 1), max_depth + 1):
+        # Prepare for round.
+        data_map = data_map_tmpl.copy()
+        results = [[None] * len(data) for _ in range(depth)]
+
+        for values in itertools.product(*([alphabet] * (depth - 1))):
+            # Prepare cumulative mask for this combination of alphabet.
+            mask = 0
+            for value in values:
+                mask ^= value
+
+            for ch in list(data_map):
+                r = ch ^ mask
+                if r in alphabet:
+                    # Found a solution for this character, mark the result.
+                    pos = data_map.pop(ch)
+                    for p in pos:
+                        results[0][p] = r
+                        for i, value in enumerate(values):
+                            results[i + 1][p] = value
+
+                    if not data_map:
+                        # Aaaand.. We're done!
+                        return [
+                            b''.join(six.int2byte(b) for b in r)
+                            for r in results
+                        ]
+
+        # No solution found at this depth. Increase depth, try again.
+
+    raise ValueError('No solution found.')
 
 
 def caesar(shift, data, shift_ranges=('az', 'AZ')):
