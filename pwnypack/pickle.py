@@ -7,6 +7,7 @@ from six.moves import cPickle, copyreg
 from kwonly_args import kwonly_defaults
 
 import pwnypack.bytecode
+from pwnypack.py_internals import get_py_internals
 
 
 __all__ = ['pickle_invoke', 'pickle_func']
@@ -24,36 +25,34 @@ class PickleInvoke(object):
         return self.func, self.args
 
 
-def get_protocol_version(target=None, protocol=None):
+def get_protocol_version(protocol=None, target=None):
     """
     Return a suitable pickle protocol version for a given target.
 
     Arguments:
-        target(None or int): The target python version (26, 27, 30 or None for
-            the currently running python version.
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol(None or int): The requested protocol version (or None for the
-            default of the currently running python version.
+            default of the target python version).
 
     Returns:
         int: A suitable pickle protocol version.
     """
 
-    if target and target not in (26, 27, 30):
-        raise ValueError('Unsupported target python %r. Use 26, 27 or 30.' % target)
+    target = get_py_internals(target)
 
     if protocol is None:
-        if target is None or target >= 30:
-            protocol = getattr(cPickle, 'DEFAULT_PROTOCOL', 0)
-        else:
-            protocol = 0
+        protocol = target['pickle_default_protocol']
 
     if protocol > cPickle.HIGHEST_PROTOCOL:
-        warnings.warn('Downgrading pickle protocol, running python support up to %d.' % cPickle.HIGHEST_PROTOCOL)
+        warnings.warn('Downgrading pickle protocol, running python supports up to %d.' % cPickle.HIGHEST_PROTOCOL)
         protocol = cPickle.HIGHEST_PROTOCOL
 
-    if protocol > 2 and target and target < 30:
-        warnings.warn('Downgrading pickle protocol, python 2 supports versions up to 2.')
-        protocol = 2
+    target_highest_protocol = target['pickle_highest_protocol']
+    if protocol > target_highest_protocol:
+        warnings.warn('Downgrading pickle protocol, target python supports up to %d.' % target_highest_protocol)
+        protocol = target_highest_protocol
 
     return protocol
 
@@ -72,8 +71,9 @@ def pickle_invoke(func, target=None, protocol=None, *args):
     Arguments:
         func(callable): The function to call or class to instantiate.
         args(tuple): The arguments to call the callable with.
-        target: The python version that will be unpickling the data (None,
-            26, 27 or 30).
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol: The pickle protocol version to use (use None for default).
 
     Returns:
@@ -89,27 +89,27 @@ def pickle_invoke(func, target=None, protocol=None, *args):
         Hello, world!
     """
 
-    protocol = get_protocol_version(target, protocol)
+    protocol = get_protocol_version(protocol, target)
     return cPickle.dumps(PickleInvoke(func, *args), protocol)
 
 
-def translate_opcodes(src_code, dst_op_specs):
+def translate_opcodes(code_obj, target):
     """
     Very crude inter-python version opcode translator. Raises SyntaxError when
     the opcode doesn't exist in the destination opmap. Used to transcribe
     python code objects between python versions.
 
     Arguments:
-        src_code(bytes): The co_code attribute of the code object.
-        dst_opmap(dict): The opcode mapping for the target.
-
-    Returns:
-        (bytes, int): The translated opcodes and the new stack size.
+        code_obj(pwnypack.bytecode.CodeObject): The code object representation
+            to translate.
+        target(dict): The py_internals structure for the target
+            python version.
     """
 
-    dst_opmap = dst_op_specs['opmap']
+    target = get_py_internals(target)
+    src_ops = code_obj.disassemble()
 
-    src_ops = pwnypack.bytecode.disassemble(src_code)
+    dst_opmap = target['opmap']
     dst_ops = []
 
     op_iter = enumerate(src_ops)
@@ -150,9 +150,7 @@ def translate_opcodes(src_code, dst_op_specs):
         else:
             dst_ops.append(op)
 
-    dst_bytecode = pwnypack.bytecode.assemble(dst_ops, dst_op_specs)
-    dst_stacksize = pwnypack.bytecode.calculate_max_stack_depth(dst_ops, dst_op_specs)
-    return dst_bytecode, dst_stacksize
+    code_obj.assemble(dst_ops, target)
 
 
 @kwonly_defaults
@@ -173,7 +171,7 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
 
         - Python 2.6 and 2.7/3.0 use very different, incompatible opcodes for
           conditional jumps (if, while, etc). Serializing those is not
-          always possible between python 2.6 to 2.7/3.0.
+          always possible between python 2.6 and 2.7/3.0.
 
         - Exception handling uses different, incompatible opcodes between
           python 2 and 3.
@@ -185,9 +183,9 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
     Arguments:
         func(callable): The function to serialize and call when unpickled.
         args(tuple): The arguments to call the callable with.
-        target(int): The target python version (``26`` for python 2.6, ``27``
-            for python 2.7, or ``30`` for python 3.0+). Can be ``None`` in
-            which case the current python version is assumed.
+        target: The internals description of the targeted python
+            version. If this is ``None`` the specification of the currently
+            running python version will be used.
         protocol(int): The pickle protocol version to use.
         b64encode(bool): Whether to base64 certain code object fields. Required
             when you prepare a pickle for python 3 on python 2. If it's
@@ -209,52 +207,50 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
         Hello, world!
     """
 
-    def code_reduce_v2(code):
-        # Translate the opcodes to the target python's opcode map.
-        co_code, co_stacksize = translate_opcodes(code.co_code, pwnypack.bytecode.OP_SPECS[target])
+    target = get_py_internals(target)
 
+    code = six.get_function_code(func)
+    code_obj = pwnypack.bytecode.CodeObject.from_code(code)
+    translate_opcodes(code_obj, target)
+
+    def code_reduce_v2(_):
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
-            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(code_obj.co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code_obj.co_lnotab))
         else:
-            co_lnotab = code.co_lnotab
+            co_code = code_obj.co_code
+            co_lnotab = code_obj.co_lnotab
 
         if six.PY3:
             # Encode unicode to bytes as python 2 doesn't support unicode identifiers.
-            co_names = tuple(n.encode('ascii') for n in code.co_names)
-            co_varnames = tuple(n.encode('ascii') for n in code.co_varnames)
-            co_filename = code.co_filename.encode('ascii')
-            co_name = code.co_name.encode('ascii')
+            co_names = tuple(n.encode('ascii') for n in code_obj.co_names)
+            co_varnames = tuple(n.encode('ascii') for n in code_obj.co_varnames)
+            co_filename = code_obj.co_filename.encode('ascii')
+            co_name = code_obj.co_name.encode('ascii')
         else:
-            co_names = code.co_names
-            co_varnames = code.co_varnames
-            co_filename = code.co_filename
-            co_name = code.co_name
+            co_names = code_obj.co_names
+            co_varnames = code_obj.co_varnames
+            co_filename = code_obj.co_filename
+            co_name = code_obj.co_name
 
-        return types.CodeType, (code.co_argcount, code.co_nlocals, co_stacksize, code.co_flags,
-                                co_code, code.co_consts, co_names, co_varnames, co_filename,
-                                co_name, code.co_firstlineno, co_lnotab)
+        return types.CodeType, (code_obj.co_argcount, code_obj.co_nlocals, code_obj.co_stacksize, code_obj.co_flags,
+                                co_code, code_obj.co_consts, co_names, co_varnames, co_filename, co_name,
+                                code_obj.co_firstlineno, co_lnotab)
 
-    def code_reduce_v3(code):
-        # Translate the opcodes to the target python's opcode map.
-        co_code, co_stacksize = translate_opcodes(code.co_code, pwnypack.bytecode.OP_SPECS[target])
-
+    def code_reduce_v3(_):
         if b64encode:
             # b64encode co_code and co_lnotab as they contain 8bit data.
-            co_code = PickleInvoke(base64.b64decode, base64.b64encode(co_code))
-            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code.co_lnotab))
+            co_code = PickleInvoke(base64.b64decode, base64.b64encode(code_obj.co_code))
+            co_lnotab = PickleInvoke(base64.b64decode, base64.b64encode(code_obj.co_lnotab))
         else:
-            co_lnotab = code.co_lnotab
+            co_code = code_obj.co_code
+            co_lnotab = code_obj.co_lnotab
 
-        if six.PY2:
-            co_kwonlyargcount = 0
-        else:
-            co_kwonlyargcount = code.co_kwonlyargcount
-
-        return types.CodeType, (code.co_argcount, co_kwonlyargcount, code.co_nlocals, co_stacksize,
-                                code.co_flags, co_code, code.co_consts, code.co_names, code.co_varnames,
-                                code.co_filename, code.co_name, code.co_firstlineno, co_lnotab)
+        return types.CodeType, (code_obj.co_argcount, code_obj.co_kwonlyargcount, code_obj.co_nlocals,
+                                code_obj.co_stacksize, code_obj.co_flags, co_code, code_obj.co_consts,
+                                code_obj.co_names, code_obj.co_varnames, code_obj.co_filename, code_obj.co_name,
+                                code_obj.co_firstlineno, co_lnotab)
 
     # Stubs to trick cPickle into pickling calls to CodeType/FunctionType.
     class CodeType(object):  # pragma: no cover
@@ -267,12 +263,10 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
     FunctionType.__module__ = 'types'
     FunctionType.__qualname__ = 'FunctionType'
 
-    protocol = get_protocol_version(target, protocol)
-
-    code = six.get_function_code(func)
+    protocol = get_protocol_version(protocol, target)
 
     old_code_reduce = copyreg.dispatch_table.pop(types.CodeType, None)
-    if target in (26, 27) or (target is None and six.PY2):
+    if target['version'] < 30:
         copyreg.pickle(types.CodeType, code_reduce_v2)
     else:
         if six.PY2:
