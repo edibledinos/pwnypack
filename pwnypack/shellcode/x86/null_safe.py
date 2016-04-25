@@ -1,3 +1,5 @@
+from pwnypack.codec import find_xor_mask
+from pwnypack.packing import P, U
 from pwnypack.shellcode.x86 import X86
 
 
@@ -82,6 +84,13 @@ class X86NullSafe(X86):
             reg = self.HIGH_REG[reg]
             value >>= 8
 
+        # Find a xor solution to compose this value without \0, \r or \n
+        xor_solution = [
+            U(s, bits=reg_width)
+            for s in find_xor_mask(P(value, bits=reg_width))
+        ]
+
+        # Find a solution for when value < 256 and is \0, \r or \n.
         if value & 0xff in (0, 10, 13):
             value += 1
             postamble = ['dec %s' % reg]
@@ -89,7 +98,7 @@ class X86NullSafe(X86):
             postamble = []
 
         # Value contains no NUL, \r or \n bytes, load directly
-        if reg_width == 8 or not any((value >> i) & 0xff in (0, 10, 13) for i in range(8, reg_width, 8)):
+        if reg_width == 8 or len(xor_solution) == 1:
             return preamble + ['mov %s, %d' % (reg, value)] + postamble
 
         # Fast path direct load of 7 bit in non 8 bit addressable registers
@@ -107,35 +116,37 @@ class X86NullSafe(X86):
 
         # Use xor to mask NUL bytes
         else:
-            value += len(postamble)
-
-            mask = sum([
-                (0xff if (value >> i) & 0xff not in (0xf2, 0xf5, 0xff) else 0x7f) << i
-                for i in range(0, reg_width, 8)
-            ])
-            masked_value = value ^ mask
+            result = preamble
 
             if reg_width <= 32:
-                # Use xor r, imm
-                return preamble + [
-                    'mov %s, %d' % (reg, mask),
-                    'xor %s, %d' % (reg, masked_value),
-                ]
+                # Use xor r, imm. Not suitable for 64bit, xor reg, imm64 does not exist
+                result.append('mov %s, %d' % (reg, xor_solution[0]))
+                for xor_value in xor_solution[1:]:
+                    result.append('xor %s, %d' % (reg, xor_value))
+
             elif reg is not self.TEMP_REG[reg_width]:
-                return preamble + [
-                    'mov %s, %d' % (self.TEMP_REG[reg_width], mask),
-                    'mov %s, %d' % (reg, masked_value),
-                    'xor %s, %s' % (reg, self.TEMP_REG[reg_width]),
-                ]
+                # Use the temporary register to compose our solution
+                temp_reg = self.TEMP_REG[reg_width]
+                result.append('mov %s, %d' % (reg, xor_solution[0]))
+                for xor_value in xor_solution[1:]:
+                    result.extend([
+                        'mov %s, %d' % (temp_reg, xor_value),
+                        'xor %s, %s' % (reg, temp_reg),
+                    ])
+
             else:
-                # No 64bit immediate xor, use stack
-                return preamble + [
-                    'mov %s, %d' % (reg, mask),
+                # We're loading the temporary register, use the stack
+                result.extend([
+                    'mov %s, %d' % (reg, xor_solution[0]),
                     'push %s' % reg,
-                    'mov %s, %d' % (reg, masked_value),
-                    'xor [%s], %s' % (self.STACK_REG, reg),
-                    'pop %s' % reg,
-                ]
+                ])
+                for xor_value in xor_solution[1:]:
+                    result.extend([
+                        'mov %s, %d' % (reg, xor_value),
+                        'xor [%s], %s' % (self.STACK_REG, reg),
+                    ])
+                result.append('pop %s' % reg)
+            return result
 
     def reg_load_offset(self, reg, value):
         return self.reg_load(reg, int(value)) + \
