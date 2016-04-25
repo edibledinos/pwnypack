@@ -1,3 +1,8 @@
+"""
+This module contains functions to load and unserialize data (including .pyc
+files) serialized using the :mod:`marshal` module on most version of python.
+"""
+
 import datetime
 from enum import IntEnum
 
@@ -24,6 +29,10 @@ FLAG_REF = 0x80
 
 
 class ObjectType(IntEnum):
+    """
+    Enumeration used internally to describe / parse a marshal object type.
+    """
+
     null = ord('0')
     none = ord('N')
     false = ord('F')
@@ -57,6 +66,22 @@ class ObjectType(IntEnum):
 
 
 def marshal_load(fp, origin=None):
+    """
+    Unserialize data serialized with :func:`marshal.dump`. This function
+    works across python versions. Marshalled code objects are returned as
+    instances of :class:`~pwnypack.bytecode.CodeObject`.
+
+    Arguments:
+        fp(file): A file or file-like object that contains the serialized
+            data.
+        origin(dict): The opcode specification of the python version that
+            generated the data. If you provide ``None``, the specs for the
+            currently running python version will be used.
+
+    Returns:
+        The unserialized data.
+    """
+
     origin = get_py_internals(origin)
     version = origin['version']
 
@@ -228,6 +253,19 @@ def marshal_load(fp, origin=None):
 
 
 def marshal_loads(data, origin=None):
+    """
+    Load data serialized with :func:`marshal.dump` from a bytestring.
+
+    Arguments:
+        data(bytes): The marshalled data.
+        origin(dict): The opcode specification of the python version that
+            generated the data. If you provide ``None``, the specs for the
+            currently running python version will be used.
+
+    Returns:
+        The unserialized data.
+    """
+
     return marshal_load(six.BytesIO(data), origin)
 
 

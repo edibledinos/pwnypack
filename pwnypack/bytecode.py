@@ -6,8 +6,8 @@ representation and some functions to manipulate those structures.
 
 The python version independent function take a py_internals parameter which
 represents the specifics of bytecode on that particular version of
-python. The :data:`pwnypack.py_internals.PY_INTERNALS` dictionary provides
-these internal specifics for various python versions.
+python. The :mod:`pwnypack.py_internals` module provides these internal
+specifics for various python versions.
 
 Examples:
     Disassemble a very simple function, change an opcode and reassemble it:
@@ -55,7 +55,7 @@ class Label(object):
 
 class Op(object):
     """
-    Describe a single bytecode operation.
+    Describes a single bytecode operation.
 
     Arguments:
         name(str): The name of the opcode.
@@ -385,17 +385,40 @@ BORROW = object()
 
 
 class AnnotatedOp(object):
+    """
+    An annotated opcode description. Instances of this class are generated
+    by :method:`CodeObject.disassemble` if you set ``annotate`` to ``True``.
+
+    It contains more descriptive information about the instruction but
+    cannot be translated back into a real bytecode operation at the moment.
+
+    This class uses the code object's reference to the python internals of
+    the python version that it originated from and the properties of the
+    code object to decode as much information as possible.
+
+    Arguments:
+        code_obj(:class:`CodeObject`): The code object this opcode belongs to.
+        name(str): The mnemonic of the opcode.
+        arg(int): The integer argument to the opcode (or ``None``).
+    """
+
     def __init__(self, code_obj, name, arg):
-        self.name = name
-        self.code_obj = code_obj
+        self.name = name  #: The name of the operation.
+        self.code_obj = code_obj  #: A reference to the :class:`CodeObject` it belongs to.
 
-        self.code = code_obj.internals['opmap'][name]
+        self.code = code_obj.internals['opmap'][name]  #: The numeric opcode.
 
+        #: Whether this opcode has an argument.
         self.has_arg = self.code >= code_obj.internals['have_argument']
+        #: Whether this opcode's argument is a compare operation.
         self.has_compare = self.code in code_obj.internals['hascompare']
+        #: Whether this opcode's argument is a reference to a constant.
         self.has_const = self.code in code_obj.internals['hasconst']
+        #: Whether this opcode's argument is a reference to a free or cell var (for closures and nested functions).
         self.has_free = self.code in code_obj.internals['hasfree']
+        #: Whether this opcode's argument is a reference to a local.
         self.has_local = self.code in code_obj.internals['haslocal']
+        #: Whether this opcode's argument is a reference to the names table.
         self.has_name = self.code in code_obj.internals['hasname']
 
         if self.has_arg:
@@ -425,6 +448,33 @@ class AnnotatedOp(object):
 
 
 class CodeObject(object):
+    """
+    Represents a python code object in a cross python version way. It contains
+    all the properties that exist on code objects on Python 3 (even when
+    run on Python 2).
+
+    Arguments:
+        co_argcount: number of arguments (not including *, ** or keyword only args)
+        co_kwonlyargcount: The keyword-only argument count of this code.
+        co_nlocals: number of local variables
+        co_stacksize: virtual machine stack space required
+        co_flags: bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
+        co_code: string of raw compiled bytecode
+        co_consts: tuple of constants used in the bytecode
+        co_names: tuple of names of local variables
+        co_varnames: tuple of names of arguments and local variables
+        co_filename: name of file in which this code object was created
+        co_name: name with which this code object was defined
+        co_firstlineno: number of first line in Python source code
+        co_lnotab: encoded mapping of line numbers to bytecode indices
+        co_freevars: tuple of names of closure variables
+        co_cellvars: tuple containing the names of local variables that are
+            referenced by nested functions
+        origin(dict): The opcode specification of the python version that
+            generated the code. If you provide ``None``, the specs for the
+            currently running python version will be used.
+    """
+
     def __init__(self, co_argcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_code, co_consts,
                  co_names, co_varnames, co_filename, co_name, co_firstlineno, co_lnotab, co_freevars, co_cellvars,
                  origin=None):
@@ -450,6 +500,22 @@ class CodeObject(object):
                   co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW,
                   co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW,
                   co_cellvars=BORROW):
+        """from_code(code, co_argcount=BORROW, co_kwonlyargcount=BORROW, co_nlocals=BORROW, co_stacksize=BORROW, co_flags=BORROW, co_code=BORROW, co_consts=BORROW, co_names=BORROW, co_varnames=BORROW, co_filename=BORROW, co_name=BORROW, co_firstlineno=BORROW, co_lnotab=BORROW, co_freevars=BORROW, co_cellvars=BORROW)
+
+        Create a new instance from an existing code object. The originating
+        internals of the instance will be that of the running python version.
+
+        Any properties explicitly specified will be overridden on the new
+        instance.
+
+        Arguments:
+            code(code): The code object to get the properties of.
+            ...: The properties to override.
+
+        Returns:
+            CodeObject: A new :class:`CodeObject` instance.
+        """
+
         if six.PY2:
             co_kwonlyargcount = co_kwonlyargcount if co_kwonlyargcount is not BORROW else 0
         else:
@@ -475,9 +541,32 @@ class CodeObject(object):
 
     @classmethod
     def from_function(cls, f, *args, **kwargs):
+        """
+        Create a new instance from a function. Gets the code object from
+        the function and passes it and any other specified parameters to
+        :meth:`from_code`.
+
+        Arguments:
+            f(function): The function to get the code object from.
+
+        Returns:
+            CodeObject: A new :class:`CodeObject` instance.
+        """
+
         return cls.from_code(six.get_function_code(f), *args, **kwargs)
 
-    def annotate(self, op):
+    def annotate_op(self, op):
+        """
+        Takes a bytecode operation (:class:`Op`) and annotates it using the
+        data contained in this code object.
+
+        Arguments:
+            op(Op): An :class:`Op` instance.
+
+        Returns:
+            AnnotatedOp: An annotated bytecode operation.
+        """
+
         if isinstance(op, Label):
             return op
         else:
@@ -485,10 +574,24 @@ class CodeObject(object):
 
     @kwonly_defaults
     def disassemble(self, annotate=False, blocks=False):
+        """
+        Disassemble the bytecode of this code object into a series of
+        opcodes and labels. Can also annotate the opcodes and group
+        the opcodes into blocks based on the labels.
+
+        Arguments:
+            annotate(bool): Whether to annotate the operations.
+            blocks(bool): Whether to group the operations into blocks.
+
+        Returns:
+            list: A list of :class:`Op` (or :class:`AnnotatedOp`) instances
+            and labels.
+        """
+
         ops = disassemble(self.co_code, self.internals)
 
         if annotate:
-            ops = [self.annotate(op) for op in ops]
+            ops = [self.annotate_op(op) for op in ops]
 
         if blocks:
             return blocks_from_ops(ops)
@@ -496,12 +599,36 @@ class CodeObject(object):
             return ops
 
     def assemble(self, ops, target=None):
+        """
+        Assemble a series of operations and labels into bytecode, analyse its
+        stack usage and replace the bytecode and stack size of this code
+        object. Can also (optionally) change the target python version.
+
+        Arguments:
+            ops(list): The opcodes (and labels) to assemble into bytecode.
+            target: The opcode specification of the targeted python
+                version. If this is ``None`` the specification of the currently
+                running python version will be used.
+
+        Returns:
+            CodeObject: A reference to this :class:`CodeObject`.
+        """
+
         self.internals = target = get_py_internals(target, self.internals)
         self.co_code = assemble(ops, target)
         self.co_stacksize = calculate_max_stack_depth(ops, target)
         return self
 
     def to_code(self):
+        """
+        Convert this instance back into a native python code object. This
+        only works if the internals of the code object are compatible with
+        those of the running python version.
+
+        Returns:
+            code: The native python code object.
+        """
+
         if self.internals is not get_py_internals():
             raise ValueError('CodeObject is not compatible with the running python internals.')
 
@@ -519,7 +646,29 @@ class CodeObject(object):
             )
 
     def to_function(self):
+        """
+        Convert this :class:`CodeObject` back into a python function.  This
+        only works if the internals of the code object are compatible with
+        those of the running python version.
+
+        Returns:
+            function: The newly created python function.
+        """
+
         return types.FunctionType(self.to_code(), globals())
 
     def __call__(self, *args, **kwargs):
+        """
+        Create a new function of this :class:`CodeObject` instance and invoke
+        it using the given parameters.
+
+        Arguments:
+            *args: The positional arguments to pass to the function.
+            **kwargs: The keyword arguments to pass to the function.
+
+
+        Returns:
+            Whatever the function returns.
+        """
+
         return self.to_function()(*args, **kwargs)
