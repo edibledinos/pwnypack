@@ -5,3 +5,9 @@
     :members:
     :undoc-members:
     :show-inheritance:
+
+    .. autoclass:: AnnotatedOp
+        :members:
+
+    .. autoclass:: Block
+        :members:
