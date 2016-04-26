@@ -190,6 +190,9 @@ class BaseEnvironment(object):
         else:
             raise TypeError('Invalid argument type "%s"' % repr(value))
 
+    def jump_reg(self, reg):
+        raise NotImplementedError('Target does not define a jump to register method')
+
     def syscall(self, op):
         raise NotImplementedError('Target does not define syscall method')
 

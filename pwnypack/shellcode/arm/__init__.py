@@ -73,5 +73,8 @@ class ARM(BaseEnvironment):
     def reg_load_offset(self, reg, value):
         return ['add %s, %s, #%d' % (reg, self.OFFSET_REG, value)]
 
+    def jump_reg(self, reg):
+        return ['bx %s' % reg]
+
     def finalize(self, code):
         return super(ARM, self).finalize(code) + ['.pool']

@@ -100,3 +100,6 @@ class X86(BaseEnvironment):
 
     def reg_load_offset(self, reg, value):
         return ['lea %s, [%s + %d]' % (reg, self.OFFSET_REG, value)]
+
+    def jump_reg(self, reg):
+        return ['jmp %s' % reg]
