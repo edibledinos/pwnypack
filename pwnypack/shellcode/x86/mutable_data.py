@@ -21,14 +21,19 @@ def nasm_mutable_data_finalizer(env, code, data):
     segment. We just append the data to the end of the code.
     """
 
-    if data:
-        return [
+    if env.target.bits == 32:
+        get_pc = [
             '\tcall __getpc0',
             '__getpc0:',
-            '\tpop %s' % env.OFFSET_REG.name,
-            '\tadd %s, __data - __getpc0' % env.OFFSET_REG.name,
+            '\tpop %s' % env.OFFSET_REG,
+            '\tadd %s, __data - __getpc0' % env.OFFSET_REG,
             '__realstart:',
-        ] + code + _pack_data(data)
+        ]
+    else:
+        get_pc = ['\tlea %s, [rel __data]' % env.OFFSET_REG]
+
+    if data:
+        return get_pc + code + _pack_data(data)
     else:
         return code
 
