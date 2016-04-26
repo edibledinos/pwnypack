@@ -75,6 +75,3 @@ class ARM(BaseEnvironment):
 
     def jump_reg(self, reg):
         return ['bx %s' % reg]
-
-    def finalize(self, code):
-        return super(ARM, self).finalize(code) + ['.pool']

@@ -5,10 +5,11 @@ def gnu_as_mutable_data_finalizer(get_pc, comment_char, align=True):
     def data_finalizer(env, code, data):
         return (get_pc(env, code) if data else []) + code + [
             '',
+            '.pool',
         ] + ([
             '.align',
         ] if align else []) + [
-            '__data:'
+            '__data:',
         ] + [
             '\t.byte %s  %s %r' % (
                 ', '.join(hex(b) for b in six.iterbytes(datum)),
