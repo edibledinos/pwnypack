@@ -100,6 +100,13 @@ def translate(env, func, *args, **kwargs):
         elif op.name == 'RETURN_VALUE':
             stack.pop()
 
+        elif op.name == 'DUP_TOP':
+            value = stack[-1]
+            if isinstance(value, SyscallInvoke):
+                stack.insert(-1, env.SYSCALL_RET_REG)
+            else:
+                stack.append(value)
+
         else:
             raise RuntimeError('Unsupported opcode: %s' % op.name)
 
