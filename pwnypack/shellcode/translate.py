@@ -92,6 +92,8 @@ def translate(env, func, *args, **kwargs):
             value = stack.pop()
             if isinstance(value, SyscallInvoke):
                 program.append(value)
+            elif isinstance(value, list):
+                program.extend(value)
             else:
                 raise ValueError('No idea how to compile %s' % value)
 
