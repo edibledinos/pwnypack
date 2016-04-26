@@ -82,6 +82,7 @@ class X86NullSafe(X86):
         # Fast path direct load where higher 8 bit of 16 bit register is addressable
         if reg in self.HIGH_REG and value < 0x10000 and not value & 0xff:
             reg = self.HIGH_REG[reg]
+            reg_width //= 2
             value >>= 8
 
         # Find a xor solution to compose this value without \0, \r or \n
