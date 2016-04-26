@@ -226,7 +226,7 @@ class BaseEnvironment(object):
 
         # We do 2 passes to make sure all data is allocated so buffers point at the right offset.
         _compile()
-        return '\n'.join(self.finalize(self.data_finalizer(_compile(), self.data)))
+        return '\n'.join(self.finalize(self.data_finalizer(_compile(), self.data))) + '\n'
 
     def assemble(self, ops):
         """
