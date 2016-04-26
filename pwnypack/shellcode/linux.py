@@ -398,10 +398,6 @@ class Linux(BaseEnvironment):
         raise NotImplementedError('Target does not define a syscall register')
 
     @property
-    def SYSCALL_RET_REG(self):
-        raise NotImplementedError('Target does not define a syscall return register')
-
-    @property
     def SYSCALL_INSTR(self):
         raise NotImplementedError('Target does not define a syscall instruction')
 
@@ -414,9 +410,10 @@ class Linux(BaseEnvironment):
 
         def handle_arg(reg, arg):
             if isinstance(arg, SyscallInvoke):
-                syscall_code, syscall_reg = self.syscall(arg)
-                code.extend(syscall_code)
-                code.extend(self.reg_push(syscall_reg))
+                code.extend(
+                    self.syscall(arg) +
+                    self.reg_push(self.SYSCALL_RET_REG)
+                )
                 return self.reg_pop(reg)
             else:
                 return self.reg_load(reg, arg)
@@ -428,4 +425,4 @@ class Linux(BaseEnvironment):
 
         return code + \
             self.reg_load(self.SYSCALL_REG, self.SYSCALL_MAP[op.syscall_def]) + \
-            [self.SYSCALL_INSTR], self.SYSCALL_RET_REG
+            [self.SYSCALL_INSTR]

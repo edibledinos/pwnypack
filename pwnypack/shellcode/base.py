@@ -53,6 +53,10 @@ class BaseEnvironment(object):
     def TEMP_REG(self):
         raise NotImplementedError('Target does not define a temporary register mapping')
 
+    @property
+    def SYSCALL_RET_REG(self):
+        raise NotImplementedError('Target does not define a syscall return register')
+
     def __init__(self):
         if self.REGISTER_WIDTH is None:
             self.REGISTER_WIDTH = dict([
@@ -181,8 +185,7 @@ class BaseEnvironment(object):
             return self.reg_load_array(reg, value)
 
         elif isinstance(value, SyscallInvoke):
-            syscall_code, syscall_reg = self.syscall(value)
-            return syscall_code + self.reg_load(reg, syscall_reg)
+            return self.syscall(value) + self.reg_load(reg, self.SYSCALL_RET_REG)
 
         else:
             raise TypeError('Invalid argument type "%s"' % repr(value))
@@ -212,7 +215,7 @@ class BaseEnvironment(object):
 
             for op in ops:
                 if isinstance(op, SyscallInvoke):
-                    code.extend(self.syscall(op)[0])
+                    code.extend(self.syscall(op))
                 elif isinstance(op, LoadRegister):
                     code.extend(self.reg_load(op.register, op.value))
                 elif isinstance(op, str):
