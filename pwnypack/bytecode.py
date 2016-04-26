@@ -387,10 +387,11 @@ BORROW = object()
 class AnnotatedOp(object):
     """
     An annotated opcode description. Instances of this class are generated
-    by :method:`CodeObject.disassemble` if you set ``annotate`` to ``True``.
+    by :meth:`CodeObject.disassemble` if you set its ``annotate`` argument
+    to ``True``.
 
     It contains more descriptive information about the instruction but
-    cannot be translated back into a real bytecode operation at the moment.
+    cannot be translated back into a bytecode operation at the moment.
 
     This class uses the code object's reference to the python internals of
     the python version that it originated from and the properties of the
