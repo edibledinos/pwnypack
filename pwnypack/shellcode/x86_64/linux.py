@@ -19,6 +19,7 @@ class LinuxX86_64(Linux, X86_64):
     sys_modify_ldt = SyscallDef('sys_modify_ldt', NUMERIC, PTR, NUMERIC)  #:
     sys_arch_prctl = SyscallDef('sys_arch_prctl', NUMERIC, NUMERIC)  #:
     sys_iopl = SyscallDef('sys_iopl', NUMERIC)  #:
+    sys_mmap = SyscallDef('sys_mmap', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
 
     SYSCALL_REG = X86_64.RAX
     SYSCALL_ARG_MAP = [X86_64.RDI, X86_64.RSI, X86_64.RDX, X86_64.R10, X86_64.R8, X86_64.R9]
@@ -34,7 +35,7 @@ class LinuxX86_64(Linux, X86_64):
         Linux.sys_newlstat: 6,
         Linux.sys_poll: 7,
         Linux.sys_lseek: 8,
-        Linux.sys_mmap: 9,
+        sys_mmap: 9,
         Linux.sys_mprotect: 10,
         Linux.sys_munmap: 11,
         Linux.sys_brk: 12,

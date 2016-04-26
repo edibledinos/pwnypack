@@ -243,7 +243,7 @@ class LinuxAArch64(Linux, AArch64):
         Linux.sys_keyctl: 219,
         Linux.sys_clone: 220,
         Linux.sys_execve: 221,
-        Linux.sys_mmap: 222,
+        Linux.sys_mmap2: 222,
         Linux.sys_fadvise64: 223,
         Linux.sys_swapon: 224,
         Linux.sys_swapoff: 225,

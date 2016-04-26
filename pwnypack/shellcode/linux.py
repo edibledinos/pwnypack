@@ -372,7 +372,7 @@ class Linux(BaseEnvironment):
     sys_clone = SyscallDef('sys_clone', NUMERIC, NUMERIC, PTR, PTR, NUMERIC)  #:
     sys_execve = SyscallDef('sys_execve', CHARP, CHARPP, CHARPP)  #:
     sys_perf_event_open = SyscallDef('sys_perf_event_open', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
-    sys_mmap2 = SyscallDef('sys_mmap2', NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
+    sys_mmap2 = SyscallDef('sys_mmap2', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
     sys_mmap = SyscallDef('sys_mmap', PTR)  #:
     sys_name_to_handle_at = SyscallDef('sys_name_to_handle_at', NUMERIC, CHARP, PTR, PTR, NUMERIC)  #:
     sys_open_by_handle_at = SyscallDef('sys_open_by_handle_at', NUMERIC, PTR, NUMERIC)  #:
