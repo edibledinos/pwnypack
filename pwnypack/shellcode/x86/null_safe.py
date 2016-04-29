@@ -56,11 +56,9 @@ class X86NullSafe(X86):
         orig_reg = reg
         orig_reg_width = reg_width = self.REGISTER_WIDTH[reg]
 
-        if value >= 2 ** reg_width:
-            raise ValueError('%d does not fit %s' % (value, reg))
 
         # 0 value, always use xor
-        elif not value:
+        if not value:
             return ['xor %s, %s' % (reg, reg)]
 
         preamble = []

@@ -179,6 +179,11 @@ class BaseEnvironment(object):
             return self.reg_load_offset(reg, sum(len(v) for v in six.iterkeys(self.data)) + value.offset)
 
         elif isinstance(value, int):
+            reg_width = self.REGISTER_WIDTH[reg]
+            if value < -2 ** (reg_width-1):
+                raise ValueError('%d does not fit %s' % (value, reg))
+            elif value >= 2 ** reg_width:
+                raise ValueError('%d does not fit %s' % (value, reg))
             return self.reg_load_imm(reg, value)
 
         elif isinstance(value, (list, tuple)):
