@@ -56,6 +56,7 @@ class X86NullSafe(X86):
         orig_reg = reg
         orig_reg_width = reg_width = self.REGISTER_WIDTH[reg]
 
+        value &= 2 ** reg_width - 1
 
         # 0 value, always use xor
         if not value:
