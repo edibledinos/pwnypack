@@ -178,7 +178,7 @@ class BaseEnvironment(object):
         elif isinstance(value, Buffer):
             return self.reg_load_offset(reg, sum(len(v) for v in six.iterkeys(self.data)) + value.offset)
 
-        elif isinstance(value, int):
+        elif isinstance(value, six.integer_types):
             reg_width = self.REGISTER_WIDTH[reg]
             if value < -2 ** (reg_width-1):
                 raise ValueError('%d does not fit %s' % (value, reg))

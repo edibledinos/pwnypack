@@ -44,14 +44,14 @@ class Array(object):
 class NUMERIC(object):
     @staticmethod
     def verify(value):
-        if not isinstance(value, (int, Register, SyscallInvoke)):
+        if not isinstance(value, (six.integer_types, Register, SyscallInvoke)):
             raise ValueError('syscall argument not of expected type int')
 
 
 class PTR(object):
     @staticmethod
     def verify(value):
-        if not isinstance(value, (type(None), int, Register, Offset, Buffer, SyscallInvoke)):
+        if not isinstance(value, (type(None), six.integer_types, Register, Offset, Buffer, SyscallInvoke)):
             raise ValueError('syscall argument not of expected type ptr')
 
 
