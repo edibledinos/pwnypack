@@ -60,9 +60,11 @@ class ARM(BaseEnvironment):
         return ['sub %s, %s, #%d' % (reg, reg, value)]
 
     def reg_load_imm(self, reg, value):
-        if not value:
+        if -256 < value < 0:
+            return ['mvn %s, #%d' % (reg, ~value)]
+        elif not value:
             return ['eor %s, %s' % (reg, reg)]
-        elif value < 0xff:
+        elif 0 < value < 256:
             return ['mov %s, #%d' % (reg, value)]
         else:
             return ['ldr %s, =%d' % (reg, value)]
