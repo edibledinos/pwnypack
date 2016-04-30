@@ -19,3 +19,7 @@ def test_cycle_find_start():
 
 def test_cycle_find_not_found():
     assert pwny.cycle_find('\x00', width=1) == -1
+
+
+def test_reghex_pattern_char():
+    assert pwny.reghex('28').match(b'(') is not None

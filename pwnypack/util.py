@@ -139,7 +139,7 @@ def reghex(pattern):
     for match in reghex_regex.finditer(pattern):
         _, match_hex, _, match_char, match_char_len, match_star_plus = match.groups()
         if match_hex:
-            b_pattern += pwnypack.codec.dehex(match_hex)
+            b_pattern += re.escape(pwnypack.codec.dehex(match_hex))
         elif match_char:
             if match_char == '?':
                 if match_char_len is None:
