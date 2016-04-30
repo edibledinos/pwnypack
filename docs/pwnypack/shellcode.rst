@@ -11,39 +11,72 @@ The idea is that you provide a shellcode generator environment with a
 highlevel declarative representation of the shellcode your want to
 assemble and the environment fills in the specifics.
 
-Currently, two concrete shellcode environment types exist each in two
-different flavors:
+The generic environments target X86, X86_64, ARM, ARM Thumb, ARM Thumb
+Mixed and AArch64 on the Linux OS. No restrictions are made on what kind of
+bytes end up in the binary output. If you use buffers, the code segment will
+need to be writable if you use the ``Mutable`` variants. The ``Stack``
+variants require an initialized stack that is large enough to hold all the
+allocated data and buffers.
 
-The generic environments target X86, X86_64, ARM, ARM Thumb and ARM Thumb
-Mixed on the Linux OS. No restrictions are made on what kind of bytes end
-up in the binary output. If you use buffers, the code segment will need
-to be writable.
-
-X86 / X86_64:
+X86:
 
 - :class:`~pwnypack.shellcode.x86.linux.LinuxX86Mutable`
+- :class:`~pwnypack.shellcode.x86.linux.LinuxX86Stack`
+
+X86_64:
+
 - :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64Mutable`
+- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64Stack`
 
-ARM / AArch64:
+ARM:
 
-- :class:`~pwnypack.shellcode.arm.linux.LinuxARM`
-- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumb`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMMutable`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMStack`
+
+ARM Thumb:
+
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumbMutable`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumbStack`
+
+ARM with modeswitch to Thumb mode:
+
 - :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumbMixed`
-- :class:`~pwnypack.shellcode.aarch64.linux.LinuxAArch64`
+- :class:`~pwnypack.shellcode.arm.linux.LinuxARMThumbStack`
 
-Specialized classes are also provided for X86/X86_64. The *NullSafeMutable*
-variants attempt to generate binary output that does not contain NUL bytes,
-carriage returns and line feeds.  The shellcode is assumed to be loaded in a
-mutable and executable segment (like an executable stack).
+AArch64:
+
+- :class:`~pwnypack.shellcode.aarch64.linux.LinuxAArch64Mutable`
+- :class:`~pwnypack.shellcode.aarch64.linux.LinuxAArch64Stack`
+
+Specialized classes are also provided for X86 and X86_64. The
+*NullSafeMutable* and *NullSafeStack* variants attempt to generate binary
+output that does not contain NUL bytes, carriage returns and line feeds.
+
+X86:
 
 - :class:`~pwnypack.shellcode.x86.linux.LinuxX86MutableNullSafe`
+- :class:`~pwnypack.shellcode.x86.linux.LinuxX86StackNullSafe`
+
+X86_64:
+
 - :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64MutableNullSafe`
+- :class:`~pwnypack.shellcode.x86_64.linux.LinuxX86_64StackNullSafe`
 
 Each shellcode environment defines a set of registers that are available on
 the architecture and a set of system calls. These are available as properties
 of the respective environment.
 
-The environment also provides a way to allocate buffers
+The environment also provides a way to allocate strings and buffers. If you
+call :meth:`~pwnypack.shellcode.base.BaseEnvironment.alloc_data` with a
+bytestring (``str`` on python 2, ``bytes`` on python 3) it will be allocated
+verbatim and an :class:`~pwnypack.shellcode.types.Offset` is returned. If
+:meth:`~pwnypack.shellcode.base.BaseEnvironment.alloc_data` is called with
+a unicode string (``unicode`` on python 2, ``str`` on python 3) it will be
+converted to a latin1 based bytestring and terminated with a NUL byte (`\\0`).
+
+:meth:`~pwnypack.shellcode.base.BaseEnvironment.alloc_buffer` can be used to
+allocate an uninitialized block of memory. It will not be embedded in the
+shellcode.
 
 There are two ways to use these shellcode environments:
 

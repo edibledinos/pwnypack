@@ -27,7 +27,7 @@ def translate(env, func, *args, **kwargs):
         kwargs(...): The keyword arguments for the function.
 
     Returns:
-        bytes: The translated shellcode.
+        list: The high-level shellcode operations.
     """
 
     func_code = six.get_function_code(func)

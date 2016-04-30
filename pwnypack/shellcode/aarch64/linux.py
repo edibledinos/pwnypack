@@ -295,8 +295,17 @@ class LinuxAArch64(Linux, AArch64):
 
 
 class LinuxAArch64Mutable(LinuxAArch64):
+    """
+    An environment that targets a 64-bit Linux ARM machine in a writable segment.
+    """
+
     data_finalizer = gnu_as_mutable_data_finalizer(lambda env, _: ['\tadr %s, __data' % env.OFFSET_REG], '//')
 
 
 class LinuxAArch64Stack(LinuxAArch64):
+    """
+    An environment that targets a 64-bit Linux ARM machine that allocates the
+    required data on the stack.
+    """
+
     data_finalizer = stack_data_finalizer(16)

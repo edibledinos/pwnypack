@@ -366,14 +366,28 @@ _mutable_data_finalizer = gnu_as_mutable_data_finalizer(lambda env, _: ['\tadr %
 
 
 class LinuxARMMutable(LinuxARM):
+    """
+    An environment that targets a 32-bit Linux ARM machine in a writable segment.
+    """
+
     data_finalizer = _mutable_data_finalizer
 
 
 class LinuxARMThumbMutable(LinuxARMThumb):
+    """
+    An environment that targets a 32-bit Linux ARM machine using the Thumb
+    instruction set in a writable segment.
+    """
+
     data_finalizer = _mutable_data_finalizer
 
 
 class LinuxARMThumbMixedMutable(LinuxARMThumbMixed):
+    """
+    An environment that targets a 32-bit Linux ARM machine, switches to Thumb
+    mode and resides in a writable segment.
+    """
+
     data_finalizer = _mutable_data_finalizer
 
 
@@ -381,12 +395,27 @@ _stack_data_finalizer = stack_data_finalizer(8)
 
 
 class LinuxARMStack(LinuxARM):
+    """
+    An environment that targets a 32-bit Linux ARM machine that allocates
+    the required data on the stack.
+    """
+
     data_finalizer = _stack_data_finalizer
 
 
 class LinuxARMThumbStack(LinuxARMThumb):
+    """
+    An environment that targets a 32-bit Linux ARM machine using the Thumb
+    instruction set that allocates the required data on the stack.
+    """
+
     data_finalizer = _stack_data_finalizer
 
 
 class LinuxARMThumbMixedStack(LinuxARMThumbMixed):
+    """
+    An environment that targets a 32-bit Linux ARM machine, switches to Thumb
+    mode and allocates the required data on the stack.
+    """
+
     data_finalizer = _stack_data_finalizer

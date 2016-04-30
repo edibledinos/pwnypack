@@ -6,6 +6,11 @@ __all__ = ['ARMThumb']
 
 
 class ARMThumb(ARM):
+    """
+    Environment that targets a generic, unrestricted ARM architecture using
+    the Thumb instruction set.
+    """
+
     def __init__(self, endian=None):
         super(ARMThumb, self).__init__(endian)
         self.target.mode |= Target.Mode.arm_thumb

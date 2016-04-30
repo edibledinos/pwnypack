@@ -5,6 +5,11 @@ __all__ = ['ARMThumbMixed']
 
 
 class ARMThumbMixed(ARMThumb):
+    """
+    Environment that targets a generic, unrestricted ARM architecture that
+    switches to the Thumb instruction set.
+    """
+
     PREAMBLE = [
         '.global _start',
         '.arm',

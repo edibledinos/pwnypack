@@ -408,8 +408,8 @@ class LinuxX86MutableNullSafe(X86NullSafe, LinuxX86):
 
 class LinuxX86Stack(LinuxX86):
     """
-    An environment that targets a 32-bit Linux X86 machine in a writable segment
-    that emits no NUL bytes or carriage return characters.
+    An environment that targets a 32-bit Linux X86 machine that allocates
+    the required data on the stack.
     """
 
     data_finalizer = x86_stack_data_finalizer(16)
@@ -417,8 +417,9 @@ class LinuxX86Stack(LinuxX86):
 
 class LinuxX86StackNullSafe(X86NullSafe, LinuxX86):
     """
-    An environment that targets a 32-bit Linux X86 machine in a writable segment
-    that emits no NUL bytes or carriage return characters.
+    An environment that targets a 32-bit Linux X86 machine that allocates
+    the required data on the stack and emits no NUL bytes or carriage return
+    characters.
     """
 
     data_finalizer = stack_data_finalizer(16)
