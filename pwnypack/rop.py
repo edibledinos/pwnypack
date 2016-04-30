@@ -162,7 +162,10 @@ def gadget_app(_parser, cmd, args):  # pragma: no cover
             sys.exit(1)
     else:
         try:
-            gadget = pwnypack.asm.asm(args.gadget.replace(';', '\n'), target=elf)
+            gadget = pwnypack.util.reghex('*'.join([
+                pwnypack.codec.enhex(pwnypack.asm.asm(piece.replace(';', '\n'), target=elf))
+                for piece in ';'.join([line.strip() for line in args.gadget.split(';')]).split('*')
+            ]))
         except SyntaxError as e:
             print('Could not assemble:', e.msg)
             sys.exit(1)

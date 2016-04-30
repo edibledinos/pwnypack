@@ -22,4 +22,4 @@ def test_cycle_find_not_found():
 
 
 def test_reghex_pattern_char():
-    assert pwny.reghex('28').match('(') is not None
+    assert pwny.reghex('28').match(b'(') is not None
