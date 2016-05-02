@@ -3,7 +3,7 @@ import six
 
 def gnu_as_mutable_data_finalizer(get_pc, comment_char, align=True):
     def data_finalizer(env, code, data):
-        return (get_pc(env, code) if data else []) + code + [
+        return (get_pc(env, code) if data or env.buffers else []) + code + [
             '',
             '.pool',
         ] + ([

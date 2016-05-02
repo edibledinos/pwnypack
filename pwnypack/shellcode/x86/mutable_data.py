@@ -32,7 +32,7 @@ def nasm_mutable_data_finalizer(env, code, data):
     else:
         get_pc = ['\tlea %s, [rel __data]' % env.OFFSET_REG]
 
-    if data:
+    if data or env.buffers:
         return get_pc + code + _pack_data(data)
     else:
         return code
@@ -44,7 +44,7 @@ def nasm_null_safe_mutable_data_finalizer(env, code, data):
     segment. We just append the data to the end of the code.
     """
 
-    if data:
+    if data or env.buffers:
         # Determine length of nullify + shellcode and adjust data pointer
         xor_offsets = []
         masked_data = OrderedDict()
