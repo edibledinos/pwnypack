@@ -10,6 +10,10 @@ def test_shellcode_translate():
     @sc.LinuxX86Mutable.translate()
     def shellcode():
         buf = alloc_buffer(64)
+        reg_add(SYSCALL_RET_REG, 127)
+        reg_add(SYSCALL_RET_REG, 8192)
+        reg_sub(SYSCALL_RET_REG, 127)
+        reg_sub(SYSCALL_RET_REG, 8192)
         sys_read(0, buf, buf.length)
         sys_write(1, buf, buf.length)
         sys_setresuid(sys_geteuid(), sys_geteuid(), sys_geteuid())

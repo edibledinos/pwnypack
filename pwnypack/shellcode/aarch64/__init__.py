@@ -101,17 +101,39 @@ class AArch64(BaseEnvironment):
         self.target = Target(Target.Arch.arm, 64, endian)
         super(AArch64, self).__init__()
 
-    def reg_add_imm(self, reg, imm):
-        return ['add %s, %s, #%d' % (reg, reg, imm)]
-
-    def reg_sub_imm(self, reg, imm):
-        return ['sub %s, %s, #%d' % (reg, reg, imm)]
-
     def reg_push(self, reg):
         return ['str %s, [sp, #-%d]!' % (reg, self.REGISTER_WIDTH[reg] // 8)]
 
     def reg_pop(self, reg):
         return ['ldr %s, [sp], #%d' % (reg, self.REGISTER_WIDTH[reg] // 8)]
+
+    def reg_add_imm(self, reg, imm):
+        if imm <= 4096:
+            return ['add %s, %s, #%d' % (reg, reg, imm)]
+
+        temp_reg = self.TEMP_REG[self.REGISTER_WIDTH[reg]]
+        if reg is temp_reg:
+            raise ValueError('Cannot perform large reg_add on temporary register')
+
+        return ['ldr %s, =%d' % (temp_reg, imm),
+                'add %s, %s, %s' % (reg, reg, temp_reg)]
+
+    def reg_sub_imm(self, reg, imm):
+        if imm <= 4096:
+            return ['sub %s, %s, #%d' % (reg, reg, imm)]
+
+        temp_reg = self.TEMP_REG[self.REGISTER_WIDTH[reg]]
+        if reg is temp_reg:
+            raise ValueError('Cannot perform large reg_add on temporary register')
+
+        return ['ldr %s, =%d' % (temp_reg, imm),
+                'sub %s, %s, %s' % (reg, reg, temp_reg)]
+
+    def reg_add_reg(self, reg1, reg2):
+        return ['add %s, %s, %s' % (reg1, reg1, reg2)]
+
+    def reg_sub_reg(self, reg1, reg2):
+        return ['sub %s, %s, %s' % (reg1, reg1, reg2)]
 
     def reg_load_imm(self, reg, value):
         if not value:

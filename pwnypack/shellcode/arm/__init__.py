@@ -54,10 +54,32 @@ class ARM(BaseEnvironment):
         return ['pop {%s}' % reg]
 
     def reg_add_imm(self, reg, value):
-        return ['add %s, %s, #%d' % (reg, reg, value)]
+        if value < 256:
+            return ['add %s, #%d' % (reg, value)]
+
+        temp_reg = self.TEMP_REG[self.REGISTER_WIDTH[reg]]
+        if reg is temp_reg:
+            raise ValueError('Cannot perform large reg_add on temporary register')
+
+        return ['ldr %s, =%d' % (temp_reg, value),
+                'add %s, %s' % (reg, temp_reg)]
 
     def reg_sub_imm(self, reg, value):
-        return ['sub %s, %s, #%d' % (reg, reg, value)]
+        if value < 256:
+            return ['sub %s, #%d' % (reg, value)]
+
+        temp_reg = self.TEMP_REG[self.REGISTER_WIDTH[reg]]
+        if reg is temp_reg:
+            raise ValueError('Cannot perform large reg_add on temporary register')
+
+        return ['ldr %s, =%d' % (temp_reg, value),
+                'sub %s, %s' % (reg, temp_reg)]
+
+    def reg_add_reg(self, reg1, reg2):
+        return ['add %s, %s' % (reg1, reg2)]
+
+    def reg_sub_reg(self, reg1, reg2):
+        return ['sub %s, %s' % (reg1, reg2)]
 
     def reg_load_imm(self, reg, value):
         if -256 < value < 0:

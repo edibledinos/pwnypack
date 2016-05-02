@@ -126,6 +126,12 @@ class BaseEnvironment(object):
     def reg_sub_imm(self, reg, imm):
         raise NotImplementedError('Target does not define reg_sub_imm')
 
+    def reg_add_reg(self, reg1, reg2):
+        raise NotImplementedError('Target does not define reg_add_reg')
+
+    def reg_sub_reg(self, reg1, reg2):
+        raise NotImplementedError('Target does not define reg_add_reg')
+
     def reg_load_imm(self, reg, value):
         raise NotImplementedError('Target does not define reg_load_imm')
 
@@ -194,6 +200,47 @@ class BaseEnvironment(object):
 
         else:
             raise TypeError('Invalid argument type "%s"' % repr(value))
+
+    def reg_add(self, reg, value):
+        if value is None:
+            return []
+
+        elif isinstance(value, Register):
+            return self.reg_add_reg(reg, value)
+
+        elif isinstance(value, (Buffer, six.integer_types)):
+            if isinstance(reg, Buffer):
+                value = sum(len(v) for v in six.iterkeys(self.data)) + value.offset
+
+            if not value:
+                return []
+
+            reg_width = self.REGISTER_WIDTH[reg]
+            if value < -2 ** (reg_width-1):
+                raise ValueError('%d does not fit %s' % (value, reg))
+            elif value >= 2 ** reg_width:
+                raise ValueError('%d does not fit %s' % (value, reg))
+
+            if value > 0:
+                return self.reg_add_imm(reg, value)
+            else:
+                return self.reg_sub_imm(reg, -value)
+
+        else:
+            raise ValueError('Invalid argument type "%s"' % repr(value))
+
+    def reg_sub(self, reg, value):
+        if value is None:
+            return []
+        elif isinstance(value, Register):
+            return self.reg_sub_reg(reg, value)
+        elif isinstance(value, Buffer):
+            value = sum(len(v) for v in six.iterkeys(self.data)) + value.offset
+            return self.reg_add(reg, -value)
+        elif isinstance(value, six.integer_types):
+            return self.reg_add(reg, -value)
+        else:
+            raise ValueError('Invalid argument type "%s"' % repr(value))
 
     def jump_reg(self, reg):
         raise NotImplementedError('Target does not define a jump to register method')

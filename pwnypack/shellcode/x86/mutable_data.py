@@ -73,7 +73,7 @@ def nasm_null_safe_mutable_data_finalizer(env, code, data):
             for offset in xor_offsets:
                 offset -= last_offset
                 null_code.extend(
-                    env.reg_add_imm(temp_reg, offset) +
+                    env.reg_add(temp_reg, offset) +
                     ['xor [%s], bl' % temp_reg]
                 )
                 last_offset += offset
@@ -81,7 +81,7 @@ def nasm_null_safe_mutable_data_finalizer(env, code, data):
             data = masked_data
 
         code_len = len(asm('\n'.join(code), target=env.target))
-        adjust_ebp = env.reg_add_imm(env.OFFSET_REG, code_len)
+        adjust_ebp = env.reg_add(env.OFFSET_REG, code_len)
 
         return [
             '\tjmp __getpc1',

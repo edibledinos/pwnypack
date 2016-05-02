@@ -52,6 +52,12 @@ class X86NullSafe(X86):
     def reg_sub_imm(self, reg, value):
         return self._reg_add_sub_imm('sub', 'dec', reg, value)
 
+    def reg_add_reg(self, reg1, reg2):
+        return ['add %s, %s' % (reg1, reg2)]
+
+    def reg_sub_reg(self, reg1, reg2):
+        return ['sub %s, %s' % (reg1, reg2)]
+
     def reg_load_imm(self, reg, value):
         orig_reg = reg
         orig_reg_width = reg_width = self.REGISTER_WIDTH[reg]

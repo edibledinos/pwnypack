@@ -27,10 +27,7 @@ def stack_data_finalizer(stack_align, push_strategy=_load_push):
         if stack_adjust != stack_align:
             stack_size += stack_adjust
 
-        push_code = []
-
-        if stack_size - data_size:
-            push_code.extend(env.reg_sub_imm(env.STACK_REG, stack_size - data_size))
+        push_code = env.reg_sub(env.STACK_REG, stack_size - data_size)
 
         while data:
             chunk, data = data[:reg_width], data[reg_width:]
@@ -38,7 +35,7 @@ def stack_data_finalizer(stack_align, push_strategy=_load_push):
 
         push_code.extend(env.reg_load(env.OFFSET_REG, env.STACK_REG))
         if data_adjust != reg_width:
-            push_code.extend(env.reg_add_imm(env.OFFSET_REG, data_adjust))
+            push_code.extend(env.reg_add(env.OFFSET_REG, data_adjust))
 
         return ['\t%s' % line for line in push_code] + code
     return proxy
