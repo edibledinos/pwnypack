@@ -51,7 +51,8 @@ class NUMERIC(object):
 class PTR(object):
     @staticmethod
     def verify(value):
-        if not isinstance(value, (type(None), six.integer_types, Register, Offset, Buffer, SyscallInvoke)):
+        if not isinstance(value, (type(None), six.integer_types, Register, Offset, Buffer, SyscallInvoke,
+                                  six.string_types, six.binary_type, list)):
             raise ValueError('syscall argument not of expected type ptr')
 
 
