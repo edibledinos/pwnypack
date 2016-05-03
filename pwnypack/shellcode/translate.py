@@ -31,6 +31,9 @@ def translate(env, func, *args, **kwargs):
     """
 
     func_code = six.get_function_code(func)
+    func_globals = dict(__builtins__)
+    func_globals.update(six.get_function_globals(func))
+
     ops = bc.disassemble(func_code.co_code)
 
     program = []
@@ -47,15 +50,12 @@ def translate(env, func, *args, **kwargs):
             stack.append(func_code.co_consts[op.arg])
 
         elif op.name == 'LOAD_GLOBAL':
-            stack.append(getattr(env, func_code.co_names[op.arg]))
+            global_name = func_code.co_names[op.arg]
+            stack.append(getattr(env, global_name, func_globals.get(global_name)))
 
         elif op.name == 'LOAD_FAST':
             var_name = func_code.co_varnames[op.arg]
-            env_var = getattr(env, var_name, None)
-            if isinstance(env_var, Register):
-                stack.append(env_var)
-            else:
-                stack.append(variables[op.arg])
+            stack.append(getattr(env, var_name, variables[op.arg]))
 
         elif op.name == 'BUILD_LIST':
             items = stack[-op.arg:]
@@ -79,14 +79,11 @@ def translate(env, func, *args, **kwargs):
         elif op.name == 'STORE_FAST':
             value = stack.pop()
             var_name = func_code.co_varnames[op.arg]
-            env_var = getattr(env, var_name, None)
-
-            if isinstance(env_var, Register):
-                program.append(LoadRegister(env_var, value))
-            elif isinstance(value, (Buffer, Offset)):
-                variables[op.arg] = value
+            var = getattr(env, var_name, variables.get(op.arg, None))
+            if isinstance(var, Register):
+                program.append(LoadRegister(var, value))
             else:
-                variables[op.arg] = env.alloc_data(value)
+                variables[op.arg] = value
 
         elif op.name == 'POP_TOP':
             value = stack.pop()
