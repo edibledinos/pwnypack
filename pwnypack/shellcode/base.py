@@ -5,7 +5,7 @@ except ImportError:
 from enum import IntEnum
 import functools
 
-from kwonly_args import kwonly_defaults
+from kwonly_args import first_kwonly_arg
 import six
 
 import pwnypack.asm
@@ -297,28 +297,38 @@ class BaseEnvironment(object):
         return pwnypack.asm.asm(self.compile(ops), target=self.target)
 
     @classmethod
-    @kwonly_defaults
-    def translate(cls, output=TranslateOutput.code, *args, **kwargs):
-        """translate(*args, output=TranslateOutput.code, **kwargs)
+    @first_kwonly_arg('output')
+    def translate(cls, f=None, output=0, **kwargs):
+        """translate(f=None, *, output=TranslateOutput.code, **kwargs)
         Decorator that turns a function into a shellcode emitting function.
 
         Arguments:
+            f(callable): The function to decorate. If ``f`` is ``None`` a
+                decorator will be returned instead.
             output(~pwnypack.shellcode.base.BaseEnvironment.TranslateOutput): The output
                 format the shellcode function will produce.
-            *args: Positional arguments are passed to shellcode environment
-                constructor.
             **kwargs: Keyword arguments are passed to shellcode environment
                 constructor.
 
         Returns:
             A decorator that will translate the given function into a
             shellcode generator
+
+        Examples:
+            >>> from pwny import *
+            >>> @sc.LinuxX86Mutable.translate
+            ... def shellcode():
+            ...     sys_exit(0)
+
+            >>> @sc.LinuxX86Mutable.translate(output=1)
+            ... def shellcode():
+            ...     sys_exit(0)
         """
 
         def decorator(f):
             @functools.wraps(f)
             def proxy(*p_args, **p_kwargs):
-                env = cls(*args, **kwargs)
+                env = cls(**kwargs)
                 result = translate(env, f, *p_args, **p_kwargs)
                 if output == cls.TranslateOutput.code:
                     return env.assemble(result)
@@ -327,4 +337,8 @@ class BaseEnvironment(object):
                 else:
                     return env, result
             return proxy
-        return decorator
+
+        if f is None:
+            return decorator
+        else:
+            return decorator(f)
