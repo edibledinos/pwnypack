@@ -43,9 +43,9 @@ class ARM(BaseEnvironment):
         '_start:',
     ]
 
-    def __init__(self, endian=None):
+    def __init__(self, endian=None, *args, **kwargs):
         self.target = Target(Target.Arch.arm, 32, endian)
-        super(ARM, self).__init__()
+        super(ARM, self).__init__(*args, **kwargs)
 
     def reg_push(self, reg):
         return ['push {%s}' % reg]

@@ -97,9 +97,9 @@ class AArch64(BaseEnvironment):
              W22, W23, W24, W25, W26, W27, W28, W29, W30, WZR]
     }
 
-    def __init__(self, endian=None):
+    def __init__(self, endian=None, *args, **kwargs):
         self.target = Target(Target.Arch.arm, 64, endian)
-        super(AArch64, self).__init__()
+        super(AArch64, self).__init__(*args, **kwargs)
 
     def reg_push(self, reg):
         return ['str %s, [sp, #-%d]!' % (reg, self.REGISTER_WIDTH[reg] // 8)]

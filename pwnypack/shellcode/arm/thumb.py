@@ -11,8 +11,8 @@ class ARMThumb(ARM):
     the Thumb instruction set.
     """
 
-    def __init__(self, endian=None):
-        super(ARMThumb, self).__init__(endian)
+    def __init__(self, endian=None, *args, **kwargs):
+        super(ARMThumb, self).__init__(endian, *args, **kwargs)
         self.target.mode |= Target.Mode.arm_thumb
 
     def reg_add_imm(self, reg, value):

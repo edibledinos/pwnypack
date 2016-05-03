@@ -70,8 +70,8 @@ class X86(BaseEnvironment):
             '_start:',
         ]
 
-    def __init__(self):
-        super(X86, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(X86, self).__init__(*args, **kwargs)
 
     def reg_push(self, reg):
         return ['push %s' % reg]
