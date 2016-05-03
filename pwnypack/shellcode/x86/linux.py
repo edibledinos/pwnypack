@@ -18,7 +18,7 @@ class LinuxX86(Linux, X86):
     def __init__(self, version=None, *args, **kwargs):
         # Remove syscalls not generally available for which backfills are available.
 
-        if version < (4, 5, 0):
+        if version is None or version < (4, 5, 0):
             self.SYSCALL_MAP = self.SYSCALL_MAP.copy()
             for syscall in (
                 Linux.sys_socket,
