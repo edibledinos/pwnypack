@@ -15,6 +15,32 @@ class LinuxX86(Linux, X86):
     An environment that targets a generic Linux X86_64 machine.
     """
 
+    def __init__(self, version=None, *args, **kwargs):
+        # Remove syscalls not generally available for which backfills are available.
+
+        if version < (4, 5, 0):
+            self.SYSCALL_MAP = self.SYSCALL_MAP.copy()
+            for syscall in (
+                Linux.sys_socket,
+                Linux.sys_socketpair,
+                Linux.sys_bind,
+                Linux.sys_connect,
+                Linux.sys_listen,
+                Linux.sys_accept4,
+                Linux.sys_getsockopt,
+                Linux.sys_setsockopt,
+                Linux.sys_getsockname,
+                Linux.sys_getpeername,
+                Linux.sys_sendto,
+                Linux.sys_sendmsg,
+                Linux.sys_recvfrom,
+                Linux.sys_recvmsg,
+                Linux.sys_shutdown,
+            ):
+                del self.SYSCALL_MAP[syscall]
+
+        super(LinuxX86, self).__init__(*args, **kwargs)
+
     sys_iopl = SyscallDef('sys_iopl', NUMERIC)  #:
     sys_vm86old = SyscallDef('sys_vm86old', PTR)  #:
     sys_sigreturn = SyscallDef('sys_sigreturn')  #:
@@ -111,7 +137,7 @@ class LinuxX86(Linux, X86):
         Linux.sys_swapon: 87,
         Linux.sys_reboot: 88,
         Linux.sys_old_readdir: 89,
-        Linux.sys_mmap: 90,
+        Linux.sys_old_mmap: 90,
         Linux.sys_munmap: 91,
         Linux.sys_truncate: 92,
         Linux.sys_ftruncate: 93,

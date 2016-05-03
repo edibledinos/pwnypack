@@ -21,6 +21,10 @@ class LinuxX86_64(Linux, X86_64):
     sys_iopl = SyscallDef('sys_iopl', NUMERIC)  #:
     sys_mmap = SyscallDef('sys_mmap', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
 
+    def sys_mmap2(self, a, b, c, d, e, f):
+        return self.sys_mmap(a, b, c, d, e, f << self.PAGE_SHIFT)
+
+    PAGE_SHIFT = 12
     SYSCALL_REG = X86_64.RAX
     SYSCALL_ARG_MAP = [X86_64.RDI, X86_64.RSI, X86_64.RDX, X86_64.R10, X86_64.R8, X86_64.R9]
     SYSCALL_RET_REG = X86_64.RAX

@@ -373,7 +373,7 @@ class Linux(BaseEnvironment):
     sys_execve = SyscallDef('sys_execve', CHARP, CHARPP, CHARPP)  #:
     sys_perf_event_open = SyscallDef('sys_perf_event_open', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
     sys_mmap2 = SyscallDef('sys_mmap2', PTR, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC)  #:
-    sys_mmap = SyscallDef('sys_mmap', PTR)  #:
+    sys_old_mmap = SyscallDef('sys_mmap', PTR)  #:
     sys_name_to_handle_at = SyscallDef('sys_name_to_handle_at', NUMERIC, CHARP, PTR, PTR, NUMERIC)  #:
     sys_open_by_handle_at = SyscallDef('sys_open_by_handle_at', NUMERIC, PTR, NUMERIC)  #:
     sys_setns = SyscallDef('sys_setns', NUMERIC, NUMERIC)  #:
@@ -426,3 +426,41 @@ class Linux(BaseEnvironment):
         return code + \
             self.reg_load(self.SYSCALL_REG, self.SYSCALL_MAP[op.syscall_def]) + \
             [self.SYSCALL_INSTR]
+
+    def __init__(self, *args, **kwargs):
+        super(Linux, self).__init__(*args, **kwargs)
+
+        # Compatibility back-fills
+        if self.sys_socketcall in self.SYSCALL_MAP:
+            def gen_socketcall_wrap(socketcall_nr):
+                return lambda *args: self.sys_socketcall(socketcall_nr, list(args))
+
+            for syscall_name, socketcall_nr in (
+                ('sys_socket', 1),
+                ('sys_bind', 2),
+                ('sys_connect', 3),
+                ('sys_listen', 4),
+                ('sys_accept', 5),
+                ('sys_getsockname', 6),
+                ('sys_getpeername', 7),
+                ('sys_socketpair', 8),
+                ('sys_send', 9),
+                ('sys_recv', 10),
+                ('sys_sendto', 11),
+                ('sys_recvfrom', 12),
+                ('sys_shutdown', 13),
+                ('sys_setsockopt', 14),
+                ('sys_getsockopt', 15),
+                ('sys_sendmsg', 16),
+                ('sys_recvmsg', 17),
+                ('sys_accept4', 18),
+            ):
+                syscall = getattr(self, syscall_name)
+                if not syscall in self.SYSCALL_MAP:
+                    setattr(self, syscall_name, gen_socketcall_wrap(socketcall_nr))
+
+        if self.sys_dup2 not in self.SYSCALL_MAP and self.sys_dup3 in self.SYSCALL_MAP:
+            self.sys_dup2 = lambda old_fd, new_fd: self.sys_dup3(old_fd, new_fd, 0)
+
+        if self.sys_accept not in self.SYSCALL_MAP and self.sys_accept4 in self.SYSCALL_MAP:
+            self.sys_accept = lambda *args: self.sys_accept4(*(args + (0,)))

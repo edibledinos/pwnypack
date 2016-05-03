@@ -95,7 +95,7 @@ class LinuxARM(Linux, ARM):
         Linux.sys_swapon: 87,
         Linux.sys_reboot: 88,
         Linux.sys_old_readdir: 89,
-        Linux.sys_mmap: 90,
+        Linux.sys_old_mmap: 90,
         Linux.sys_munmap: 91,
         Linux.sys_truncate: 92,
         Linux.sys_ftruncate: 93,
