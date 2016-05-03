@@ -55,7 +55,7 @@ def translate(env, func, *args, **kwargs):
 
         elif op.name == 'LOAD_FAST':
             var_name = func_code.co_varnames[op.arg]
-            stack.append(getattr(env, var_name, variables[op.arg]))
+            stack.append(getattr(env, var_name, variables.get(op.arg)))
 
         elif op.name == 'BUILD_LIST':
             items = stack[-op.arg:]
