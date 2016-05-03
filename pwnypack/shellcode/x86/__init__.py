@@ -80,9 +80,13 @@ class X86(BaseEnvironment):
         return ['pop %s' % reg]
 
     def reg_add_imm(self, reg, value):
+        if value == 1:
+            return ['inc %s' % reg]
         return ['add %s, %d' % (reg, value)]
 
     def reg_sub_imm(self, reg, value):
+        if value == 1:
+            return ['dec %s' % reg]
         return ['sub %s, %d' % (reg, value)]
 
     def reg_add_reg(self, reg1, reg2):
