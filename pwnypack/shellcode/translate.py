@@ -113,6 +113,21 @@ def translate(env, func, *args, **kwargs):
             else:
                 stack.append(value)
 
+        elif op.name == 'BINARY_SUBSCR':
+            index = stack.pop()
+            value = stack.pop()
+            stack.append(value[index])
+
+        elif op.name == 'STORE_SUBSCR':
+            index = stack.pop()
+            value = stack.pop()
+            new_value = stack.pop()
+            var = value[index]
+            if isinstance(var, Register):
+                program.append(LoadRegister(var, new_value))
+            else:
+                value[index] = new_value
+
         else:
             raise RuntimeError('Unsupported opcode: %s' % op.name)
 
