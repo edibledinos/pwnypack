@@ -67,14 +67,23 @@ def translate(env, func, *args, **kwargs):
             stack.append(getattr(obj, func_code.co_names[op.arg]))
 
         elif op.name == 'CALL_FUNCTION':
-            if op.arg:
-                f_args = stack[-op.arg:]
-                del stack[-op.arg:]
+            nargs = op.arg & 0xff
+            nkwargs = op.arg >> 8
+
+            if nkwargs:
+                f_kwargs = dict(zip(stack[-nkwargs * 2::2], stack[-nkwargs * 2 + 1::2]))
+                del stack[-nkwargs * 2:]
+            else:
+                f_kwargs = {}
+
+            if nargs:
+                f_args = stack[-nargs:]
+                del stack[-nargs:]
             else:
                 f_args = []
 
             f = stack.pop()
-            stack.append(f(*f_args))
+            stack.append(f(*f_args, **f_kwargs))
 
         elif op.name == 'STORE_FAST':
             value = stack.pop()
