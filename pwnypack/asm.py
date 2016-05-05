@@ -88,8 +88,8 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
     Args:
         code(str): The statements to assemble.
         addr(int): The memory address where the code will run.
-        syntax(AsmSyntax): The input assembler syntax. Defaults to nasm
-            on x86/x86_64, AT&T on other platforms.
+        syntax(AsmSyntax): The input assembler syntax for x86. Defaults to
+            nasm, ignored on other platforms.
         target(~pwnypack.target.Target): The target architecture. The
             global target is used if this argument is ``None``.
         gnu_binutils_prefix(str): When the syntax is AT&T, gnu binutils'
@@ -120,16 +120,10 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
     if target is None:
         target = pwnypack.target.target
 
-    if syntax is None:
-        if target.arch is pwnypack.target.Target.Arch.x86:
-            syntax = AsmSyntax.nasm
-        else:
-            syntax = AsmSyntax.att
+    if syntax is None and target.arch is pwnypack.target.Target.Arch.x86:
+        syntax = AsmSyntax.nasm
 
-    if syntax is AsmSyntax.nasm:
-        if target.arch is not pwnypack.target.Target.Arch.x86:
-            raise NotImplementedError('nasm only supports x86 target platforms.')
-
+    if target.arch is pwnypack.target.Target.Arch.x86 and syntax is AsmSyntax.nasm:
         with tempfile.NamedTemporaryFile() as tmp_asm:
             tmp_asm.write(('bits %d\norg %d\n%s' % (target.bits.value, addr, code)).encode('utf-8'))
             tmp_asm.flush()
@@ -162,7 +156,8 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                     os.unlink(tmp_bin_name)
                 except OSError:
                     pass
-    elif syntax is AsmSyntax.att:
+    elif target.arch in (pwnypack.target.Target.Arch.x86, pwnypack.target.Target.Arch.arm):
+        preamble = ''
         as_flags = []
         ld_flags = []
 
@@ -171,8 +166,12 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 binutils_arch = 'i386'
             else:
                 binutils_arch = 'amd64'
+
+            if syntax is AsmSyntax.intel:
+                preamble = '.intel_syntax noprefix\n'
+
             ld_flags.extend(['--oformat', 'binary'])
-        elif target.arch is pwnypack.target.Target.Arch.arm:
+        else:
             if target.bits == 32:
                 binutils_arch = 'arm'
                 if target.mode & pwnypack.target.Target.Mode.arm_v8:
@@ -191,8 +190,6 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
 
             if target.mode & pwnypack.target.Target.Mode.arm_thumb:
                 as_flags.append('-mthumb')
-        else:
-            raise NotImplementedError('pwnypack only supports AT&T syntax on x86 and arm.')
 
         if gnu_binutils_prefix is None:
             gnu_binutils_prefix = find_binutils_prefix(binutils_arch)
@@ -210,7 +207,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            stdout, stderr = p.communicate(code.encode('utf-8'))
+            stdout, stderr = p.communicate((preamble + code).encode('utf-8'))
 
             if p.returncode:
                 raise SyntaxError(stderr.decode('utf-8'))
@@ -255,7 +252,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 pass  # pragma: no cover
 
     else:
-        raise NotImplementedError('Unsupported syntax for host platform.')
+        raise NotImplementedError('Unsupported syntax or target platform.')
 
 
 def prepare_capstone(syntax=AsmSyntax.att, target=None):

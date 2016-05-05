@@ -20,29 +20,21 @@ ASM_TESTS = [
     (target_x86_32, None, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
     (target_x86_32, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
     (target_x86_32, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\xa0\xed\x0c\x00\x00'),
+    (target_x86_32, pwny.AsmSyntax.intel, 'mov al, byte ptr [0xced]', b'\xa0\xed\x0c\x00\x00'),
 
     (target_x86_64, None, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
     (target_x86_64, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
     (target_x86_64, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\x8a\x04%\xed\x0c\x00\x00'),
+    (target_x86_64, pwny.AsmSyntax.intel, 'mov al, byte ptr [0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
 
     (target_arm_32_le, None, 'add r0, r1, #0', b'\x00\x00\x81\xe2'),
-    (target_arm_32_le, pwny.AsmSyntax.att, 'add r0, r1, #0', b'\x00\x00\x81\xe2'),
-
     (target_arm_32_be, None, 'add r0, r1, #0', b'\xe2\x81\x00\x00'),
-    (target_arm_32_be, pwny.AsmSyntax.att, 'add r0, r1, #0', b'\xe2\x81\x00\x00'),
-
     (target_armv7m_32_le, None, 'push {r0}', b'\x01\xb4'),
-    (target_armv7m_32_le, pwny.AsmSyntax.att, 'push {r0}', b'\x01\xb4'),
-
     (target_armv7m_32_be, None, 'push {r0}', b'\xb4\x01'),
-    (target_armv7m_32_be, pwny.AsmSyntax.att, 'push {r0}', b'\xb4\x01'),
 
     (target_arm_64_le, None, 'add x0, x1, #0', b' \x00\x00\x91'),
-    (target_arm_64_le, pwny.AsmSyntax.att, 'add x0, x1, #0', b' \x00\x00\x91'),
-
     # The output of as/ld and capstone disagree. Assume a failure will happen.
     pytest.mark.xfail()((target_arm_64_be, None, 'add x0, x1, #0', b'\x91\x00\x00 ')),
-    pytest.mark.xfail()((target_arm_64_be, pwny.AsmSyntax.att, 'add x0, x1, #0', b'\x91\x00\x00 ')),
 ]
 
 
@@ -58,17 +50,12 @@ def test_asm(test_target, syntax, source, result, target):
 
 @pytest.mark.xfail(raises=SyntaxError)
 def test_asm_syntax_error():
-    pwny.asm('mov ced, 3')
+    pwny.asm('mov ced, 3', target=target_x86_32)
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_asm_unsupported_target():
     pwny.asm('mov al, [0xced]', target=target_unknown_32)
-
-
-@pytest.mark.xfail(raises=NotImplementedError)
-def test_asm_nasm_unsupported_arch():
-    pwny.asm('mov al, [0xced]', syntax=pwny.AsmSyntax.nasm, target=target_arm_64_le)
 
 
 @pytest.mark.parametrize(('test_target', 'syntax', 'result', 'source'), ASM_TESTS)
