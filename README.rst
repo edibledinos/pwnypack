@@ -178,6 +178,10 @@ Contributors
 want to contribute, feel free to fork and create a pull request on
 `GitHub <https://github.com/edibledinos/pwnypack>`__.
 
+Current contributors:
+
+- blasty <peter@haxx.in> contributed the ARM shellcode generator.
+
 License
 -------
 

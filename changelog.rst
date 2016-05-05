@@ -17,6 +17,7 @@ next release
 * Add Dockerfile for pwnypack shell and pwnbook.
 * Fix interact on python 3 in Flow.
 * Add python bytecode manipulation functions.
+* Added shellcode generator for X86/X86_64, ARM (+Thumb) and AArch64.
 
 0.7.2 (2016-03-11)
 ==================

@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import sys
 import os
@@ -37,7 +37,7 @@ setup(
     setup_requires=['setuptools>=17.1'],
 
     name='pwnypack',
-    packages=['pwny', 'pwnypack'],
+    packages=find_packages(),
     version=__version__,
     description='Official Certified Edible Dinosaurs CTF toolkit.',
     long_description=read_file('README.rst') + '\n' + read_file('changelog.rst'),

@@ -122,6 +122,21 @@ for _w, _f in ((8, 'b'), (16, 'h'), (32, 'l'), (64, 'q')):
 del _w, _f, _pack_closure, _unpack_closure
 
 
+def _get_bits(bits=None, target=None):
+    """
+    Determine the number of bits to pack/unpack.
+    """
+
+    if bits is not None:
+        bits = int(bits)
+        if bits in (8, 16, 32, 64):
+            return bits
+        else:
+            raise ValueError('bits needs to be 8, 16, 32 or 64')
+    else:
+        return int((target if target is not None else pwnypack.target.target).bits)
+
+
 def P(value, bits=None, endian=None, target=None):
     """
     Pack an unsigned pointer for a given target.
@@ -139,9 +154,7 @@ def P(value, bits=None, endian=None, target=None):
             the global :data:`~pwnypack.target.target`.
     """
 
-    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
-        pwnypack.target.target.bits
-    return globals()['P%d' % bits.value](value, endian=endian, target=target)
+    return globals()['P%d' % _get_bits(bits, target)](value, endian=endian, target=target)
 
 
 def p(value, bits=None, endian=None, target=None):
@@ -161,9 +174,7 @@ def p(value, bits=None, endian=None, target=None):
             the global :data:`~pwnypack.target.target`.
     """
 
-    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
-        pwnypack.target.target.bits
-    return globals()['p%d' % bits.value](value, endian=endian, target=target)
+    return globals()['p%d' % _get_bits(bits, target)](value, endian=endian, target=target)
 
 
 def U(data, bits=None, endian=None, target=None):
@@ -186,9 +197,7 @@ def U(data, bits=None, endian=None, target=None):
         int: The pointer value.
     """
 
-    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
-        pwnypack.target.target.bits
-    return globals()['U%d' % bits.value](data, endian=endian, target=target)
+    return globals()['U%d' % _get_bits(bits, target)](data, endian=endian, target=target)
 
 
 def u(data, bits=None, endian=None, target=None):
@@ -211,6 +220,4 @@ def u(data, bits=None, endian=None, target=None):
         int: The pointer value.
     """
 
-    bits = pwnypack.target.Target.Bits(bits) if bits is not None else target.bits if target is not None else \
-        pwnypack.target.target.bits
-    return globals()['u%d' % bits.value](data, endian=endian, target=target)
+    return globals()['u%d' % _get_bits(bits, target)](data, endian=endian, target=target)
