@@ -128,6 +128,22 @@ def translate(env, func, *args, **kwargs):
             else:
                 value[index] = new_value
 
+        elif op.name == 'INPLACE_ADD':
+            value = stack.pop()
+            reg = stack.pop()
+            if not isinstance(reg, Register):
+                raise TypeError('In-place addition is only supported on registers')
+            program.extend(env.reg_add(reg, value))
+            stack.append(reg)
+
+        elif op.name == 'INPLACE_SUBTRACT':
+            value = stack.pop()
+            reg = stack.pop()
+            if not isinstance(reg, Register):
+                raise TypeError('In-place subtraction is only supported on registers')
+            program.extend(env.reg_sub(reg, value))
+            stack.append(reg)
+
         else:
             raise RuntimeError('Unsupported opcode: %s' % op.name)
 
