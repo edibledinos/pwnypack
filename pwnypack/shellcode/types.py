@@ -14,7 +14,7 @@ class Register(object):
         return self.name
 
     def __repr__(self):
-        return '%s' % self.name.upper()
+        return '<Reg:%s>' % self.name.upper()
 
 
 class Offset(int):

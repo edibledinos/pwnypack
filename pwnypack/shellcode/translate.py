@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import inspect
 
 import six
@@ -127,7 +125,7 @@ def translate(env, func, *args, **kwargs):
             elif isinstance(value, list):
                 program.extend(value)
             else:
-                raise ValueError('No idea how to compile %s' % value)
+                raise ValueError('No idea how to compile %s' % (value,))
 
         elif op.name == 'RETURN_VALUE':
             stack.pop()

@@ -49,7 +49,7 @@ AArch64:
 - :class:`~pwnypack.shellcode.aarch64.linux.LinuxAArch64Stack`
 
 Specialized classes are also provided for X86 and X86_64. The
-*NullSafeMutable* and *NullSafeStack* variants attempt to generate binary
+*MutableNullSafe* and *StackNullSafe* variants attempt to generate binary
 output that does not contain NUL bytes, carriage returns and line feeds.
 
 X86:

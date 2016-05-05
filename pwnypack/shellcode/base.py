@@ -141,6 +141,15 @@ class BaseEnvironment(object):
     def reg_load_offset(self, reg, offset):
         raise NotImplementedError('Target does not define reg_load_offset')
 
+    def jump_reg(self, reg):
+        raise NotImplementedError('Target does not define a jump to register method')
+
+    def syscall(self, op):
+        raise NotImplementedError('Target does not define syscall method')
+
+    def data_finalizer(self, code, data):
+        raise NotImplementedError('Target does not define a data finalizer')
+
     def reg_load_array(self, reg, value):
         temp_reg = self.TEMP_REG[self.target.bits]
         code = []
@@ -163,6 +172,21 @@ class BaseEnvironment(object):
         return code
 
     def reg_load(self, reg, value):
+        """
+        Load a value into a register. The value can be a string or binary (in
+        which case the value is passed to :meth:`alloc_data`), another
+        :class:`Register`, an :class:`Offset` or :class:`Buffer`, an integer
+        immediate, a ``list`` or ``tuple`` or a syscall invocation.
+
+        Arguments:
+            reg(pwnypack.shellcode.types.Register): The register to load the
+                value into.
+            value: The value to load into the register.
+
+        Returns:
+            list: A list of mnemonics that will load value into reg.
+        """
+
         if isinstance(value, (six.text_type, six.binary_type)):
             value = self.alloc_data(value)
 
@@ -202,6 +226,19 @@ class BaseEnvironment(object):
             raise TypeError('Invalid argument type "%s"' % repr(value))
 
     def reg_add(self, reg, value):
+        """
+        Add a value to a register. The value can be another :class:`Register`,
+        an :class:`Offset`, a :class:`Buffer`, an integer or ``None``.
+
+        Arguments:
+            reg(pwnypack.shellcode.types.Register): The register to add the
+                value to.
+            value: The value to add to the register.
+
+        Returns:
+            list: A list of mnemonics that will add ``value`` to ``reg``.
+        """
+
         if value is None:
             return []
 
@@ -241,15 +278,6 @@ class BaseEnvironment(object):
             return self.reg_add(reg, -value)
         else:
             raise ValueError('Invalid argument type "%s"' % repr(value))
-
-    def jump_reg(self, reg):
-        raise NotImplementedError('Target does not define a jump to register method')
-
-    def syscall(self, op):
-        raise NotImplementedError('Target does not define syscall method')
-
-    def data_finalizer(self, code, data):
-        raise NotImplementedError('Target does not define a data finalizer')
 
     def finalize(self, code):
         return self.PREAMBLE + code
