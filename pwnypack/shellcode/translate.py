@@ -9,7 +9,30 @@ from pwnypack.shellcode.types import Register, Offset, Buffer
 from pwnypack import bytecode as bc
 
 
-__all__ = ['translate']
+__all__ = ['translate', 'fragment']
+
+
+class Fragment(object):
+    def __init__(self, f):
+        self.f = f
+
+    def __call__(self, env, *args, **kwargs):
+        return translate(env, self.f, *args, **kwargs)
+
+
+def fragment(f):
+    """
+    Decorator to turn a function into a shellcode fragment that can be called
+    as a function from within a translated function.
+
+    Arguments:
+        f(callable): The function to mark as a shellcode fragment.
+
+    Returns:
+        callable: The decorated shellcode fragment.
+    """
+
+    return Fragment(f)
 
 
 def translate(env, func, *args, **kwargs):
@@ -83,7 +106,10 @@ def translate(env, func, *args, **kwargs):
                 f_args = []
 
             f = stack.pop()
-            stack.append(f(*f_args, **f_kwargs))
+            if isinstance(f, Fragment):
+                stack.append(f(env, *f_args, **f_kwargs))
+            else:
+                stack.append(f(*f_args, **f_kwargs))
 
         elif op.name == 'STORE_FAST':
             value = stack.pop()
