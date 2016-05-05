@@ -157,6 +157,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 except OSError:
                     pass
     elif target.arch in (pwnypack.target.Target.Arch.x86, pwnypack.target.Target.Arch.arm):
+        preamble = ''
         as_flags = []
         ld_flags = []
 
@@ -165,6 +166,10 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 binutils_arch = 'i386'
             else:
                 binutils_arch = 'amd64'
+
+            if syntax is AsmSyntax.intel:
+                preamble = '.intel_syntax noprefix\n'
+
             ld_flags.extend(['--oformat', 'binary'])
         else:
             if target.bits == 32:
@@ -202,7 +207,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            stdout, stderr = p.communicate(code.encode('utf-8'))
+            stdout, stderr = p.communicate((preamble + code).encode('utf-8'))
 
             if p.returncode:
                 raise SyntaxError(stderr.decode('utf-8'))

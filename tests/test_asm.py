@@ -20,10 +20,12 @@ ASM_TESTS = [
     (target_x86_32, None, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
     (target_x86_32, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\xa0\xed\x0c\x00\x00'),
     (target_x86_32, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\xa0\xed\x0c\x00\x00'),
+    (target_x86_32, pwny.AsmSyntax.intel, 'mov al, byte ptr [0xced]', b'\xa0\xed\x0c\x00\x00'),
 
     (target_x86_64, None, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
     (target_x86_64, pwny.AsmSyntax.nasm, 'mov al,[0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
     (target_x86_64, pwny.AsmSyntax.att, 'movb 0xced, %al', b'\x8a\x04%\xed\x0c\x00\x00'),
+    (target_x86_64, pwny.AsmSyntax.intel, 'mov al, byte ptr [0xced]', b'\x8a\x04%\xed\x0c\x00\x00'),
 
     (target_arm_32_le, None, 'add r0, r1, #0', b'\x00\x00\x81\xe2'),
     (target_arm_32_be, None, 'add r0, r1, #0', b'\xe2\x81\x00\x00'),
