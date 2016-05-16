@@ -43,6 +43,7 @@ try:
     HAVE_KEYSTONE = True
 except ImportError:
     HAVE_KEYSTONE = False
+WANT_KEYSTONE = os.environ.get('WANT_KEYSTONE', '1').upper() in ('1', 'YES', 'TRUE')
 
 
 __all__ = [
@@ -130,7 +131,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
     if syntax is None and target.arch is pwnypack.target.Target.Arch.x86:
         syntax = AsmSyntax.nasm
 
-    if HAVE_KEYSTONE:
+    if HAVE_KEYSTONE and WANT_KEYSTONE:
         ks_mode = 0
         ks_syntax = None
 
