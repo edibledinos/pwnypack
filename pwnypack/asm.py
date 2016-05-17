@@ -1,15 +1,16 @@
 """
 This module contains functions to assemble and disassemble code for a given
-target platform.
+target platform. By default the keystone engine assembler will be used if it
+is available. If it's not available (or if the ``WANT_KEYSTONE`` environment
+variable is set and it's not ``1``, ``YES`` or ``TRUE`` (case insensitive)),
+pwnypack falls back to using the *nasm* assembler for nasm syntax on X86 or
+*GNU as* for any other supported syntax / architecture. Disassembly is
+performed by *ndisasm* on x86 for nasm syntax. *capstone* is used for any
+other supported syntax / architecture.
 
 Currently, the only supported architectures are
 :attr:`~pwnypack.target.Target.Arch.x86` (both 32 and 64 bits variants) and
 :attr:`~pwnypack.target.Target.Arch.arm` (both 32 and 64 bits variants).
-Assembly is performed by the *nasm* assembler (only supports
-:attr:`~AsmSyntax.nasm` syntax on x86) or *gnu as* (supports
-:attr:`~AsmSyntax.att` syntax on x86 and arm). Disassembly is performed by
-*ndisasm* (:attr:`~AsmSyntax.nasm` syntax) or *capstone*
-(:attr:`~AsmSyntax.intel` & :attr:`~AsmSyntax.att` syntax).
 """
 
 from __future__ import print_function
@@ -30,12 +31,20 @@ import pwnypack.target
 import pwnypack.main
 import pwnypack.codec
 import tempfile
+import six
 
 try:
     import capstone
     HAVE_CAPSTONE = True
 except ImportError:
     HAVE_CAPSTONE = False
+
+try:
+    import keystone
+    HAVE_KEYSTONE = True
+except ImportError:
+    HAVE_KEYSTONE = False
+WANT_KEYSTONE = os.environ.get('WANT_KEYSTONE', '1').upper() in ('1', 'YES', 'TRUE')
 
 
 __all__ = [
@@ -122,6 +131,59 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
 
     if syntax is None and target.arch is pwnypack.target.Target.Arch.x86:
         syntax = AsmSyntax.nasm
+
+    if HAVE_KEYSTONE and WANT_KEYSTONE:
+        ks_mode = 0
+        ks_syntax = None
+
+        if target.arch is pwnypack.target.Target.Arch.x86:
+            ks_arch = keystone.KS_ARCH_X86
+            if target.bits is pwnypack.target.Target.Bits.bits_32:
+                ks_mode |= keystone.KS_MODE_32
+            else:
+                ks_mode |= keystone.KS_MODE_64
+            if syntax is AsmSyntax.nasm:
+                ks_syntax = keystone.KS_OPT_SYNTAX_NASM
+            elif syntax is AsmSyntax.intel:
+                ks_syntax = keystone.KS_OPT_SYNTAX_INTEL
+            else:
+                ks_syntax = keystone.KS_OPT_SYNTAX_ATT
+
+        elif target.arch is pwnypack.target.Target.Arch.arm:
+            if target.bits is pwnypack.target.Target.Bits.bits_32:
+                ks_arch = keystone.KS_ARCH_ARM
+
+                if target.mode & pwnypack.target.Target.Mode.arm_thumb:
+                    ks_mode |= keystone.KS_MODE_THUMB
+                else:
+                    ks_mode |= keystone.KS_MODE_ARM
+
+                if target.mode & pwnypack.target.Target.Mode.arm_v8:
+                    ks_mode |= keystone.KS_MODE_V8
+
+                if target.mode & pwnypack.target.Target.Mode.arm_m_class:
+                    ks_mode |= keystone.KS_MODE_MICRO
+
+                if target.endian is pwnypack.target.Target.Endian.little:
+                    ks_mode |= keystone.KS_MODE_LITTLE_ENDIAN
+                else:
+                    ks_mode |= keystone.KS_MODE_BIG_ENDIAN
+            else:
+                ks_arch = keystone.KS_ARCH_ARM64
+                ks_mode |= keystone.KS_MODE_BIG_ENDIAN
+        else:
+            raise NotImplementedError('Unsupported syntax or target platform.')
+
+        ks = keystone.Ks(ks_arch, ks_mode)
+        if ks_syntax is not None:
+            ks.syntax = ks_syntax
+        try:
+            data, insn_count = ks.asm(code, addr)
+        except keystone.KsError as e:
+            import traceback
+            traceback.print_exc()
+            raise SyntaxError(e.message)
+        return b''.join(six.int2byte(b) for b in data)
 
     if target.arch is pwnypack.target.Target.Arch.x86 and syntax is AsmSyntax.nasm:
         with tempfile.NamedTemporaryFile() as tmp_asm:
