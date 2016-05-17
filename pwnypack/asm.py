@@ -496,6 +496,7 @@ def asm_app(parser, cmd, args):  # pragma: no cover
         args.source,
         syntax=syntax,
         target=target,
+        addr=args.address,
     )
 
 
