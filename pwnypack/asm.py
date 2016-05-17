@@ -514,7 +514,7 @@ def disasm_app(_parser, cmd, args):  # pragma: no cover
     parser.add_argument(
         '--syntax', '-s',
         choices=AsmSyntax.__members__.keys(),
-        default='nasm',
+        default=None,
     )
     parser.add_argument(
         '--address', '-o',
@@ -530,7 +530,10 @@ def disasm_app(_parser, cmd, args):  # pragma: no cover
 
     args = parser.parse_args(args)
     target = pwnypack.main.target_from_arguments(args)
-    syntax = AsmSyntax.__members__[args.syntax]
+    if args.syntax is not None:
+        syntax = AsmSyntax.__members__[args.syntax]
+    else:
+        syntax = None
 
     if args.format is None:
         if args.code is None:
