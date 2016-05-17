@@ -1,24 +1,28 @@
 Release history
 ###############
 
-next release
-============
+0.8.0 (2015-05-17)
+==================
 
 * Return empty list when trying to read non-existing .dynamic section.
 * Don't print newline when piping the output of a gadget.
 * Fix output of raw binary data on python 3.
 * Add pwnypack extension for ipython.
-* Add pwnypack jupyter notebook wrapper.
+* Add pwnypack jupyter notebook wrapper (pwnbook).
 * Moved and renamed util.pickle_call to pickle.pickle_invoke.
 * Added pickle_func that pickles a function and its invocation.
-* Added support for using GNU binutils to assemble AT&T syntax.
-* Added support for assembling / disassembling ARM.
+* Added support for using GNU binutils to assemble AT&T and intel syntax.
+* Added support for assembling/disassembling ARM using binutils/capstone.
 * Use extras_require to make capstone, paramiko and jupyter optional.
 * Add Dockerfile for pwnypack shell and pwnbook.
 * Fix interact on python 3 in Flow.
 * Add python bytecode manipulation functions.
 * Added shellcode generator for X86/X86_64, ARM (+Thumb) and AArch64.
 * Use keystone engine as assembler engine by default.
+* Added xor mask finder.
+* Added python independent marshal and .pyc loader.
+* Fix internal escaping of reghex expressions.
+* Allow wildcards when searching for ROP gadgets using assembly statements.
 
 0.7.2 (2016-03-11)
 ==================
