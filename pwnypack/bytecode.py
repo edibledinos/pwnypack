@@ -510,7 +510,7 @@ class CodeObject(object):
         instance.
 
         Arguments:
-            code(code): The code object to get the properties of.
+            code(types.CodeType): The code object to get the properties of.
             ...: The properties to override.
 
         Returns:
@@ -627,7 +627,7 @@ class CodeObject(object):
         those of the running python version.
 
         Returns:
-            code: The native python code object.
+            types.CodeType: The native python code object.
         """
 
         if self.internals is not get_py_internals():
