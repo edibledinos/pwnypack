@@ -65,8 +65,6 @@ class X86(BaseEnvironment):
             'BITS %d' % self.target.bits.value,
             'global _start',
             '',
-            'SECTION .text',
-            '',
             '_start:',
         ]
 
