@@ -1,15 +1,16 @@
 """
 This module contains functions to assemble and disassemble code for a given
-target platform.
+target platform. By default the keystone engine assembler will be used if it
+is available. If it's not available (or if the ``WANT_KEYSTONE`` environment
+variable is set and it's not ``1``, ``YES`` or ``TRUE`` (case insensitive)),
+pwnypack falls back to using the *nasm* assembler for nasm syntax on X86 or
+*GNU as* for any other supported syntax / architecture. Disassembly is
+performed by *ndisasm* on x86 for nasm syntax. *capstone* is used for any
+other supported syntax / architecture.
 
 Currently, the only supported architectures are
 :attr:`~pwnypack.target.Target.Arch.x86` (both 32 and 64 bits variants) and
 :attr:`~pwnypack.target.Target.Arch.arm` (both 32 and 64 bits variants).
-Assembly is performed by the *nasm* assembler (only supports
-:attr:`~AsmSyntax.nasm` syntax on x86) or *gnu as* (supports
-:attr:`~AsmSyntax.att` syntax on x86 and arm). Disassembly is performed by
-*ndisasm* (:attr:`~AsmSyntax.nasm` syntax) or *capstone*
-(:attr:`~AsmSyntax.intel` & :attr:`~AsmSyntax.att` syntax).
 """
 
 from __future__ import print_function
