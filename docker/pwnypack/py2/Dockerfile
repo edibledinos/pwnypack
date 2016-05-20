@@ -6,7 +6,8 @@ RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -qy \
 		git nasm build-essential python \
 		python-dev python-pip python-virtualenv python-setuptools \
-		binutils-aarch64-linux-gnu binutils-arm-none-eabi && \
+		binutils-aarch64-linux-gnu binutils-arm-none-eabi \
+		libffi-dev libssl-dev && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
