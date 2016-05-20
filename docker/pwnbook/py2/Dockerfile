@@ -1,4 +1,4 @@
-FROM edibledinos/pwnypack:latest
+FROM edibledinos/pwnypack:py2
 
 MAINTAINER Ingmar Steen <iksteen@gmail.com>
 

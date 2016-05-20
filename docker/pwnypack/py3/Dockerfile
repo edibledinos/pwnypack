@@ -19,7 +19,7 @@ RUN /usr/bin/pip3 install virtualenv && \
 USER pwnypack
 
 RUN virtualenv -p /usr/bin/python3 /virtualenv && /virtualenv/bin/pip install -U pip setuptools && \
-	git clone https://github.com/edibledinos/pwnypack /tmp/pwnypack && \
+	git clone -b latest https://github.com/edibledinos/pwnypack /tmp/pwnypack && \
 	/virtualenv/bin/pip install --no-binary capstone /tmp/pwnypack/[all] && \
 	rm -rf /tmp/pwnypack ~/.cache
 
