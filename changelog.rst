@@ -8,6 +8,7 @@ next release
 * Docker images clone latest branch of pwnypack repository.
 * Fix magic command registration on IPython >= 5.0.0.
 * Support parsing (a subset of) ~/.ssh/config in flow.SSHClient.
+* Fix aarch64 support when using keystone engine.
 
 0.8.0 (2015-05-17)
 ==================

@@ -170,7 +170,7 @@ def asm(code, addr=0, syntax=None, target=None, gnu_binutils_prefix=None):
                     ks_mode |= keystone.KS_MODE_BIG_ENDIAN
             else:
                 ks_arch = keystone.KS_ARCH_ARM64
-                ks_mode |= keystone.KS_MODE_BIG_ENDIAN
+                ks_mode |= keystone.KS_MODE_LITTLE_ENDIAN
         else:
             raise NotImplementedError('Unsupported syntax or target platform.')
 
