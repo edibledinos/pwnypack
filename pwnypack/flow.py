@@ -29,10 +29,13 @@ Examples:
     >>> f.readline(echo=True)
 """
 
+import os
 import subprocess
 import sys
 import socket
 import select
+import inspect
+
 try:
     import paramiko
     HAVE_PARAMIKO = True
@@ -272,6 +275,44 @@ if HAVE_PARAMIKO:
         def __init__(self):
             super(SSHClient, self).__init__()
             self.set_missing_host_key_policy(paramiko.client.WarningPolicy())
+
+        def connect(self, hostname, *args, **kwargs):
+            connect = super(SSHClient, self).connect
+            options = inspect.getcallargs(connect, hostname, *args, **kwargs)
+            del options['self']
+
+            ssh_config = paramiko.SSHConfig()
+            user_config_file = os.path.expanduser("~/.ssh/config")
+            if os.path.exists(user_config_file):
+                with open(user_config_file) as f:
+                    ssh_config.parse(f)
+
+            user_config = ssh_config.lookup(options['hostname'])
+
+            if 'hostname' in user_config:
+                options['hostname'] = user_config['hostname']
+            if 'port' not in kwargs and 'port' in user_config:
+                options['port'] = int(user_config['port'])
+            if 'username' not in kwargs and 'user' in user_config:
+                options['username'] = user_config['user']
+            if 'key_filename' not in kwargs and 'identityfile' in user_config:
+                options['key_filename'] = user_config['identityfile']
+            if 'timeout' not in kwargs and 'connecttimeout' in user_config:
+                options['timeout'] = int(user_config['connecttimeout'])
+            if 'look_for_keys' not in kwargs and 'allow_agent' not in kwargs and 'identiesonly' in user_config:
+                options['look_for_keys'] = options['allow_agent'] = user_config['identiesonly'] == 'no'
+            if 'gss_auth' not in kwargs and 'gssapiauthentication' in user_config:
+                options['gss_auth'] = user_config['gssapiauthentication'] == 'yes'
+            if 'gss_kex' not in kwargs and 'gssapikeyexchange' in user_config:
+                options['gss_key'] = user_config['gssapikeyexchange'] == 'yes'
+            if 'gss_deleg_creds' not in kwargs and 'gssapidelegatecredentials' in user_config:
+                options['gss_deleg_creds'] = user_config['gssapidelegatecredentials'] == 'yes'
+            if 'compress' not in kwargs and 'compression' in user_config:
+                options['compress'] = user_config['compress'] == 'yes'
+            if 'sock' not in kwargs and 'proxycommand' in user_config:
+                options['sock'] = paramiko.ProxyCommand(user_config['proxycommand'])
+
+            return connect(**options)
 
         def execute(self, command, pty=False, echo=False):
             """
