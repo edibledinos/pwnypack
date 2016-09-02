@@ -1,20 +1,24 @@
-import functools
 import shlex
 import pwny
 import pwnypack.main
+from IPython.core.magic import register_line_magic
 
 
 __all__ = []
 
 
-def call_main_func(func_name, ipython, line):
-    pwnypack.main.main([func_name] + shlex.split(line))
+def wrap_main(func_name):
+    def wrapper(line):
+        pwnypack.main.main([func_name] + shlex.split(line))
+    return wrapper
+
+
+for f_name, f_dict in pwnypack.main.MAIN_FUNCTIONS.items():
+    register_line_magic(f_name)(wrap_main(f_name))
 
 
 def load_ipython_extension(ipython):
     ipython.push(vars(pwny))
-    for f_name in pwnypack.main.MAIN_FUNCTIONS:
-        ipython.define_magic(f_name, functools.partial(call_main_func, f_name))
 
 
 def unload_ipython_extension(ipython):
