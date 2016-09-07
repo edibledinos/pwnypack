@@ -1,6 +1,12 @@
 Release history
 ###############
 
+next release
+============
+
+* Adding missing dev packages on docker images.
+* Docker images clone latest branch of pwnypack repository.
+
 0.8.0 (2015-05-17)
 ==================
 
