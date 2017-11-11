@@ -13,5 +13,6 @@ from pwnypack.php import *
 from pwnypack.pickle import *
 from pwnypack.py_internals import *
 from pwnypack.marshal import *
+from pwnypack.oracle import *
 from pwny import bc
 from pwny import sc
