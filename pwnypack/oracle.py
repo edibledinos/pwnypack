@@ -51,7 +51,7 @@ def check_padding_decrypt(event, oracle, block_len, chunk, block, plain, i, j):
 
 
 def decrypt_block(oracle, block_len, alphabet, pool, params):
-    prev, block, prefix, suffix, in_padding = params
+    prev, block, prefix, suffix, is_last_block = params
 
     if pool is not None:
         event_factory = multiprocessing.Manager().Event
@@ -61,6 +61,8 @@ def decrypt_block(oracle, block_len, alphabet, pool, params):
         map_func = map
 
     plain = prefix + bytearray([0] * (block_len - len(prefix) - len(suffix))) + suffix
+
+    in_padding = is_last_block and not suffix
 
     i = block_len - 1 - len(suffix)
     while i >= len(prefix):
