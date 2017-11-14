@@ -33,6 +33,7 @@ Examples:
 from __future__ import print_function
 
 import inspect
+import itertools
 import types
 
 import six
@@ -100,6 +101,11 @@ def disassemble(code, origin=None):
     hasjrel = origin['hasjrel']
     hasjabs = origin['hasjabs']
     hasjump = set(hasjrel) | set(hasjabs)
+    wordcode = origin['wordcode']
+    if not wordcode:
+        ext_arg_shift = 16
+    else:
+        ext_arg_shift = 8
 
     ext_arg_name = opname[origin['extended_arg']]
     ext_arg = 0
@@ -110,23 +116,28 @@ def disassemble(code, origin=None):
     code_iter = enumerate(six.iterbytes(code))
     for op_addr, op_code in code_iter:
         if op_code >= origin['have_argument']:
-            _, a = next(code_iter)
-            _, b = next(code_iter)
-            arg = a + (b << 8) + ext_arg
+            rel_addr, arg = next(code_iter)
+            if not wordcode:
+                rel_addr, b = next(code_iter)
+                arg += b << 8
+
+            arg += ext_arg
 
             if op_code in hasjrel:
-                arg += op_addr + 3
+                arg += rel_addr
 
             if op_code in hasjump:
                 arg = addr_labels.setdefault(arg, Label())
         else:
+            if wordcode:
+                next(code_iter)
             arg = None
         ext_arg = 0
 
         op_name = opname[op_code]
 
         if op_name == ext_arg_name:
-            ext_arg = arg << 16
+            ext_arg = arg << ext_arg_shift
             op = None
         else:
             op = Op(op_name, arg)
@@ -161,11 +172,6 @@ def assemble(ops, target=None):
         bytes: The assembled bytecode.
     """
 
-    def encode_op(op_code, op_arg=None):
-        if op_arg is None:
-            return six.int2byte(op_code)
-        else:
-            return six.int2byte(op_code) + six.int2byte(op_arg & 255) + six.int2byte(op_arg >> 8)
 
     target = get_py_internals(target)
 
@@ -175,6 +181,33 @@ def assemble(ops, target=None):
     hasjump = set(hasjrel) | set(hasjabs)
     have_argument = target['have_argument']
     extended_arg = target['extended_arg']
+    wordcode = target['wordcode']
+
+    if not wordcode:
+        def encode_op(output, op_code, op_arg=None):
+            n = 1
+            if op_arg is None:
+                output.append(op_code)
+            else:
+                n += 2
+                ext_arg = op_arg >> 16
+                if ext_arg:
+                    n += 3
+                    output.extend([extended_arg, ext_arg & 255, ext_arg >> 8])
+                    op_arg &= 65535
+                output.extend([op_code, op_arg & 255, op_arg >> 8])
+            return n
+    else:
+        def encode_op(output, op_code, op_arg=None):
+            n = 2
+            if op_arg is None:
+                output.extend([op_code, 0])
+            else:
+                ext_arg = op_arg >> 8
+                if ext_arg:
+                    n += encode_op(extended_arg, ext_arg)
+                output.extend([op_code, op_arg & 255])
+            return n
 
     # A bit of a chicken and egg problem: The address of a label depends on the instructions before it. However,
     # the instructions before a label might depend on the label itself: For very large functions, jumps may
@@ -182,13 +215,12 @@ def assemble(ops, target=None):
     # has materialized, which means the address of the label will change on the next pass, which might mean
     # a different jump offset might become larger, etc... We run passes until no label changes address.
 
-    output = b''
     label_address = {}
-    retry = True
-    while retry:
+    while True:
         retry = False
-        output = b''
+        output = bytearray()
         address = 0
+
         for op in ops:
             if isinstance(op, Label):
                 if label_address.get(op) != address:
@@ -199,21 +231,13 @@ def assemble(ops, target=None):
             op_code = opmap[op.name]
             op_arg = op.arg
 
-            if op_arg is None:
-                if op_code >= have_argument:
-                    # Sanity check.
-                    raise ValueError('Opcode %s requires argument.' % op)
-
-                # Encode a single-byte opcode.
-                output += encode_op(op_code)
-                address += 1
-                continue
-
-            if op_code < have_argument:
+            if op_code >= have_argument and op_arg is None:
+                # Sanity check.
+                raise ValueError('Opcode %s requires argument.' % op)
+            elif op_code < have_argument and op_arg is not None:
                 # Sanity check.
                 raise ValueError('Opcode %s should not have an argument.' % op)
-
-            if isinstance(op_arg, Label):
+            elif isinstance(op_arg, Label):
                 if op_code not in hasjump:
                     # Sanity check.
                     raise ValueError('Did not expect label as argument for opcode %s.' % op)
@@ -226,32 +250,38 @@ def assemble(ops, target=None):
                 op_arg = label_address.get(op_arg)
                 if op_arg is None:
                     # Label hasn't materialized yet, we'll catch it on the next pass.
-                    if op_code in hasjabs and address > 65535:
-                        # Educated guess that we'll need an extended arg. Might save us a pass.
-                        address += 6
-                    else:
-                        address += 3
+                    address += encode_op(output, op_code, 0)
                     continue
 
                 if op_code in hasjrel:
-                    # Fixup address for relative jump.
-                    op_arg -= address + 3
+                    op_arg -= address
             elif op_code in hasjump:
                 # Sanity check.
                 raise ValueError('Expected label as argument for opcode %s.' % op)
 
-            if op_arg >= 65536:
-                # Encode the extended argument (upper 16 bit of the argument).
-                output += encode_op(extended_arg, op_arg >> 16)
-                address += 3
-                # Adjust the argument to only contain the lower 16 bits.
-                op_arg &= 65535
-
             # Encode the opcode and the argument.
-            output += encode_op(op_code, op_arg)
-            address += 3
+            n = encode_op(output, op_code, op_arg)
+            address += n
 
-    return output
+            if op_code in hasjrel:
+                if not wordcode:
+                    op_arg = output[-2] + (output[-1] << 8)
+                    if op_arg < n:
+                        ext_arg = output[-5] + (output[-4] << 8) - 1
+                        output[-5], output[-4] = ext_arg & 255, ext_arg >> 8
+                        op_arg += 65536
+                    op_arg -= n
+                    output[-2], output[-1] = op_arg & 255, op_arg >> 8
+                else:
+                    for i in itertools.count(1, 2):
+                        if n <= output[-i]:
+                            output[-i] -= n
+                            break
+                        output[-i] += 256 - n
+                        n = 1
+
+        if not retry:
+            return bytes(output)
 
 
 class Block(object):

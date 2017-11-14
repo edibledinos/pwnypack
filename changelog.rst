@@ -12,6 +12,7 @@ next release
 * Added padding oracle attack functions.
 * Added keystone-engine dependency for 'asm' and 'all' targets.
 * Make pwnbook, shell and ssh targets require python 2.7+.
+* Added internals for python 3.5.2 and 3.6.
 
 0.8.0 (2015-05-17)
 ==================
