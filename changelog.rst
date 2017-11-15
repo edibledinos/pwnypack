@@ -10,6 +10,8 @@ next release
 * Support parsing (a subset of) ~/.ssh/config in flow.SSHClient.
 * Fix aarch64 support when using keystone engine.
 * Added padding oracle attack functions.
+* Added keystone-engine dependency for 'asm' and 'all' targets.
+* Make pwnbook, shell and ssh targets require python 2.7+.
 
 0.8.0 (2015-05-17)
 ==================

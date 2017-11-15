@@ -13,6 +13,6 @@ sudo: false
 install:
   - pip install -U setuptools pip
   - pip install -U py pytest
-  - pip install --no-binary capstone -e .[disasm,rop,ssh]
+  - pip install --no-binary capstone,keystone-engine -e .[asm,disasm,rop,ssh]
 script:
-  - python setup.py test
+  - WANT_KEYSTONE=0 python setup.py test
