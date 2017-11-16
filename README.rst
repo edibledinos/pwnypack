@@ -30,7 +30,7 @@ dependencies, run:
 
 .. code:: bash
 
-    $ pip install --no-binary capstone pwnypack[all]
+    $ pip install --no-binary capstone,keystone-engine pwnypack[all]
 
 To install the latest released version of pwnypack with minimal
 dependencies, run:
@@ -41,8 +41,11 @@ dependencies, run:
 
 Other available install targets are:
 
+- ``--no-binary keystone-engine pwnypack[asm]`` - installs ``keystone-engine``
+  to support all assembler targets without any additional depenencies.
+
 - ``--no-binary capstone pwnypack[disasm]`` - installs ``capstone`` for AT&T
-  and intel syntax disassembly, required to disassemble ARM binaries).
+  and intel syntax disassembly, required to disassemble ARM binaries.
 
 - ``--no-binary capstone pwnypack[rop]`` - installs ``capstone`` to validate
   ROP gadgets.
@@ -116,7 +119,7 @@ example in the wiki.
 Common errors
 -------------
 
-Capstone fails to import the dynamic library.
+Capstone/keystone fails to import the dynamic library.
 
 .. code::
 
@@ -126,13 +129,15 @@ Capstone fails to import the dynamic library.
        raise ImportError("ERROR: fail to load the dynamic library.")
    ImportError: ERROR: fail to load the dynamic library.
 
-The ``capstone`` package has a bug which when used with a new verion of
-``pip`` will end up installing the capstone library in the wrong location on
-linux. Re-install ``capstone`` using:
+The ``capstone`` and ``keystone`` packages have a bug which when used with a
+new verion of ``pip`` will end up installing the dynamic libraries in the
+wrong location on some platforms. Re-install ``capstone`` and/or ``keystone``
+using:
 
 .. code:: bash
 
     $ pip install --no-binary capstone capstone
+    $ pip install --no-binary keystone-engine keystone-engine
 
 SyntaxError when importing pwnypack.
 
