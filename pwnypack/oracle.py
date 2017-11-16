@@ -50,8 +50,8 @@ def check_padding_decrypt(event, oracle, block_len, chunk, block, plain, i, j):
         return plain
 
 
-def decrypt_block(oracle, block_len, alphabet, pool, params):
-    prev, block, prefix, suffix, is_last_block = params
+def decrypt_block(oracle, block_len, alphabet, pool, progress, params):
+    start, prev, block, prefix, suffix, is_last_block = params
 
     if pool is not None:
         event_factory = multiprocessing.Manager().Event
@@ -60,7 +60,17 @@ def decrypt_block(oracle, block_len, alphabet, pool, params):
         event_factory = threading.Event
         map_func = map
 
-    plain = prefix + bytearray([0] * (block_len - len(prefix) - len(suffix))) + suffix
+    plain = bytearray([0] * block_len)
+
+    for i, j in enumerate(prefix):
+        plain[i] = j
+        if progress is not None:
+            progress(start + i, j)
+
+    for i, j in enumerate(reversed(suffix)):
+        plain[block_len - i - 1] = j
+        if progress is not None:
+            progress(start + block_len - i - 1, j)
 
     in_padding = is_last_block and not suffix
 
@@ -91,8 +101,12 @@ def decrypt_block(oracle, block_len, alphabet, pool, params):
             pad_value = plain[-1]
             for j in range(block_len - pad_value, i):
                 plain[j] = pad_value
+                if progress is not None:
+                    progress(start + j, pad_value)
             i -= pad_value
         else:
+            if progress is not None:
+                progress(start + i, plain[i])
             i -= 1
 
     return plain
@@ -105,6 +119,7 @@ def block_pairs(block_len, data, known_prefix, known_suffix):
                                          range(data_len - block_len, -1, -block_len),
                                          range(suffix_len - block_len, -data_len - 1, -block_len)):
         yield (
+            prev,
             data[prev:start],
             data[start:start + block_len],
             known_prefix[prev:start],
@@ -114,7 +129,7 @@ def block_pairs(block_len, data, known_prefix, known_suffix):
 
 
 def padding_oracle_decrypt(oracle, ciphertext, known_prefix=b'', known_suffix=b'', block_size=128,
-                           alphabet=None, pool=None, block_pool=None):
+                           alphabet=None, pool=None, block_pool=None, progress=None):
     """
     Decrypt ciphertext using an oracle function that returns ``True`` if the
     provided ciphertext is correctly PKCS#7 padded after decryption. The
@@ -144,6 +159,9 @@ def padding_oracle_decrypt(oracle, ciphertext, known_prefix=b'', known_suffix=b'
             multiple blocks, it is usually more efficient than using the
             ``pool`` argument. If ``None`` (the default), no multiprocessing
             will be used.
+        progress(callable): A callable that will be called each time a new
+            byte is decrypted. Is called with the positition of the character
+            in the plaintext result and the character itself.
 
     Returns:
         bytes: The decrypted data with its PKCS#7 padding stripped.
@@ -174,7 +192,7 @@ def padding_oracle_decrypt(oracle, ciphertext, known_prefix=b'', known_suffix=b'
 
     plaintext = bytearray()
 
-    decrypt_func = functools.partial(decrypt_block, oracle, block_len, alphabet, pool)
+    decrypt_func = functools.partial(decrypt_block, oracle, block_len, alphabet, pool, progress)
     for plain in map_func(decrypt_func, block_pairs(block_len, bytearray(ciphertext), known_prefix, known_suffix)):
         plaintext[0:0] = plain
 
