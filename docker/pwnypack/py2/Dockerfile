@@ -19,7 +19,7 @@ USER pwnypack
 
 RUN virtualenv /virtualenv && /virtualenv/bin/pip install -U pip setuptools && \
 	git clone -b latest https://github.com/edibledinos/pwnypack /tmp/pwnypack && \
-	/virtualenv/bin/pip install --no-binary capstone /tmp/pwnypack/[all] && \
+	/virtualenv/bin/pip install --no-binary capstone,keystone-engine /tmp/pwnypack/[all] && \
 	rm -rf /tmp/pwnypack ~/.cache
 
 RUN git clone https://github.com/edibledinos/pwnypack-examples.git /projects && \
