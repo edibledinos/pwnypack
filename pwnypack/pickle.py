@@ -266,7 +266,7 @@ def pickle_func(func, target=None, protocol=None, b64encode=None, *args):
     protocol = get_protocol_version(protocol, target)
 
     old_code_reduce = copyreg.dispatch_table.pop(types.CodeType, None)
-    if target['version'] < 30:
+    if target['version'] < 300:
         copyreg.pickle(types.CodeType, code_reduce_v2)
     else:
         if six.PY2:
