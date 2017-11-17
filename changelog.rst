@@ -1,8 +1,8 @@
 Release history
 ###############
 
-next release
-============
+0.9.0 (2017-11-17)
+==================
 
 * Adding missing dev packages on docker images.
 * Docker images clone latest branch of pwnypack repository.
@@ -14,7 +14,7 @@ next release
 * Make pwnbook, shell and ssh targets require python 2.7+.
 * Added internals for python 3.5.2 and 3.6.
 
-0.8.0 (2015-05-17)
+0.8.0 (2016-05-17)
 ==================
 
 * Return empty list when trying to read non-existing .dynamic section.
