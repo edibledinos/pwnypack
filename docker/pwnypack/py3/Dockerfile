@@ -4,7 +4,7 @@ MAINTAINER Ingmar Steen <iksteen@gmail.com>
 
 RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -qy \
-		git nasm build-essential python3 \
+		git nasm build-essential python python3 cmake \
 		python3-dev python3-pip python3-setuptools \
 		binutils-aarch64-linux-gnu binutils-arm-none-eabi \
 		libffi-dev libssl-dev && \
