@@ -87,7 +87,7 @@ class PhpObject(object):
         if key.startswith('protected '):
             return '\0*\0' + key.split(' ', 1)[1]
         elif key.startswith('private '):
-            return self.class_name + key.split(' ', 1)[1]
+            return '\0' + self.class_name + '\0' + key.split(' ', 1)[1]
         elif key.startswith('public '):
             return key.split(' ', 1)[1]
         else:

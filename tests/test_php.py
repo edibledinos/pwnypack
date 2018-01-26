@@ -28,7 +28,7 @@ def test_php_object_protected_property():
 
 def test_php_object_private_property():
     o = PhpObject('Test', {'private a': 42})
-    assert php_serialize(o) == b'O:4:"Test":1:{s:5:"Testa";i:42;}'
+    assert php_serialize(o) == b'O:4:"Test":1:{s:7:"\0Test\0a";i:42;}'
 
 
 def test_php_object_get_item():
@@ -51,4 +51,4 @@ def test_php_object_get_item_protected():
 def test_php_object_get_item_private():
     o = PhpObject('Test', {'private a': 42})
     assert o['private a'] == 42
-    assert o['Testa'] == 42
+    assert o['\0Test\0a'] == 42

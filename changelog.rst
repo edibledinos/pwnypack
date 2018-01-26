@@ -4,6 +4,8 @@ Release history
 next release
 ============
 
+* Fix serializing private PHP object properties.
+
 0.9.0 (2017-11-17)
 ==================
 
